@@ -1,0 +1,566 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Setup Docker Compose for B-Delivery Services",
+        "description": "Configure the `docker-compose.yaml` file to orchestrate all required services: PostgreSQL, Redis, MinIO, Next.js web-app, and the Go chat-server. Ensure all containers are on the `bdelivery_net` bridge network for DNS communication.",
+        "details": "Create a `docker-compose.yaml` file in the root directory. Define services for `postgres` (postgres:15-alpine), `redis` (redis:7-alpine), `minio` (minio/minio), `chat-server` (golang:1.22 base, custom build), and `web-app` (node:20 base, Next.js). Map internal ports to external local ports as specified in the PRD (5432, 6379, 9000/9001, 8080, 3000). Configure volumes for persistent data (Postgres, Redis, MinIO). Set up the `bdelivery_net` network and assign all services to it. Ensure MinIO has `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` environment variables set for initial setup. For `chat-server` and `web-app`, define build contexts and commands. Example for `web-app` service: `build: .` (assuming Dockerfile in root), `ports: - '3000:3000'`, `networks: - bdelivery_net`, `depends_on: - postgres - redis - minio`.",
+        "testStrategy": "Run `docker-compose up -d`. Verify all containers are running using `docker-compose ps`. Check logs for each service to ensure no startup errors. Attempt to connect to PostgreSQL, Redis, and MinIO from the host machine using their exposed ports.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Initialize Prisma ORM and Database Schema",
+        "description": "Define the database schema using Prisma based on the provided `schema.prisma` content. Generate Prisma client and apply initial migrations to the PostgreSQL database.",
+        "details": "Copy the provided `schema.prisma` content into `prisma/schema.prisma`. Configure the `DATABASE_URL` in `.env` to point to the `postgres` service within the Docker network (e.g., `postgresql://user:password@postgres:5432/bdelivery`). Run `npx prisma migrate dev --name init` to create the initial migration and apply it to the database. Generate the Prisma client using `npx prisma generate`. Ensure `User`, `Restaurant`, `Menu`, `Order`, `Chat`, `Message`, `Review`, `FavoriteRestaurant`, and `Report` models are correctly defined with their enums and relations.",
+        "testStrategy": "After running `npx prisma migrate dev`, connect to the PostgreSQL database (e.g., using `psql` or a GUI tool) and verify that all tables and their columns, including enums, have been created correctly according to the `schema.prisma`.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Setup Next.js 14+ Project with UI Frameworks",
+        "description": "Initialize a Next.js 14+ project using the App Router, integrate Tailwind CSS for styling, and set up shadcn/ui for reusable UI components.",
+        "details": "Create a new Next.js project: `npx create-next-app@latest bdelivery --typescript --tailwind --eslint --app --src-dir --import-alias '@/*'`. Configure `tailwind.config.ts` to include shadcn/ui paths. Install shadcn/ui: `npx shadcn-ui@latest init` and select appropriate options. Add a base layout and global CSS. Ensure `NEXTAUTH_URL` and `NEXTAUTH_SECRET` are set in `.env`.",
+        "testStrategy": "Run `npm run dev` and access `http://localhost:3000`. Verify that Tailwind CSS is applied correctly by adding a simple styled element. Install a shadcn/ui component (e.g., Button) and confirm it renders without errors.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Implement Google Social Login with NextAuth.js v5",
+        "description": "Integrate Google Social Login using NextAuth.js v5 (Auth.js) to allow users to authenticate with their Google accounts.",
+        "details": "Install `next-auth`. Create `auth.ts` in the project root. Configure `Auth.js` with the Google Provider, using `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from `.env`. Set up `auth.config.ts` and `middleware.ts` for session management and route protection. Implement `signIn` and `signOut` functions. Ensure the `User` model in Prisma is linked to NextAuth for database session management. The `User` model should be updated on first login or if `email` or `image` changes. The `role` should default to `USER`.",
+        "testStrategy": "Navigate to the login page. Click the 'Login with Google' button. Complete the Google authentication flow. Verify that the user is redirected to the home page and their session information (e.g., email, name, image) is accessible in the frontend. Check the database to confirm a new `User` entry is created with `role: USER`.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Develop User Profile Management",
+        "description": "Create a user profile page allowing users to view and update their nickname, profile picture, and default delivery address. Implement the 'Profile 수정' button functionality.",
+        "details": "Create a dedicated route for the user profile page (e.g., `/mypage/profile`). Fetch user data from the database using Prisma. Implement a form for updating `nickname` and `defaultAddress`. For profile pictures, integrate with the MinIO Presigned URL strategy (Task 8). Use Next.js Server Actions for form submissions to update the `User` model in the database. Ensure `latitude` and `longitude` are updated when `defaultAddress` changes, requiring Kakao API integration (Task 7).",
+        "testStrategy": "Log in as a user. Navigate to the profile page. Update nickname and save. Verify the changes are reflected on the page and in the database. Attempt to update the profile picture (once Task 8 is done).",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Integrate Kakao Map API and Geolocation Services",
+        "description": "Integrate Kakao Map API for displaying maps and converting coordinates, and the Kakao Postcode Service for manual address input. Implement browser Geolocation API for automatic current location detection.",
+        "details": "Load Kakao Map API script using `NEXT_PUBLIC_KAKAO_MAP_KEY`. Implement a utility function to convert coordinates to address and vice-versa using Kakao's REST API. For manual address input, load the Kakao Postcode Service script (`//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js`) and integrate it as a popup. Implement browser's `navigator.geolocation` to get current `latitude` and `longitude`. Handle permission requests and denials gracefully, providing fallback to manual input. Store `latitude` and `longitude` in the `User` and `Restaurant` models.",
+        "testStrategy": "Test the geolocation flow: allow permission (auto-detect address), deny permission (prompt manual input). Test the Kakao Postcode popup: search for an address, select it, and verify the address and coordinates are correctly retrieved. Verify coordinate-to-address conversion works.",
+        "priority": "high",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Implement User Delivery Address Management",
+        "description": "Develop functionality for users to add, edit, delete, and set a default delivery address. This includes the initial address setting flow upon first login or if no address is set.",
+        "details": "Create a dedicated page (e.g., `/mypage/addresses`) for managing addresses. Implement forms for adding/editing addresses, utilizing the Kakao Postcode Service (Task 6) to get address details and convert them to `latitude` and `longitude`. Store multiple addresses in a new `UserAddress` model (if needed, otherwise update `User.defaultAddress`). Implement logic to prompt for address setting if `User.defaultAddress` is null, redirecting to the address setting screen. Use Server Actions for CRUD operations. Ensure the selected address's `latitude` and `longitude` are stored in the `User` model as `defaultAddress`, `latitude`, `longitude`.",
+        "testStrategy": "Log in as a new user; verify redirection to address setup. Set an address. Go to My Page -> Address Management. Add a new address, set it as default, edit an existing one, delete one. Confirm changes persist and are reflected in the `User` model.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          5,
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Integrate MinIO Object Storage with Presigned URLs",
+        "description": "Implement image upload functionality using MinIO object storage. Utilize a Presigned URL strategy for secure and efficient client-side image uploads.",
+        "details": "Configure MinIO client in Next.js API Routes using `MINIO_ENDPOINT`, `MINIO_PORT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET_NAME` from `.env`. Create an API endpoint (e.g., `/api/upload/presigned-url`) that generates a presigned PUT URL for client-side uploads. The client should resize and compress images (e.g., WebP) before uploading directly to the presigned URL. After successful upload, store the MinIO object URL in the database (e.g., `User.image`, `Restaurant.imageUrl`, `Menu.imageUrl`). Implement image optimization on the client side before upload.",
+        "testStrategy": "Create a test page with an image upload input. Select an image, trigger the upload. Verify that a presigned URL is generated, the image is successfully uploaded to MinIO, and the corresponding URL is saved in the database. Check MinIO console to confirm the image exists.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Implement Restaurant Registration Flow for Owners",
+        "description": "Develop the '음식점 등록하기' flow for users to register their restaurant, including inputting details, address with Kakao Postcode, and updating their user role to `OWNER`.",
+        "details": "Create a form for restaurant registration (e.g., `/mypage/register-restaurant`). Fields include `name`, `category`, `imageUrl` (using Task 8), `minOrderAmount`, `deliveryFee`, `deliveryTime`, `isOpen`. Integrate Kakao Postcode Service (Task 6) for address input, automatically converting to `latitude` and `longitude` for the `Restaurant` model. Upon successful registration, update the `User.role` to `OWNER` using Prisma. Use Next.js Server Actions for form submission and database updates.",
+        "testStrategy": "Log in as a regular user. Navigate to My Page and click '음식점 등록하기'. Fill out the form, including address search and image upload. Submit the form. Verify that a new `Restaurant` entry is created in the database, and the `User.role` for the logged-in user is updated to `OWNER`.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          5,
+          6,
+          8
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Develop Home Screen Restaurant Listing",
+        "description": "Implement the home screen to display a list of restaurants within a 3km radius of the user's set address, with infinite scroll functionality.",
+        "details": "Fetch the user's `defaultAddress` `latitude` and `longitude` (from Task 7). Implement a Prisma query to retrieve `Restaurant` entities within a 3km radius. The query should use a Haversine formula approximation or similar geospatial calculation. Implement infinite scrolling using a library like `react-infinite-scroll-component` or a custom Intersection Observer. Display restaurant cards with `thumbnail`, `name`, `category`, `rating`, `reviewCount`, `deliveryTime`, `minOrderAmount` as per `ui/1.메인페이지.png`.",
+        "testStrategy": "Set a user's default address. Verify that only restaurants within 3km are displayed. Scroll down and confirm that more restaurants are loaded dynamically. Change the user's address and verify the restaurant list updates accordingly.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          7
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Implement Home Screen Filtering and Sorting",
+        "description": "Add category filtering (horizontal scroll) and sorting options ('배달 빠른 순', '평점 순', '최소 주문금액 순') to the home screen restaurant list.",
+        "details": "Implement UI for category icons (e.g., '치킨', '중식') as a horizontal scrollable list. When a category is selected, filter the `Restaurant` query (from Task 10) by `RestaurantCategory`. Implement sorting options by `deliveryTime`, average `rating`, and `minOrderAmount`. Use Next.js search params to manage filter and sort states, allowing for shareable URLs. Update the Prisma query to include `orderBy` clauses based on selected sorting criteria.",
+        "testStrategy": "On the home screen, select different categories and verify the list filters correctly. Apply different sorting options and confirm the order of restaurants changes as expected. Combine filters and sorts to ensure they work together.",
+        "priority": "high",
+        "dependencies": [
+          10
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "Develop Integrated Search Functionality",
+        "description": "Implement the search bar on the home screen to perform a unified search across restaurant names, menu names, and menu categories.",
+        "details": "Create a search input component (refer to `ui/1.메인페이지.png`). Implement a Next.js API Route or Server Action for search. The Prisma query should search `Restaurant.name`, `Menu.name`, and `Menu.category` (via `Restaurant.menus`). The search results should display `restaurantName`, `matchedMenuName`, `price`, `rating`. Clicking a search result should navigate to the corresponding restaurant detail page, potentially scrolling to the relevant menu section if a menu item was matched.",
+        "testStrategy": "Enter a restaurant name, a menu name, and a menu category into the search bar. Verify that relevant restaurants are displayed in the search results. Click on a search result and confirm correct navigation to the restaurant detail page.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          10
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "Create Restaurant Detail Page",
+        "description": "Develop the restaurant detail page to display comprehensive information about a restaurant, including its name, photos, ratings, operating hours, minimum order, delivery fee, and menu tabs.",
+        "details": "Create a dynamic route for restaurant details (e.g., `/restaurants/[id]`). Fetch `Restaurant` data and its associated `Menu` items using Prisma. Display `name`, `imageUrl`, `averageRating`, `reviewCount`, `minOrderAmount`, `deliveryFee`, `deliveryTime`. Implement menu tabs ('인기 메뉴', '신메뉴', '전체 메뉴') using shadcn/ui tabs. Populate menu items under each tab, showing `name`, `price`, `reviewCount`, `imageUrl`, and a `+` button. Refer to `ui/3.가게상세페이지.png`, `ui/6.가게 페이지.png`, `ui/7. 가게페이지2.png`.",
+        "testStrategy": "Navigate to a restaurant's detail page. Verify all restaurant information is correctly displayed. Click through the menu tabs and confirm that menus are filtered and displayed appropriately. Check for correct display of '인기 메뉴' and '신메뉴' badges.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          10
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "Implement Menu Selection and Options Bottom Sheet",
+        "description": "Enable users to select menu items, choose options (if applicable), specify quantity, and add them to the shopping cart via a bottom sheet UI.",
+        "details": "When a menu item is clicked on the restaurant detail page, display a shadcn/ui bottom sheet or dialog. The bottom sheet should show menu details, allow quantity selection (+/- buttons), and present any menu options (though the schema doesn't explicitly define options, assume simple quantity for MVP). Include an '장바구니 담기' button. Implement client-side state management (e.g., Zustand) for temporary menu selection before adding to cart.",
+        "testStrategy": "On a restaurant detail page, click a menu item. Verify the bottom sheet appears with menu details and quantity selector. Adjust quantity. Click '장바구니 담기' (this will be fully tested with Task 15).",
+        "priority": "high",
+        "dependencies": [
+          13
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Develop Shopping Cart Logic and UI",
+        "description": "Implement the shopping cart functionality, allowing users to view selected menus, adjust quantities, and enforcing the 'single restaurant only' rule with a warning popup.",
+        "details": "Create a client-side state management solution (e.g., Zustand) for the shopping cart. The cart should store `menuId`, `quantity`, `price`, and `restaurantId`. Implement UI for displaying cart items, adjusting quantities (+/-), and removing items. Crucially, implement the logic for the 'single restaurant only' rule: if a user tries to add a menu from a different restaurant, display a confirmation popup (`ui/11. 장바구니에 다른 가게 메뉴 담겨있는데 다른 가게 메뉴 담을때 팝업.png`) with '취소' and '담기' options. If '담기' is selected, clear the existing cart and add the new item. Refer to `ui/9. 장바구니페이지.png` and `ui/10. 장바구니페이지 2.png`.",
+        "testStrategy": "Add multiple items from one restaurant to the cart. Verify quantities can be adjusted. Try adding an item from a different restaurant; confirm the warning popup appears. Select '담기' and verify the cart is cleared and the new item is added. Select '취소' and verify the cart remains unchanged.",
+        "priority": "high",
+        "dependencies": [
+          14
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "Implement Order Placement and Confirmation",
+        "description": "Develop the final step of the ordering process where users confirm their order from the shopping cart, bypassing a real payment UI, and immediately creating an order.",
+        "details": "On the shopping cart page, implement a '주문 확정' button. When clicked, trigger a Next.js Server Action to create a new `Order` entry in the database. The `Order` should include `userId`, `restaurantId`, `totalPrice`, `deliveryAddress`, and `items` (from `OrderItem` model). Set `status` to `PENDING`. After successful order creation, redirect the user to the order status page (Task 20).",
+        "testStrategy": "Add items to the cart. Click '주문 확정'. Verify that a new `Order` and associated `OrderItem` entries are created in the database with `status: PENDING`. Confirm redirection to the order status page.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          15
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "Setup Go Chat Server Core (Fiber, WebSocket, Redis Streams)",
+        "description": "Develop the core Go chat server using Fiber framework, implementing WebSocket for real-time communication and Redis Streams for messaging between Next.js and Go.",
+        "details": "Create a Go project. Install Fiber. Implement a WebSocket handler using `github.com/gofiber/websocket/v2`. Connect to Redis using `github.com/go-redis/redis/v8`. Set up Redis Streams consumer groups for `Next.js -> Go` and `Go -> Client` event pipelines. The Go server should subscribe to Redis Streams for order status updates and customer service messages. Implement JWT validation for WebSocket connections using `next-auth`'s JWT secret to ensure secure communication. The chat server should listen on port 8080.",
+        "testStrategy": "Run the Go chat server. Use a WebSocket client (e.g., Postman, browser console) to connect to `ws://localhost:8080/ws`. Send a test message. Verify the connection is established and messages can be sent/received. Publish a test message to a Redis Stream from a separate client and verify the Go server consumes it.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 18,
+        "title": "Implement Real-time Order Status Updates (Backend)",
+        "description": "Develop Next.js API Routes to publish order status change events to Redis Streams, enabling the Go chat server to push updates to clients.",
+        "details": "When an `Order.status` is updated (e.g., by a restaurant owner via an API endpoint), after updating the database via Prisma, publish an event to a Redis Stream (e.g., `order_updates_stream`). The event payload should include `orderId`, `newStatus`, `timestamp`, and `userId` (to target the correct customer). Use the `REDIS_URL` from `.env` to connect to Redis. This will be triggered by owner actions (Task 31).",
+        "testStrategy": "Manually update an order's status in the database or simulate an owner action. Monitor the Redis Stream using `redis-cli` (`XREADGROUP GROUP mygroup consumer1 COUNT 1 STREAMS order_updates_stream >`) to verify that the event is published correctly with the expected payload.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          17
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 19,
+        "title": "Integrate Frontend WebSocket Client for Order Status",
+        "description": "Implement a WebSocket client in the Next.js frontend to subscribe to real-time order status updates from the Go chat server.",
+        "details": "Create a custom React hook or component that establishes a WebSocket connection to `CHAT_SERVER_URL` (from `.env`). The connection should include the user's JWT token in the HTTP headers for authentication. Upon receiving an order status update event from the WebSocket, update the local state of the order on the customer's order status page (Task 20). Handle connection lifecycle (open, close, error, reconnect).",
+        "testStrategy": "Place an order. Open the order status page. Manually trigger an order status change (e.g., via a backend API call or direct DB update that publishes to Redis). Verify that the order status on the customer's frontend updates in real-time without page refresh.",
+        "priority": "high",
+        "dependencies": [
+          17,
+          18
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 20,
+        "title": "Develop Customer Order Status Page",
+        "description": "Create a page where customers can view the real-time status of their active orders, including a Kakao Map displaying the restaurant's location.",
+        "details": "Create a dynamic route for order status (e.g., `/orders/[id]/status`). Fetch the `Order` details and `Restaurant` location from the database. Display the current `OrderStatus` text ('주문 접수', '조리중', '픽업 완료(배달 중)', '배달 완료'). Integrate Kakao Map API (Task 6) to show a pin at the `Restaurant.latitude` and `longitude`. When `status` is '픽업 완료', display '배달 중, 도착 예정 N분' text. Integrate the WebSocket client (Task 19) to update the status in real-time.",
+        "testStrategy": "Place an order. Navigate to the order status page. Verify the restaurant's location is pinned on the map. As the order status changes (simulated or real), confirm the status text updates in real-time. Check the '배달 중, 도착 예정 N분' text appears at the correct status.",
+        "priority": "high",
+        "dependencies": [
+          6,
+          16,
+          19
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 21,
+        "title": "Implement Customer 1:1 Chat UI and Functionality",
+        "description": "Develop the customer service 1:1 chat interface, including chat list, message room, text/image messaging, read receipts, typing indicators, and message paging.",
+        "details": "Create routes for chat list (`/chat`) and chat room (`/chat/[id]`). Refer to `ui/12. 상담 채팅 페이지.png`. Implement chat list with `senderName`, `lastMessage`, `timestamp`, `unreadCount`. For the chat room, establish a WebSocket connection to the Go chat server (Task 17). Implement UI for sending `TEXT` messages (Enter to send, Shift+Enter for newline) and `IMAGE` messages (using MinIO Presigned URLs from Task 8). Display `isRead` status, `createdAt` for messages, and date separators. Implement a typing indicator (3 dots animation) and infinite scroll for message paging (fetch max 50 previous messages). Chat should be linked to an `Order` or general inquiry (Task 26).",
+        "testStrategy": "Start a new chat. Send text messages, verify they appear in real-time and are marked as unread until the 'customer service' (simulated) reads them. Send an image message. Verify typing indicator works. Scroll up to load older messages. Verify date separators and message timestamps.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          8,
+          17
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 22,
+        "title": "Develop Review Creation System",
+        "description": "Enable users to write reviews for completed orders, including a 1-5 star rating, optional text, image attachments, and predefined checklist tags.",
+        "details": "Create a review submission form accessible from completed orders (Task 27). The form should include a 1-5 star rating selector (required), a text area for `content` (optional), an image upload input (optional, using MinIO Presigned URLs from Task 8), and checkboxes for `tags` ('맛이 좋아요', '양이 많아요', etc.). Use Next.js Server Actions to create a new `Review` entry in the database, linking it to `userId`, `restaurantId`, and `orderId`. Ensure `orderId` is unique for reviews.",
+        "testStrategy": "Complete an order. Navigate to the review creation form for that order. Submit a review with only a rating, then with rating and text, then with rating, text, image, and tags. Verify `Review` entries are created correctly in the database with all provided data.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          8,
+          16
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 23,
+        "title": "Implement Review Listing Page",
+        "description": "Create a page to display restaurant reviews, featuring a star rating distribution chart, owner notices, sorting, and a 'photo reviews only' filter.",
+        "details": "Create a route for restaurant reviews (e.g., `/restaurants/[id]/reviews`). Fetch `Review` data for a specific restaurant. Calculate and display the average rating and total review count. Implement a UI component for the 1-5 star distribution chart (bar graph). Display '사장님 공지' (owner notice, if available from `Restaurant` model or a new `RestaurantNotice` model). List reviews with `nickname`, `rating`, `createdAt`, `content`, `attachedImages`. Implement '최신순' sorting and a toggle for '사진 리뷰만 보기'. Refer to `ui/8. 음식점 리뷰페이지.png`.",
+        "testStrategy": "Navigate to a restaurant's review page. Verify average rating, total count, and star distribution chart are accurate. Apply '사진 리뷰만 보기' filter and confirm only reviews with images are shown. Change sorting to '최신순' and verify order.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          13,
+          22
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 24,
+        "title": "Develop Favorite Restaurant Functionality",
+        "description": "Implement the ability for users to mark restaurants as favorites ('찜') and view their list of favorited restaurants.",
+        "details": "Add a 'heart' icon/button to restaurant cards (home screen, detail page). When clicked, toggle an entry in the `FavoriteRestaurant` join table for the `userId` and `restaurantId`. Create a dedicated '찜 목록' page (e.g., `/mypage/favorites`) that fetches all `FavoriteRestaurant` entries for the logged-in user. Display favorited restaurants with `name`, `rating`, `minOrderAmount`, `deliveryStatus`. Refer to `ui/2.찜목록페이지.png`.",
+        "testStrategy": "On the home screen, favorite a restaurant. Verify the heart icon changes state. Navigate to '찜 목록' and confirm the restaurant appears. Unfavorite the restaurant and verify it's removed from the list.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          10
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 25,
+        "title": "Implement My Page Core UI and Navigation",
+        "description": "Develop the main My Page interface, including the user's profile section and navigation links to '주문 내역', '관심 음식점', '리뷰 관리', '주소 관리', and '음식점 등록 신청'.",
+        "details": "Create the `/mypage` route. Display the user's `profilePicture` and `nickname` (from Task 5). Implement the '프로필 수정' button. Create navigation links for each sub-section. Ensure the '음식점 등록하기' button is only visible to `USER` roles and hidden for `OWNER` roles. Refer to `ui/4.마이페이지.png`.",
+        "testStrategy": "Log in as a user. Navigate to My Page. Verify profile info is correct. Click each navigation link to ensure it leads to the correct (even if empty) sub-page. Log in as an `OWNER` (after Task 9) and verify '음식점 등록하기' button is not visible.",
+        "priority": "medium",
+        "dependencies": [
+          4,
+          5,
+          9
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 26,
+        "title": "Develop My Page - Order History",
+        "description": "Implement the '주문 내역' section within My Page, displaying past and current orders, with tabs for '배달중' and '완료', filters, and reorder/review buttons.",
+        "details": "Create a route for order history (e.g., `/mypage/orders`). Fetch `Order` data for the logged-in user. Implement tabs for `PENDING`/`COOKING`/`PICKED_UP` ('배달중') and `DONE`/`CANCELLED` ('완료'). Display order cards with `date`, `restaurantName`, `orderItems`, `totalPrice`. For completed orders, provide '같은 메뉴 담기' (reorder to cart) and '바로 주문' (direct reorder) buttons, and a '리뷰 작성' button (linking to Task 22). Refer to `ui/5.주문내역.png`.",
+        "testStrategy": "Place several orders, some completed, some in progress. Navigate to '주문 내역'. Verify orders are correctly categorized under '배달중' and '완료' tabs. Click '리뷰 작성' for a completed order and verify redirection to the review form. Click '같은 메뉴 담기' and verify items are added to the cart.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          16,
+          22,
+          25
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 27,
+        "title": "Develop My Page - Favorite Restaurant List",
+        "description": "Implement the '관심 음식점' section within My Page, displaying the user's list of favorited restaurants.",
+        "details": "Create a route for favorite restaurants (e.g., `/mypage/favorites`). Fetch `FavoriteRestaurant` entries for the logged-in user. Display a list of favorited restaurants, showing `name`, `rating`, `minOrderAmount`, `deliveryAvailability`. This reuses the logic from Task 24.",
+        "testStrategy": "Favorite some restaurants (Task 24). Navigate to '관심 음식점' in My Page. Verify all favorited restaurants are listed correctly with their details.",
+        "priority": "medium",
+        "dependencies": [
+          24,
+          25
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 28,
+        "title": "Develop My Page - Review Management",
+        "description": "Implement the '리뷰 관리' section within My Page, allowing users to view, edit, and delete their own submitted reviews.",
+        "details": "Create a route for review management (e.g., `/mypage/reviews`). Fetch all `Review` entries where `userId` matches the logged-in user. Display a list of reviews. For each review, provide '수정' (edit) and '삭제' (delete) buttons. Implement forms for editing reviews (reusing parts of Task 22) and Server Actions for update/delete operations.",
+        "testStrategy": "Submit a few reviews (Task 22). Navigate to '리뷰 관리'. Verify all submitted reviews are listed. Edit a review and confirm changes. Delete a review and confirm it's removed from the list and database.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          22,
+          25
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 29,
+        "title": "Develop My Page - Address Management",
+        "description": "Implement the '주소 관리' section within My Page, allowing users to add, modify, delete, and set a default delivery address.",
+        "details": "Create a route for address management (e.g., `/mypage/addresses`). This reuses and extends the functionality from Task 7. Display a list of saved addresses. Provide buttons for '추가', '수정', '삭제', and '기본 배달 주소 설정'. Ensure `latitude` and `longitude` are correctly handled for each address.",
+        "testStrategy": "Navigate to '주소 관리'. Add multiple addresses. Set a different address as default. Edit an address. Delete an address. Verify all changes are reflected in the UI and database.",
+        "priority": "medium",
+        "dependencies": [
+          7,
+          25
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 30,
+        "title": "Implement Owner Dashboard Access Control",
+        "description": "Set up middleware or layout protection to restrict access to the owner dashboard only to users with `User.role == 'OWNER'`.",
+        "details": "In `middleware.ts` or within the layout component for owner pages (e.g., `/owner/*`), check the authenticated user's `session.user.role`. If the role is not `OWNER`, redirect them to the home page or an unauthorized access page. This ensures that only authorized restaurant owners can access their management functionalities.",
+        "testStrategy": "Log in as a `USER`. Attempt to access an owner dashboard URL (e.g., `/owner/dashboard`). Verify redirection to the home page. Log in as an `OWNER` (after Task 9) and verify successful access to the owner dashboard.",
+        "priority": "high",
+        "dependencies": [
+          4,
+          9
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 31,
+        "title": "Develop Owner Dashboard - Order Management",
+        "description": "Implement the owner's order management interface, allowing them to view new orders in real-time and update their status (접수 → 조리중 → 픽업 완료 → 배달 완료).",
+        "details": "Create a route for owner order management (e.g., `/owner/orders`). Fetch `Order` entries associated with the logged-in `OWNER`'s `Restaurant`. Display a list of orders. For each order, provide buttons to change its `OrderStatus` (e.g., '조리 시작', '픽업 완료', '배달 완료'). When an order status is updated, use a Next.js Server Action to update the `Order` in the database and then publish an event to Redis Streams (Task 18) for real-time customer updates. Implement real-time reception of new orders (e.g., via WebSocket or polling).",
+        "testStrategy": "Log in as an `OWNER`. Place a new order as a customer. Verify the new order appears in the owner's dashboard. Change the order status through the owner UI (e.g., to '조리중', '픽업 완료', '배달 완료'). Verify the status updates in the database and that the customer's order status page (Task 20) updates in real-time.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          16,
+          18,
+          30
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 32,
+        "title": "Develop Owner Dashboard - Menu Management",
+        "description": "Implement the owner's menu management interface, enabling them to create, read, update, and delete menus for their restaurant, including '품절 처리' (sold out) functionality.",
+        "details": "Create a route for owner menu management (e.g., `/owner/menus`). Fetch `Menu` entries associated with the logged-in `OWNER`'s `Restaurant`. Implement forms for '메뉴 등록' (create) with `name`, `category`, `price`, `description`, `imageUrl` (using Task 8). Provide '수정' (edit) and '삭제' (delete) actions for existing menus. Add a toggle for `isSoldOut` status. Use Next.js Server Actions for all CRUD operations.",
+        "testStrategy": "Log in as an `OWNER`. Add a new menu item, including an image. Edit an existing menu item. Toggle a menu item to '품절' and verify it's reflected on the customer-facing menu page (Task 13). Delete a menu item. Verify all changes persist in the database.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          8,
+          30
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 33,
+        "title": "Implement Admin Dashboard Access Control",
+        "description": "Set up middleware or layout protection to restrict access to the admin dashboard only to users with `User.role == 'ADMIN'`.",
+        "details": "Similar to Task 30, implement access control for admin routes (e.g., `/admin/*`). In `middleware.ts` or within the admin layout component, check `session.user.role`. If the role is not `ADMIN`, redirect to the home page or an unauthorized access page. Manually update a user's role to `ADMIN` in the database for testing.",
+        "testStrategy": "Log in as a `USER` or `OWNER`. Attempt to access an admin dashboard URL (e.g., `/admin/dashboard`). Verify redirection. Manually change a user's role to `ADMIN` in the database. Log in as that user and verify successful access to the admin dashboard.",
+        "priority": "high",
+        "dependencies": [
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 34,
+        "title": "Develop Admin Dashboard Overview (KPIs, Heatmap, Search Trends)",
+        "description": "Create the admin dashboard overview page, displaying key performance indicators (DAU, new sign-ups, new orders, completed deliveries, pending reports), a geo-heatmap of orders, and search keyword trends.",
+        "details": "Create the `/admin/dashboard` route. Fetch data for KPIs (DAU, new users, new orders, completed orders, pending reports) using Prisma queries. Display these as KPI cards. For the geo-heatmap, fetch `Order` locations and integrate with Kakao Map API (Task 6) to visualize order density. Implement basic search keyword and trend analysis (e.g., top N search terms, failed searches) by logging search queries (requires a new `SearchLog` model or similar).",
+        "testStrategy": "Log in as an `ADMIN`. Navigate to the dashboard. Verify KPI cards display correct counts. Check if the map loads and (with some test data) shows a heatmap. Verify search trends are displayed.",
+        "priority": "low",
+        "dependencies": [
+          2,
+          6,
+          33
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 35,
+        "title": "Implement Admin Dashboard - User Management",
+        "description": "Develop the user management section of the admin dashboard, allowing administrators to view a list of users, their details, and apply penalties (suspension, ban).",
+        "details": "Create the `/admin/users` route. Display a table of `User`s with columns: `nickname`, `email`, `createdAt`, `status`, `reportCount`. Implement search by `nickname`/`email` and filter by `status`. Create a user detail view (e.g., `/admin/users/[id]`) showing more info and order history. Implement actions for `Penalty` (e.g., '이용 정지', '영구 차단') by updating `User.status` and `User.bannedAt`. Use Next.js Server Actions for all updates.",
+        "testStrategy": "Log in as an `ADMIN`. Navigate to user management. Search for users, apply filters. View a user's detail page. Apply a temporary ban to a user; verify their `status` changes. Unban a user. Verify changes in the database.",
+        "priority": "low",
+        "dependencies": [
+          2,
+          33
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 36,
+        "title": "Implement Admin Dashboard - Report and Content Moderation",
+        "description": "Develop the report and content moderation section, allowing administrators to review reported content (users, restaurants, menus) and take appropriate actions.",
+        "details": "Create the `/admin/reports` route. Display a list of `Report` entries with `status: PENDING`. Columns: `reporter`, `targetType`, `reason`, `createdAt`. Create a report detail view (e.g., `/admin/reports/[id]`) showing full details and actions: '기각' (reject), '숨김' (hide restaurant/menu), '회원 정지' (ban user). Update `Report.status` and potentially `Restaurant.isOpen`, `Menu.isSoldOut`, or `User.status`. Implement a '금칙어 및 필터링 관리' section to add/remove keywords for automatic content moderation.",
+        "testStrategy": "Log in as a regular user and submit a test report (requires a new API endpoint for reporting). Log in as an `ADMIN`. Navigate to report management. View the pending report. Reject it, then try hiding a restaurant/menu, or banning a user via a report. Verify `Report.status` updates and target entities are affected.",
+        "priority": "low",
+        "dependencies": [
+          2,
+          33,
+          35
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 37,
+        "title": "Implement Admin Dashboard - Delivery Radius Control",
+        "description": "Develop the delivery radius control feature, allowing administrators to define tier policies for exposure radius and map them to administrative districts.",
+        "details": "Create the `/admin/delivery-radius` route. Implement UI for '티어 정책 설정' (e.g., policy name, radius steps, min exposure count). Implement '행정구역별 티어 매핑' to apply policies to `시/도` units. This will likely require new Prisma models for `DeliveryPolicy` and `AdminDistrictPolicy`. The logic for restaurant listing (Task 10) will need to dynamically adjust the 3km radius based on these policies. Implement a '밀도 시뮬레이터' to preview exposure counts.",
+        "testStrategy": "Log in as an `ADMIN`. Navigate to delivery radius control. Create a new tier policy. Map it to a specific administrative district. Verify the policy is saved. (Full testing requires integration with Task 10).",
+        "priority": "low",
+        "dependencies": [
+          2,
+          33
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 38,
+        "title": "Implement Global UI - Bottom Navigation",
+        "description": "Develop the fixed 4-tab bottom navigation ('홈', '찜', '주문내역', '마이페이지') that is always visible across all customer-facing pages.",
+        "details": "Create a `BottomNavigation` component. Use Next.js `Link` components for navigation. Highlight the active tab based on the current route. Integrate this component into the main layout of the Next.js application so it appears on all relevant pages. Refer to the common UI section in the PRD.",
+        "testStrategy": "Navigate through different customer pages. Verify the bottom navigation bar is always present and correctly highlights the active tab. Click each tab and confirm it navigates to the correct page.",
+        "priority": "high",
+        "dependencies": [
+          3,
+          10,
+          24,
+          26,
+          25
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 39,
+        "title": "Setup Playwright E2E Testing with Mock Auth",
+        "description": "Configure Playwright for end-to-end testing, including setting up a mock authentication provider to bypass actual login flows for faster test execution.",
+        "details": "Install Playwright: `npx playwright install`. Configure `playwright.config.ts`. Implement a custom Playwright fixture or helper to inject a mock authentication state (e.g., by setting a specific cookie or local storage item that NextAuth.js can recognize in test mode). This mock auth should simulate a logged-in user with a specific role (USER, OWNER, ADMIN) for different test scenarios. Write a basic test case for a happy path scenario like 'restaurant search and view details'.",
+        "testStrategy": "Run `npx playwright test`. Verify that the mock authentication allows tests to proceed without manual login. Ensure the example test case passes, confirming Playwright can interact with the application and assert UI elements.",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2026-03-24T03:23:23.505Z",
+      "updated": "2026-03-24T03:23:23.505Z",
+      "description": "Tasks for master context"
+    }
+  }
+}
