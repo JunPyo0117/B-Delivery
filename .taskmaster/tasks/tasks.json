@@ -158,8 +158,9 @@
         "dependencies": [
           "10"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.732Z"
       },
       {
         "id": "12",
@@ -172,8 +173,9 @@
           "2",
           "10"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.758Z"
       },
       {
         "id": "13",
@@ -200,8 +202,9 @@
         "dependencies": [
           "13"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.771Z"
       },
       {
         "id": "15",
@@ -213,8 +216,9 @@
         "dependencies": [
           "14"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.782Z"
       },
       {
         "id": "16",
@@ -227,8 +231,9 @@
           "2",
           "15"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.786Z"
       },
       {
         "id": "17",
@@ -271,8 +276,9 @@
           "17",
           "18"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.787Z"
       },
       {
         "id": "20",
@@ -286,8 +292,9 @@
           "16",
           "19"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.789Z"
       },
       {
         "id": "21",
@@ -317,8 +324,9 @@
           "8",
           "16"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.790Z"
       },
       {
         "id": "23",
@@ -332,8 +340,9 @@
           "13",
           "22"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.791Z"
       },
       {
         "id": "24",
@@ -362,8 +371,9 @@
           "5",
           "9"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.792Z"
       },
       {
         "id": "26",
@@ -378,8 +388,9 @@
           "22",
           "25"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.793Z"
       },
       {
         "id": "27",
@@ -392,8 +403,9 @@
           "24",
           "25"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.795Z"
       },
       {
         "id": "28",
@@ -407,8 +419,9 @@
           "22",
           "25"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.796Z"
       },
       {
         "id": "29",
@@ -421,8 +434,9 @@
           "7",
           "25"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.797Z"
       },
       {
         "id": "30",
@@ -435,8 +449,9 @@
           "4",
           "9"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.800Z"
       },
       {
         "id": "31",
@@ -451,8 +466,9 @@
           "18",
           "30"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.801Z"
       },
       {
         "id": "32",
@@ -466,8 +482,9 @@
           "8",
           "30"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.802Z"
       },
       {
         "id": "33",
@@ -495,8 +512,9 @@
           "6",
           "33"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.803Z"
       },
       {
         "id": "35",
@@ -509,8 +527,9 @@
           "2",
           "33"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.804Z"
       },
       {
         "id": "36",
@@ -524,8 +543,9 @@
           "33",
           "35"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.805Z"
       },
       {
         "id": "37",
@@ -538,8 +558,9 @@
           "2",
           "33"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.806Z"
       },
       {
         "id": "38",
@@ -555,8 +576,9 @@
           "26",
           "25"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-25T10:05:35.810Z"
       },
       {
         "id": "39",
@@ -576,9 +598,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-03-25T09:02:16.029Z",
+      "lastModified": "2026-03-25T10:05:35.810Z",
       "taskCount": 39,
-      "completedCount": 17,
+      "completedCount": 39,
       "tags": [
         "master"
       ]
