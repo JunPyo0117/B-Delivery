@@ -50,6 +50,38 @@ export default async function LoginPage() {
           Google로 계속하기
         </button>
       </form>
+
+      {process.env.E2E_TESTING === "true" && (
+        <form
+          action={async (formData: FormData) => {
+            "use server";
+            await signIn("test-credentials", {
+              email: formData.get("email") as string,
+              redirectTo: "/",
+            });
+          }}
+          className="mt-6 w-full"
+        >
+          <p className="mb-2 text-center text-xs text-muted-foreground">
+            테스트 로그인
+          </p>
+          <div className="flex gap-2">
+            <input
+              name="email"
+              type="email"
+              placeholder="테스트 이메일"
+              defaultValue="user@bdelivery.com"
+              className="flex-1 rounded-lg border px-3 py-2 text-sm"
+            />
+            <button
+              type="submit"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+            >
+              로그인
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }
