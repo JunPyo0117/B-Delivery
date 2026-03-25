@@ -2,43 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 
-declare global {
-  interface Window {
-    kakao: typeof kakao;
-  }
-}
-
-declare namespace kakao {
-  namespace maps {
-    class Map {
-      constructor(container: HTMLElement, options: MapOptions);
-    }
-    class LatLng {
-      constructor(lat: number, lng: number);
-    }
-    class Marker {
-      constructor(options: { position: LatLng; map: Map });
-      setMap(map: Map | null): void;
-    }
-    class CustomOverlay {
-      constructor(options: {
-        position: LatLng;
-        content: string;
-        yAnchor?: number;
-        map?: Map;
-      });
-      setMap(map: Map | null): void;
-    }
-
-    interface MapOptions {
-      center: LatLng;
-      level: number;
-    }
-
-    function load(callback: () => void): void;
-  }
-}
-
 interface RestaurantMapProps {
   latitude: number;
   longitude: number;
@@ -73,7 +36,7 @@ export function RestaurantMap({
     script.async = true;
 
     script.onload = () => {
-      kakao.maps.load(() => {
+      window.kakao.maps.load(() => {
         setIsLoaded(true);
       });
     };
@@ -92,6 +55,7 @@ export function RestaurantMap({
   useEffect(() => {
     if (!isLoaded || !mapContainerRef.current) return;
 
+    const { kakao } = window;
     const position = new kakao.maps.LatLng(latitude, longitude);
 
     const map = new kakao.maps.Map(mapContainerRef.current, {

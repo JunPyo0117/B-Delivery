@@ -35,6 +35,21 @@ declare namespace kakao.maps {
     map?: Map
   }
 
+  class CustomOverlay {
+    constructor(options: CustomOverlayOptions)
+    setMap(map: Map | null): void
+    setPosition(position: LatLng): void
+  }
+
+  interface CustomOverlayOptions {
+    position: LatLng
+    content: string | HTMLElement
+    map?: Map
+    yAnchor?: number
+    xAnchor?: number
+    zIndex?: number
+  }
+
   namespace services {
     type Status = "OK" | "ZERO_RESULT" | "ERROR"
 
