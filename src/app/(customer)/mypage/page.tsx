@@ -102,8 +102,8 @@ export default async function MypagePage() {
         />
         <MenuItem
           icon={<Heart className="size-5" />}
-          label="관심 음식점"
-          href="/favorites"
+          label="찜 목록"
+          href="/mypage/favorites"
         />
         <MenuItem
           icon={<Star className="size-5" />}

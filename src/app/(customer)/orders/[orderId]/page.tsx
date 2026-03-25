@@ -46,6 +46,7 @@ export default async function OrderDetailPage({
   }
 
   const isCancelled = order.status === "CANCELLED";
+  const isDone = order.status === "DONE";
   const currentStepIndex = ORDER_STEPS.findIndex(
     (s) => s.status === order.status
   );
@@ -78,8 +79,11 @@ export default async function OrderDetailPage({
       </header>
 
       <div className="flex-1 pb-6">
-        {/* 주문 상태 프로그레스 */}
-        <div className="bg-background px-4 py-6">
+        {/* 주문 상태 프로그레스 - 클릭 시 상태 페이지로 이동 */}
+        <Link
+          href={`/orders/${orderId}/status`}
+          className="block bg-background px-4 py-6 hover:bg-muted/20 transition-colors"
+        >
           {isCancelled ? (
             <div className="flex flex-col items-center gap-2 text-muted-foreground">
               <CircleX className="size-12 text-muted-foreground/60" />
@@ -132,9 +136,15 @@ export default async function OrderDetailPage({
                   />
                 ))}
               </div>
+              {/* 실시간 상태 보기 안내 */}
+              {!isDone && (
+                <p className="text-center text-xs text-primary mt-3">
+                  실시간 주문 상태 보기 &rarr;
+                </p>
+              )}
             </>
           )}
-        </div>
+        </Link>
 
         {/* 가게 정보 */}
         <div className="bg-background mt-2 px-4 py-4">
