@@ -45,9 +45,11 @@ export function OrderCard({ order }: OrderCardProps) {
     <button
       onClick={handleClick}
       disabled={loading}
-      className="flex items-center gap-3 w-full p-3 rounded-xl bg-gray-100 text-left hover:bg-gray-200 transition-colors disabled:opacity-60"
+      className="flex items-center gap-3 w-full p-3.5 rounded-xl bg-[#F5F5F5] text-left
+        hover:bg-[#EEEEEE] active:scale-[0.98] transition-all duration-150 disabled:opacity-50"
     >
-      <div className="size-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0 overflow-hidden">
+      {/* 가게 썸네일 */}
+      <div className="size-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-black/5">
         {order.restaurantImageUrl ? (
           <img
             src={order.restaurantImageUrl}
@@ -58,13 +60,22 @@ export function OrderCard({ order }: OrderCardProps) {
           <span className="text-lg">🍗</span>
         )}
       </div>
+
+      {/* 주문 정보 */}
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm truncate">{order.restaurantName}</p>
-        <p className="text-xs text-gray-500 mt-0.5">
+        <p className="font-bold text-[14px] text-gray-900 truncate">
+          {order.restaurantName}
+        </p>
+        <p className="text-[12px] text-gray-500 mt-0.5 truncate">
           {order.itemSummary} {order.totalPrice.toLocaleString()}원
         </p>
-        <p className="text-xs text-gray-400 mt-0.5">{dateStr}</p>
+        <p className="text-[11px] text-gray-400 mt-0.5">{dateStr}</p>
       </div>
+
+      {/* 로딩 인디케이터 */}
+      {loading && (
+        <div className="size-4 border-2 border-gray-300 border-t-[#2DB400] rounded-full animate-spin shrink-0" />
+      )}
     </button>
   );
 }

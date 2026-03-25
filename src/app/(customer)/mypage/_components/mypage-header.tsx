@@ -1,21 +1,30 @@
 "use client";
 
-import { LogOut } from "lucide-react";
+import { Headphones, Settings, LogOut } from "lucide-react";
 import { signOut } from "next-auth/react";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export function MypageHeader() {
   return (
-    <header className="flex items-center justify-between px-4 h-12">
-      <h1 className="text-lg font-bold">마이배민</h1>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        onClick={() => signOut({ callbackUrl: "/login" })}
-        aria-label="로그아웃"
-      >
-        <LogOut className="size-4" />
-      </Button>
+    <header className="flex items-center justify-between px-4 h-14">
+      <h1 className="text-[22px] font-bold tracking-tight">마이배민</h1>
+      <div className="flex items-center gap-3">
+        <Link
+          href="/chat"
+          className="text-gray-600 hover:text-gray-900 transition-colors"
+          aria-label="고객센터"
+        >
+          <Headphones className="size-[22px]" />
+        </Link>
+        <button
+          type="button"
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          className="text-gray-600 hover:text-gray-900 transition-colors"
+          aria-label="로그아웃"
+        >
+          <Settings className="size-[22px]" />
+        </button>
+      </div>
     </header>
   );
 }

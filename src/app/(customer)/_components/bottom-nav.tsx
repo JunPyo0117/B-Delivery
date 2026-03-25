@@ -31,10 +31,11 @@ export function BottomNav() {
 
   return (
     <nav
-      className="sticky bottom-0 z-50 border-t border-gray-200 bg-white"
+      className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 border-t bg-white"
+      style={{ borderColor: "#EEEEEE" }}
       aria-label="하단 네비게이션"
     >
-      <ul className="flex items-center justify-around h-14">
+      <ul className="flex items-center justify-around pb-5" style={{ height: "80px" }}>
         {tabs.map(({ href, label, icon: Icon }) => {
           const isActive =
             href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -44,15 +45,16 @@ export function BottomNav() {
               <Link
                 href={href}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] transition-colors",
+                  "flex flex-col items-center justify-center gap-1 transition-colors",
                   isActive
-                    ? "text-[#00C4B4] font-semibold"
-                    : "text-gray-500 hover:text-gray-700",
+                    ? "text-[#2DB400] font-semibold"
+                    : "text-[#999999]",
                 )}
+                style={{ fontSize: "10px" }}
                 aria-current={isActive ? "page" : undefined}
               >
                 <Icon
-                  className="size-5"
+                  className="size-[22px]"
                   strokeWidth={isActive ? 2.5 : 1.5}
                   fill={isActive && href === "/favorites" ? "currentColor" : "none"}
                 />

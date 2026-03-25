@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Star, Clock, MapPin } from "lucide-react";
-import { CATEGORY_LABELS } from "@/lib/constants";
+import { Star } from "lucide-react";
 import type { RestaurantListItem } from "@/types/restaurant";
 
 interface RestaurantCardProps {
@@ -12,75 +11,60 @@ export function RestaurantCard({ restaurant }: RestaurantCardProps) {
   const {
     id,
     name,
-    category,
     imageUrl,
     minOrderAmount,
     deliveryFee,
     deliveryTime,
-    distance,
     avgRating,
     reviewCount,
   } = restaurant;
 
-  const categoryLabel =
-    CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] ?? category;
-
   return (
     <Link
       href={`/restaurants/${id}`}
-      className="flex gap-3 border-b px-4 py-3 transition-colors active:bg-muted"
+      className="flex gap-3.5 px-4 py-3.5 transition-colors active:bg-gray-50"
     >
-      <div className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-muted">
+      {/* 썸네일 100x100 */}
+      <div className="relative w-[100px] h-[100px] shrink-0 overflow-hidden rounded-lg bg-[#F2F2F2]">
         {imageUrl ? (
           <Image
             src={imageUrl}
             alt={name}
             fill
-            sizes="80px"
+            sizes="100px"
             className="object-cover"
           />
         ) : (
-          <div className="flex size-full items-center justify-center text-2xl">
+          <div className="flex size-full items-center justify-center text-3xl">
             🍽️
           </div>
         )}
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
-        <div className="flex items-center gap-1.5">
-          <h3 className="truncate text-sm font-bold">{name}</h3>
-          <span className="shrink-0 text-xs text-muted-foreground">
-            {categoryLabel}
-          </span>
-        </div>
+      {/* 정보 */}
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
+        <h3 className="text-[15px] font-semibold text-black truncate">{name}</h3>
 
-        <div className="flex items-center gap-1.5 text-xs">
-          {avgRating > 0 && (
-            <span className="flex items-center gap-0.5 font-medium">
-              <Star className="size-3 fill-yellow-400 text-yellow-400" />
-              {avgRating.toFixed(1)}
-            </span>
-          )}
+        {/* 별점 */}
+        <div className="flex items-center gap-1 mt-0.5">
+          <Star className="size-3.5 fill-[#FFB300] text-[#FFB300]" />
+          <span className="text-[13px] font-medium text-black">
+            {avgRating > 0 ? avgRating.toFixed(1) : "-"}
+          </span>
           {reviewCount > 0 && (
-            <span className="text-muted-foreground">
-              리뷰 {reviewCount}
+            <span className="text-[13px] text-gray-400">
+              ({reviewCount})
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="flex items-center gap-0.5">
-            <Clock className="size-3" />
-            {deliveryTime}분
-          </span>
-          <span className="flex items-center gap-0.5">
-            <MapPin className="size-3" />
-            {distance}km
-          </span>
-          <span>배달비 {deliveryFee.toLocaleString()}원</span>
-        </div>
+        {/* 배달 시간 + 배달비 */}
+        <p className="text-[13px] text-gray-500 mt-0.5">
+          {deliveryTime}분 · 배달비 {deliveryFee.toLocaleString()}원
+        </p>
 
-        <p className="text-[11px] text-muted-foreground">
+        {/* 최소주문 */}
+        <p className="text-[12px] text-gray-400">
           최소주문 {minOrderAmount.toLocaleString()}원
         </p>
       </div>

@@ -23,22 +23,25 @@ const NAV_ITEMS = [
   },
 ] as const;
 
-/** Owner 전용 상단 네비게이션 바 */
+/** Owner 전용 상단 네비게이션 바 — 그린 테마 */
 export function OwnerNav() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 border-b bg-white">
+    <header className="sticky top-0 z-50" style={{ backgroundColor: "#2DB400" }}>
       <div className="flex items-center justify-between px-4 h-14">
-        <Link href="/owner/dashboard" className="text-lg font-bold text-primary">
+        <Link href="/owner/dashboard" className="text-lg font-bold text-white">
           B-Delivery 사장님
         </Link>
-        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          href="/"
+          className="text-sm text-white/70 hover:text-white transition-colors"
+        >
           고객 화면
         </Link>
       </div>
 
-      <nav className="flex border-t">
+      <nav className="flex border-t border-white/20">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const isActive = pathname.startsWith(href);
           return (
@@ -48,8 +51,8 @@ export function OwnerNav() {
               className={cn(
                 "flex flex-1 items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition-colors",
                 isActive
-                  ? "border-b-2 border-primary text-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "border-b-2 border-white text-white"
+                  : "text-white/60 hover:text-white/80"
               )}
             >
               <Icon className="h-4 w-4" />

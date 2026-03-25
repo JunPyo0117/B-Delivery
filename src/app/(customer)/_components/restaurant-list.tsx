@@ -106,15 +106,16 @@ export function RestaurantList({
 
   if (initialLoading) {
     return (
-      <section className="px-4 py-8">
-        <div className="space-y-3">
+      <section className="bg-white px-4 py-6">
+        <div className="space-y-4">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex gap-3 animate-pulse">
-              <div className="size-20 shrink-0 rounded-lg bg-muted" />
-              <div className="flex flex-1 flex-col gap-2 py-1">
-                <div className="h-4 w-2/3 rounded bg-muted" />
-                <div className="h-3 w-1/3 rounded bg-muted" />
-                <div className="h-3 w-1/2 rounded bg-muted" />
+            <div key={i} className="flex gap-3.5 animate-pulse">
+              <div className="w-[100px] h-[100px] shrink-0 rounded-lg bg-gray-100" />
+              <div className="flex flex-1 flex-col gap-2.5 py-2">
+                <div className="h-4 w-3/5 rounded bg-gray-100" />
+                <div className="h-3.5 w-1/4 rounded bg-gray-100" />
+                <div className="h-3 w-2/5 rounded bg-gray-100" />
+                <div className="h-3 w-1/3 rounded bg-gray-100" />
               </div>
             </div>
           ))}
@@ -124,23 +125,16 @@ export function RestaurantList({
   }
 
   return (
-    <section>
-      <div className="flex items-center justify-between px-4 pb-2 pt-3">
-        <h2 className="text-sm font-bold">주변 음식점</h2>
-        <span className="text-xs text-muted-foreground">
-          {restaurants.length}개
-        </span>
-      </div>
-
+    <section className="bg-white">
       {restaurants.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 px-4 py-16 text-muted-foreground">
+        <div className="flex flex-col items-center gap-3 px-4 py-16 text-gray-400">
           <MapPin className="size-10 stroke-1" />
           <p className="text-sm">주변에 음식점이 없어요</p>
           <p className="text-xs">배달 가능한 음식점이 없습니다.</p>
         </div>
       ) : (
         <>
-          <div>
+          <div className="divide-y divide-[#EEEEEE]">
             {restaurants.map((restaurant) => (
               <RestaurantCard key={restaurant.id} restaurant={restaurant} />
             ))}
@@ -150,12 +144,12 @@ export function RestaurantList({
 
           {loading && (
             <div className="flex justify-center py-4">
-              <Loader2 className="size-5 animate-spin text-muted-foreground" />
+              <Loader2 className="size-5 animate-spin text-gray-400" />
             </div>
           )}
 
           {nextCursor === null && restaurants.length > 0 && (
-            <p className="py-6 text-center text-xs text-muted-foreground">
+            <p className="py-6 text-center text-xs text-gray-400">
               모든 음식점을 확인했어요
             </p>
           )}

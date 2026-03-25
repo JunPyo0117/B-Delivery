@@ -46,6 +46,17 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* B-Delivery 커스텀 디자인 토큰 */
+  --color-brand: #2DB400;
+  --color-star: #FFB300;
+  --color-danger: #FF5252;
+  --color-warning: #FF6B00;
+  --color-admin: #1A1A2E;
+
+  /* 커스텀 폰트 사이즈 */
+  --font-size-2xs: 0.625rem;
+  --font-size-2xs--line-height: 0.875rem;
 }
 
 :root {
@@ -55,8 +66,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: #2DB400;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
