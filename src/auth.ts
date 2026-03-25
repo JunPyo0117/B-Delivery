@@ -1,18 +1,52 @@
 import NextAuth from "next-auth";
+import type { Provider } from "next-auth/providers";
 import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 
+const providers: Provider[] = [
+  Google({
+    clientId: process.env.GOOGLE_CLIENT_ID!,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+  }),
+];
+
+// E2E 테스트 환경에서만 Credentials provider 추가
+if (process.env.E2E_TESTING === "true") {
+  providers.push(
+    Credentials({
+      id: "test-credentials",
+      name: "Test Credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+      },
+      async authorize(credentials) {
+        const email = credentials?.email as string;
+        if (!email) return null;
+
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user) return null;
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.nickname,
+          image: user.image,
+        };
+      },
+    })
+  );
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-  ],
+  providers,
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   callbacks: {
-    async signIn({ account, profile }) {
+    async signIn({ account, profile, credentials }) {
+      // E2E 테스트용 Credentials provider 허용
+      if (account?.provider === "test-credentials") return true;
+
       if (account?.provider !== "google" || !profile?.email) return false;
 
       const existingUser = await prisma.user.findUnique({
