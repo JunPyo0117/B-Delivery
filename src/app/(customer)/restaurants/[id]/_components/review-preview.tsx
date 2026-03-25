@@ -1,4 +1,5 @@
-import { Star } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, Star } from "lucide-react";
 
 interface ReviewData {
   id: string;
@@ -13,12 +14,14 @@ interface ReviewPreviewProps {
   reviews: ReviewData[];
   totalCount: number;
   averageRating: number;
+  restaurantId: string;
 }
 
 export function ReviewPreview({
   reviews,
   totalCount,
   averageRating,
+  restaurantId,
 }: ReviewPreviewProps) {
   if (totalCount === 0) {
     return (
@@ -30,7 +33,10 @@ export function ReviewPreview({
 
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <Link
+        href={`/restaurants/${restaurantId}/reviews`}
+        className="flex items-center justify-between"
+      >
         <div className="flex items-center gap-1">
           <Star className="size-4 fill-yellow-400 text-yellow-400" />
           <span className="text-sm font-semibold">
@@ -40,7 +46,8 @@ export function ReviewPreview({
             리뷰 {totalCount.toLocaleString()}개
           </span>
         </div>
-      </div>
+        <ChevronRight className="size-4 text-muted-foreground" />
+      </Link>
 
       <div className="mt-2 space-y-2">
         {reviews.map((review) => (
