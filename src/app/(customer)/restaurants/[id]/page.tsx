@@ -6,7 +6,7 @@ import { RestaurantInfo } from "./_components/restaurant-info";
 import { DeliveryInfo } from "./_components/delivery-info";
 import { ReviewPreview } from "./_components/review-preview";
 import { MenuTabBar } from "./_components/menu-tab-bar";
-import { MenuSection } from "./_components/menu-section";
+import { MenuListClient } from "./_components/menu-list-client";
 import { Separator } from "@/components/ui/separator";
 
 export default async function RestaurantDetailPage({
@@ -51,13 +51,23 @@ export default async function RestaurantDetailPage({
   const averageRating = ratingAgg._avg.rating ?? 0;
   const reviewCount = restaurant._count.reviews;
 
-  // 메뉴 카테고리별 그룹핑
-  const menusByCategory: Record<string, typeof restaurant.menus> = {};
+  // 메뉴 카테고리별 그룹핑 (클라이언트 직렬화를 위해 필요한 필드만 추출)
+  const menusByCategory: Record<
+    string,
+    { id: string; name: string; price: number; description: string | null; imageUrl: string | null; isSoldOut: boolean }[]
+  > = {};
   for (const menu of restaurant.menus) {
     if (!menusByCategory[menu.category]) {
       menusByCategory[menu.category] = [];
     }
-    menusByCategory[menu.category].push(menu);
+    menusByCategory[menu.category].push({
+      id: menu.id,
+      name: menu.name,
+      price: menu.price,
+      description: menu.description,
+      imageUrl: menu.imageUrl,
+      isSoldOut: menu.isSoldOut,
+    });
   }
   const categories = Object.keys(menusByCategory);
 
@@ -105,15 +115,12 @@ export default async function RestaurantDetailPage({
       {categories.length > 0 && (
         <>
           <MenuTabBar categories={categories} />
-          <div className="px-4">
-            {categories.map((category) => (
-              <MenuSection
-                key={category}
-                category={category}
-                menus={menusByCategory[category]}
-              />
-            ))}
-          </div>
+          <MenuListClient
+            menusByCategory={menusByCategory}
+            categories={categories}
+            restaurantId={restaurant.id}
+            restaurantName={restaurant.name}
+          />
         </>
       )}
     </div>
