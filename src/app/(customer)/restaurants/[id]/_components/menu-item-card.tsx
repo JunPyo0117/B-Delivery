@@ -1,13 +1,17 @@
+"use client";
+
 import Image from "next/image";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MenuItemCardProps {
+  id: string;
   name: string;
   description: string | null;
   price: number;
   imageUrl: string | null;
   isSoldOut: boolean;
+  onClick?: () => void;
 }
 
 export function MenuItemCard({
@@ -16,12 +20,27 @@ export function MenuItemCard({
   price,
   imageUrl,
   isSoldOut,
+  onClick,
 }: MenuItemCardProps) {
   return (
     <div
+      role={isSoldOut ? undefined : "button"}
+      tabIndex={isSoldOut ? undefined : 0}
+      onClick={isSoldOut ? undefined : onClick}
+      onKeyDown={
+        isSoldOut
+          ? undefined
+          : (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick?.();
+              }
+            }
+      }
       className={cn(
         "flex items-center gap-3 py-4",
-        isSoldOut && "opacity-50"
+        isSoldOut && "opacity-50",
+        !isSoldOut && "cursor-pointer active:bg-muted/50 transition-colors"
       )}
     >
       {/* 메뉴 정보 */}
@@ -56,12 +75,12 @@ export function MenuItemCard({
           <div className="size-20 rounded-lg bg-muted" />
         )}
         {!isSoldOut && (
-          <button
+          <span
             className="absolute -bottom-2 -right-2 flex size-7 items-center justify-center rounded-full border bg-background shadow-sm"
-            aria-label={`${name} 추가`}
+            aria-hidden="true"
           >
             <Plus className="size-4" />
-          </button>
+          </span>
         )}
       </div>
     </div>
