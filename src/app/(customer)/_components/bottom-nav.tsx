@@ -16,6 +16,9 @@ const tabs = [
 export function BottomNav() {
   const pathname = usePathname();
 
+  // 채팅방에서는 BottomNav 숨김
+  if (pathname.startsWith("/chat/")) return null;
+
   return (
     <nav className="sticky bottom-0 z-50 border-t bg-background">
       <ul className="flex items-center justify-around h-14">
