@@ -198,9 +198,10 @@ model Review {
   restaurantId String
   orderId      String @unique
 
-  rating  Int      // 1~5
-  content String?
-  tags    String[] // 선택한 체크리스트 항목
+  rating    Int      // 1~5
+  content   String?
+  tags      String[] // 선택한 체크리스트 항목
+  imageUrls String[] // 리뷰 이미지 URLs
 
   user       User       @relation(fields: [userId], references: [id])
   restaurant Restaurant @relation(fields: [restaurantId], references: [id])
