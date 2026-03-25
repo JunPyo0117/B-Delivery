@@ -93,7 +93,7 @@ export default async function MypagePage() {
         <MenuItem
           icon={<MapPin className="size-5" />}
           label="주소관리"
-          href="/mypage/profile"
+          href="/mypage/addresses"
         />
         <MenuItem
           icon={<MessageSquare className="size-5" />}

@@ -82,8 +82,26 @@ model User {
   receivedReports Report[] @relation("ReportedUser")
 
   restaurant Restaurant? // OWNER인 경우
+  addresses  UserAddress[]
 
   createdAt DateTime @default(now())
+}
+
+model UserAddress {
+  id            String  @id @default(uuid())
+  userId        String
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label         String
+  address       String
+  addressDetail String?
+  latitude      Float
+  longitude     Float
+  isDefault     Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Restaurant {
