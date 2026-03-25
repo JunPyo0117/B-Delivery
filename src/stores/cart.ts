@@ -16,12 +16,15 @@ interface CartState {
   items: CartItem[];
   restaurantId: string | null;
   restaurantName: string | null;
+  deliveryFee: number;
+  minOrderAmount: number;
 
   // 액션
   addItem: (item: Omit<CartItem, "quantity">, quantity: number) => void;
   removeItem: (menuId: string) => void;
   updateQuantity: (menuId: string, quantity: number) => void;
   clearCart: () => void;
+  setDeliveryInfo: (deliveryFee: number, minOrderAmount: number) => void;
 
   // 파생 값 헬퍼
   getTotal: () => number;
