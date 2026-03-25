@@ -10,6 +10,7 @@ import {
   MapPin,
   MessageSquare,
   Star,
+  Store,
 } from "lucide-react";
 
 import { auth } from "@/auth";
@@ -21,7 +22,7 @@ export default async function MypagePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const { nickname, image, defaultAddress } = session.user;
+  const { nickname, image, defaultAddress, role } = session.user;
 
   return (
     <div className="flex flex-col">
@@ -99,6 +100,13 @@ export default async function MypagePage() {
           label="고객센터"
           href="/mypage"
         />
+        {role === "USER" && (
+          <MenuItem
+            icon={<Store className="size-5" />}
+            label="음식점 등록하기"
+            href="/mypage/register-restaurant"
+          />
+        )}
       </nav>
     </div>
   );
