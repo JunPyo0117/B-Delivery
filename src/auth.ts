@@ -89,6 +89,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             token.role = dbUser.role;
             token.nickname = dbUser.nickname;
             token.defaultAddress = dbUser.defaultAddress;
+            token.picture = dbUser.image;
           }
         }
       }
