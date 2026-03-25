@@ -20,6 +20,7 @@ export function RestaurantList({
 }: RestaurantListProps) {
   const searchParams = useSearchParams();
   const category = searchParams.get("category");
+  const sort = searchParams.get("sort");
 
   const [restaurants, setRestaurants] =
     useState<RestaurantListItem[]>(initialRestaurants);
@@ -30,21 +31,24 @@ export function RestaurantList({
   const [initialLoading, setInitialLoading] = useState(false);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const prevCategoryRef = useRef<string | null>(null);
+  const prevFilterRef = useRef<string | null>(null);
 
-  // 카테고리 변경 시 리스트 재로드
+  // 카테고리 또는 정렬 변경 시 리스트 재로드
   useEffect(() => {
-    if (prevCategoryRef.current === category) return;
-    prevCategoryRef.current = category;
+    const filterKey = `${category ?? ""}_${sort ?? ""}`;
+    if (prevFilterRef.current === filterKey) return;
+    prevFilterRef.current = filterKey;
 
     // 초기 로드 시에는 서버 데이터 사용
-    if (category === null && restaurants === initialRestaurants) return;
+    if (category === null && sort === null && restaurants === initialRestaurants)
+      return;
 
-    const fetchByCategory = async () => {
+    const fetchFiltered = async () => {
       setInitialLoading(true);
       try {
         const params = new URLSearchParams();
         if (category) params.set("category", category);
+        if (sort) params.set("sort", sort);
         params.set("cursor", "0");
 
         const res = await fetch(`/api/restaurants?${params.toString()}`);
@@ -58,8 +62,8 @@ export function RestaurantList({
       }
     };
 
-    fetchByCategory();
-  }, [category, initialRestaurants, restaurants]);
+    fetchFiltered();
+  }, [category, sort, initialRestaurants, restaurants]);
 
   const loadMore = useCallback(async () => {
     if (loading || nextCursor === null) return;
@@ -68,6 +72,7 @@ export function RestaurantList({
     try {
       const params = new URLSearchParams();
       if (category) params.set("category", category);
+      if (sort) params.set("sort", sort);
       params.set("cursor", String(nextCursor));
 
       const res = await fetch(`/api/restaurants?${params.toString()}`);
@@ -79,7 +84,7 @@ export function RestaurantList({
     } finally {
       setLoading(false);
     }
-  }, [loading, nextCursor, category]);
+  }, [loading, nextCursor, category, sort]);
 
   // IntersectionObserver로 무한스크롤
   useEffect(() => {

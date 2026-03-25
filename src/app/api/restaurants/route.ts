@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { VALID_SORT_OPTIONS, type SortOption } from "@/lib/constants";
 import type { RestaurantListItem } from "@/types/restaurant";
 
 const MAX_DISTANCE_KM = 3;
@@ -20,6 +21,13 @@ const HAVERSINE_EXPR = `
   ))
 `;
 
+// 정렬 옵션별 ORDER BY 절 매핑
+const ORDER_BY_MAP: Record<SortOption, string> = {
+  distance: "distance ASC",
+  rating: '"avgRating" DESC, distance ASC',
+  minOrder: 'r."minOrderAmount" ASC, distance ASC',
+};
+
 export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session?.user) {
@@ -36,6 +44,7 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = request.nextUrl;
   const category = searchParams.get("category");
+  const sortParam = searchParams.get("sort") as SortOption | null;
   const cursor = Math.max(0, parseInt(searchParams.get("cursor") ?? "0", 10));
   const limit = Math.min(
     MAX_LIMIT,
@@ -49,7 +58,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // 정렬 옵션 검증 (유효하지 않으면 기본값 distance)
+  const sort: SortOption =
+    sortParam && VALID_SORT_OPTIONS.includes(sortParam) ? sortParam : "distance";
+
   const useCategory = category && category !== "ALL";
+  const orderByClause = ORDER_BY_MAP[sort];
 
   const query = `
     SELECT
@@ -69,7 +83,7 @@ export async function GET(request: NextRequest) {
       AND (${HAVERSINE_EXPR}) <= $3::float
       ${useCategory ? `AND r."category"::text = $6::text` : ""}
     GROUP BY r.id
-    ORDER BY distance ASC
+    ORDER BY ${orderByClause}
     LIMIT $4::int OFFSET $5::int
   `;
 

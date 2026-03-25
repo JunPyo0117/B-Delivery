@@ -16,6 +16,17 @@ export const CATEGORY_LABELS: Record<
   ETC: "기타",
 };
 
+// 정렬 옵션
+export const SORT_OPTIONS = {
+  distance: "배달 빠른 순",
+  rating: "평점 순",
+  minOrder: "최소 주문금액 순",
+} as const;
+
+export type SortOption = keyof typeof SORT_OPTIONS;
+
+export const VALID_SORT_OPTIONS = Object.keys(SORT_OPTIONS) as SortOption[];
+
 export const CATEGORY_ICONS: Record<
   Exclude<RestaurantCategory, "ALL">,
   string

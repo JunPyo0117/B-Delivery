@@ -1,8 +1,11 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { VALID_SORT_OPTIONS, type SortOption } from "@/lib/constants";
 import type { RestaurantListItem } from "@/types/restaurant";
 import { HomeHeader } from "./_components/home-header";
+import { SearchBar } from "./_components/search-bar";
 import { CategoryGrid } from "./_components/category-grid";
+import { SortSelect } from "./_components/sort-select";
 import { RestaurantList } from "./_components/restaurant-list";
 
 const MAX_DISTANCE_KM = 3;
@@ -16,14 +19,39 @@ const HAVERSINE_SQL = (latParam: string, lngParam: string) => `
   ))
 `;
 
+// 정렬 옵션별 ORDER BY 절 매핑
+const ORDER_BY_MAP: Record<SortOption, string> = {
+  distance: "distance ASC",
+  rating: '"avgRating" DESC, distance ASC',
+  minOrder: 'r."minOrderAmount" ASC, distance ASC',
+};
+
+const VALID_CATEGORIES = [
+  "KOREAN", "CHINESE", "JAPANESE", "CHICKEN", "PIZZA",
+  "BUNSIK", "JOKBAL", "CAFE", "FASTFOOD", "ETC",
+] as const;
+
+interface HomePageProps {
+  searchParams: Promise<{ category?: string; sort?: string }>;
+}
+
 async function getInitialRestaurants(
   latitude: number,
-  longitude: number
+  longitude: number,
+  category?: string,
+  sort?: SortOption
 ): Promise<{ restaurants: RestaurantListItem[]; nextCursor: number | null }> {
   const haversine = HAVERSINE_SQL("$1", "$2");
+  const effectiveSort: SortOption =
+    sort && VALID_SORT_OPTIONS.includes(sort) ? sort : "distance";
+  const orderByClause = ORDER_BY_MAP[effectiveSort];
 
-  const restaurants = await prisma.$queryRawUnsafe<RestaurantListItem[]>(
-    `
+  const useCategory =
+    category &&
+    category !== "ALL" &&
+    VALID_CATEGORIES.includes(category as (typeof VALID_CATEGORIES)[number]);
+
+  const query = `
     SELECT
       r.id,
       r.name,
@@ -39,14 +67,23 @@ async function getInitialRestaurants(
     LEFT JOIN "Review" rev ON rev."restaurantId" = r.id
     WHERE r."isOpen" = true
       AND (${haversine}) <= $3::float
+      ${useCategory ? `AND r."category"::text = $4::text` : ""}
     GROUP BY r.id
-    ORDER BY distance ASC
-    LIMIT $4::int OFFSET 0
-    `,
-    latitude,
-    longitude,
-    MAX_DISTANCE_KM,
-    PAGE_SIZE + 1
+    ORDER BY ${orderByClause}
+    LIMIT ${useCategory ? "$5" : "$4"}::int OFFSET 0
+  `;
+
+  const params: unknown[] = [latitude, longitude, MAX_DISTANCE_KM];
+  if (useCategory) {
+    params.push(category);
+    params.push(PAGE_SIZE + 1);
+  } else {
+    params.push(PAGE_SIZE + 1);
+  }
+
+  const restaurants = await prisma.$queryRawUnsafe<RestaurantListItem[]>(
+    query,
+    ...params
   );
 
   const hasMore = restaurants.length > PAGE_SIZE;
@@ -56,7 +93,8 @@ async function getInitialRestaurants(
   };
 }
 
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const resolvedParams = await searchParams;
   const session = await auth();
 
   const latitude = session?.user?.latitude;
@@ -68,13 +106,20 @@ export default async function HomePage() {
   } = { restaurants: [], nextCursor: null };
 
   if (latitude != null && longitude != null) {
-    initialData = await getInitialRestaurants(latitude, longitude);
+    initialData = await getInitialRestaurants(
+      latitude,
+      longitude,
+      resolvedParams.category,
+      resolvedParams.sort as SortOption | undefined
+    );
   }
 
   return (
     <div className="flex flex-col">
       <HomeHeader address={session?.user?.defaultAddress ?? null} />
+      <SearchBar />
       <CategoryGrid />
+      <SortSelect />
       <RestaurantList
         initialRestaurants={initialData.restaurants}
         initialNextCursor={initialData.nextCursor}
