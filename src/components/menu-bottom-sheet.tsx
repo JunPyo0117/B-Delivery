@@ -16,6 +16,8 @@ export interface MenuSheetData {
   imageUrl: string | null;
   restaurantId: string;
   restaurantName: string;
+  deliveryFee?: number;
+  minOrderAmount?: number;
 }
 
 interface MenuBottomSheetProps {
@@ -32,7 +34,7 @@ export function MenuBottomSheet({
   const [quantity, setQuantity] = useState(1);
   const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
 
-  const { addItem, isDifferentRestaurant, replaceWithItem } = useCartStore();
+  const { addItem, isDifferentRestaurant, replaceWithItem, setDeliveryInfo } = useCartStore();
 
   // 시트가 열릴 때 수량 초기화
   const handleOpenChange = useCallback(
@@ -68,6 +70,9 @@ export function MenuBottomSheet({
       },
       quantity
     );
+    if (menu.deliveryFee !== undefined && menu.minOrderAmount !== undefined) {
+      setDeliveryInfo(menu.deliveryFee, menu.minOrderAmount);
+    }
     handleOpenChange(false);
   };
 
@@ -83,6 +88,9 @@ export function MenuBottomSheet({
       },
       quantity
     );
+    if (menu.deliveryFee !== undefined && menu.minOrderAmount !== undefined) {
+      setDeliveryInfo(menu.deliveryFee, menu.minOrderAmount);
+    }
     setShowReplaceConfirm(false);
     handleOpenChange(false);
   };

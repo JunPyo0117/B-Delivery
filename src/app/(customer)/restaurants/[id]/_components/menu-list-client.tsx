@@ -6,12 +6,15 @@ import {
   MenuBottomSheet,
   type MenuSheetData,
 } from "@/components/menu-bottom-sheet";
+import { CartFloatingBar } from "@/app/(customer)/cart/_components/cart-floating-bar";
 
 interface MenuListClientProps {
   menusByCategory: Record<string, MenuData[]>;
   categories: string[];
   restaurantId: string;
   restaurantName: string;
+  deliveryFee: number;
+  minOrderAmount: number;
 }
 
 export function MenuListClient({
@@ -19,6 +22,8 @@ export function MenuListClient({
   categories,
   restaurantId,
   restaurantName,
+  deliveryFee,
+  minOrderAmount,
 }: MenuListClientProps) {
   const [selectedMenu, setSelectedMenu] = useState<MenuSheetData | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -32,6 +37,8 @@ export function MenuListClient({
       imageUrl: menu.imageUrl,
       restaurantId,
       restaurantName,
+      deliveryFee,
+      minOrderAmount,
     });
     setSheetOpen(true);
   };
@@ -54,6 +61,8 @@ export function MenuListClient({
         open={sheetOpen}
         onOpenChange={setSheetOpen}
       />
+
+      <CartFloatingBar />
     </>
   );
 }

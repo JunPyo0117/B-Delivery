@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { OrderStatus } from "@/generated/prisma/client";
+import { OrderStatus } from "@/generated/prisma/enums";
 import { Button } from "@/components/ui/button";
 import { OrderStatusBadge } from "./order-status-badge";
 import { updateOrderStatus } from "../_actions/update-order-status";

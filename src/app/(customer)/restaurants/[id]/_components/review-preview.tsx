@@ -5,6 +5,8 @@ interface ReviewData {
   rating: number;
   content: string | null;
   nickname: string;
+  tags?: string[];
+  imageUrls?: string[];
 }
 
 interface ReviewPreviewProps {
@@ -58,8 +60,32 @@ export function ReviewPreview({
                 {review.nickname}
               </span>
             </div>
+            {review.tags && review.tags.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {review.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
             {review.content && (
               <p className="mt-1 line-clamp-2 text-sm">{review.content}</p>
+            )}
+            {review.imageUrls && review.imageUrls.length > 0 && (
+              <div className="mt-2 flex gap-1.5 overflow-x-auto">
+                {review.imageUrls.map((url, i) => (
+                  <img
+                    key={url}
+                    src={url}
+                    alt={`리뷰 이미지 ${i + 1}`}
+                    className="size-16 shrink-0 rounded-md object-cover"
+                  />
+                ))}
+              </div>
             )}
           </div>
         ))}

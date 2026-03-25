@@ -99,11 +99,13 @@ export default async function RestaurantDetailPage({
         <Separator className="my-3" />
 
         <ReviewPreview
-          reviews={restaurant.reviews.map((r: { id: string; rating: number; content: string | null; user: { nickname: string } }) => ({
+          reviews={restaurant.reviews.map((r: { id: string; rating: number; content: string | null; tags: string[]; imageUrls: string[]; user: { nickname: string } }) => ({
             id: r.id,
             rating: r.rating,
             content: r.content,
             nickname: r.user.nickname ?? "익명",
+            tags: r.tags,
+            imageUrls: r.imageUrls,
           }))}
           totalCount={reviewCount}
           averageRating={averageRating}
@@ -120,6 +122,8 @@ export default async function RestaurantDetailPage({
             categories={categories}
             restaurantId={restaurant.id}
             restaurantName={restaurant.name}
+            deliveryFee={restaurant.deliveryFee}
+            minOrderAmount={restaurant.minOrderAmount}
           />
         </>
       )}

@@ -1,4 +1,4 @@
-import { OrderStatus } from "@/generated/prisma/client";
+import { OrderStatus } from "@/generated/prisma/enums";
 
 const STATUS_CONFIG: Record<
   OrderStatus,
