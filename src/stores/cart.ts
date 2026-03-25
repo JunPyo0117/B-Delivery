@@ -71,7 +71,13 @@ export const useCartStore = create<CartState>()(
         const state = get();
         const newItems = state.items.filter((i) => i.menuId !== menuId);
         if (newItems.length === 0) {
-          set({ items: [], restaurantId: null, restaurantName: null, deliveryFee: 0, minOrderAmount: 0 });
+          set({
+            items: [],
+            restaurantId: null,
+            restaurantName: null,
+            deliveryFee: 0,
+            minOrderAmount: 0,
+          });
         } else {
           set({ items: newItems });
         }
@@ -89,9 +95,17 @@ export const useCartStore = create<CartState>()(
         }));
       },
 
-      clearCart: () => set({ items: [], restaurantId: null, restaurantName: null, deliveryFee: 0, minOrderAmount: 0 }),
+      clearCart: () =>
+        set({
+          items: [],
+          restaurantId: null,
+          restaurantName: null,
+          deliveryFee: 0,
+          minOrderAmount: 0,
+        }),
 
-      setDeliveryInfo: (deliveryFee, minOrderAmount) => set({ deliveryFee, minOrderAmount }),
+      setDeliveryInfo: (deliveryFee, minOrderAmount) =>
+        set({ deliveryFee, minOrderAmount }),
 
       getTotal: () => {
         return get().items.reduce((sum, i) => sum + i.price * i.quantity, 0);
@@ -111,6 +125,8 @@ export const useCartStore = create<CartState>()(
           items: [{ ...item, quantity }],
           restaurantId: item.restaurantId,
           restaurantName: item.restaurantName,
+          deliveryFee: 0,
+          minOrderAmount: 0,
         });
       },
     }),
