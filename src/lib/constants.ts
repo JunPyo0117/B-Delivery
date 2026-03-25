@@ -15,3 +15,19 @@ export const CATEGORY_LABELS: Record<
   FASTFOOD: "패스트푸드",
   ETC: "기타",
 };
+
+export const CATEGORY_ICONS: Record<
+  Exclude<RestaurantCategory, "ALL">,
+  string
+> = {
+  KOREAN: "🍚",
+  CHINESE: "🥟",
+  JAPANESE: "🍣",
+  CHICKEN: "🍗",
+  PIZZA: "🍕",
+  BUNSIK: "🍜",
+  JOKBAL: "🥩",
+  CAFE: "☕",
+  FASTFOOD: "🍔",
+  ETC: "🍽️",
+};

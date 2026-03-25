@@ -89,6 +89,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             token.role = dbUser.role;
             token.nickname = dbUser.nickname;
             token.defaultAddress = dbUser.defaultAddress;
+            token.latitude = dbUser.latitude;
+            token.longitude = dbUser.longitude;
             token.picture = dbUser.image;
           }
         }
@@ -103,6 +105,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.nickname = token.nickname as string;
         session.user.defaultAddress =
           (token.defaultAddress as string) ?? null;
+        session.user.latitude = (token.latitude as number) ?? null;
+        session.user.longitude = (token.longitude as number) ?? null;
       }
       return session;
     },

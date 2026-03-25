@@ -8,6 +8,8 @@ declare module "next-auth" {
       role: "USER" | "OWNER" | "ADMIN";
       nickname: string;
       defaultAddress: string | null;
+      latitude: number | null;
+      longitude: number | null;
       email: string;
       name?: string | null;
       image?: string | null;
@@ -21,5 +23,7 @@ declare module "next-auth/jwt" {
     role: "USER" | "OWNER" | "ADMIN";
     nickname: string;
     defaultAddress: string | null;
+    latitude: number | null;
+    longitude: number | null;
   }
 }
