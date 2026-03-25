@@ -1,0 +1,244 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────
+
+enum Role {
+  USER
+  OWNER // 음식점 사장
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+  WITHDRAWN
+}
+
+enum OrderStatus {
+  PENDING   // 주문 접수
+  COOKING   // 조리중
+  PICKED_UP // 픽업 완료 (배달 중)
+  DONE      // 배달 완료
+  CANCELLED // 취소
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  REJECTED
+}
+
+enum RestaurantCategory {
+  ALL
+  KOREAN   // 한식
+  CHINESE  // 중식
+  JAPANESE // 일식
+  CHICKEN  // 치킨
+  PIZZA    // 피자
+  BUNSIK   // 분식
+  JOKBAL   // 족발·보쌈
+  CAFE     // 카페·디저트
+  FASTFOOD // 패스트푸드
+  ETC      // 기타
+}
+
+enum ReportTarget {
+  USER
+  RESTAURANT
+  MENU
+  CHAT
+}
+
+// ─── Models ──────────────────────────────────────────────
+
+model User {
+  id             String     @id @default(uuid())
+  email          String     @unique
+  nickname       String
+  image          String?
+  defaultAddress String?
+  latitude       Float?
+  longitude      Float?
+
+  role     Role       @default(USER)
+  status   UserStatus @default(ACTIVE)
+  bannedAt DateTime?
+
+  orders    Order[]
+  favorites FavoriteRestaurant[]
+  reviews   Review[]
+
+  sentMessages Message[]
+  chats        Chat[]
+
+  sentReports     Report[] @relation("Reporter")
+  receivedReports Report[] @relation("ReportedUser")
+
+  restaurant Restaurant? // OWNER인 경우
+
+  createdAt DateTime @default(now())
+}
+
+model Restaurant {
+  id      String @id @default(uuid())
+  ownerId String @unique
+  owner   User   @relation(fields: [ownerId], references: [id])
+
+  name           String
+  category       RestaurantCategory
+  imageUrl       String?
+  description    String?
+  minOrderAmount Int
+  deliveryFee    Int
+  deliveryTime   Int     @default(30) // 예상 배달 시간 (분)
+  isOpen         Boolean @default(true)
+
+  latitude  Float
+  longitude Float
+
+  menus     Menu[]
+  orders    Order[]
+  reviews   Review[]
+  favorites FavoriteRestaurant[]
+  reports   Report[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Menu {
+  id           String     @id @default(uuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  name        String
+  price       Int
+  description String?
+  imageUrl    String?
+  category    String
+  isSoldOut   Boolean @default(false)
+
+  orderItems OrderItem[]
+  reports    Report[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Order {
+  id           String @id @default(uuid())
+  userId       String
+  restaurantId String
+
+  user       User       @relation(fields: [userId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+
+  status          OrderStatus @default(PENDING)
+  totalPrice      Int
+  deliveryAddress String
+
+  items  OrderItem[]
+  review Review?
+  chat   Chat?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OrderItem {
+  id       String @id @default(uuid())
+  orderId  String
+  menuId   String
+  quantity Int
+  price    Int // 주문 시점 가격
+
+  order Order @relation(fields: [orderId], references: [id])
+  menu  Menu  @relation(fields: [menuId], references: [id])
+}
+
+model FavoriteRestaurant {
+  userId       String
+  restaurantId String
+  user         User       @relation(fields: [userId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  createdAt    DateTime   @default(now())
+
+  @@id([userId, restaurantId])
+}
+
+model Review {
+  id           String @id @default(uuid())
+  userId       String
+  restaurantId String
+  orderId      String @unique
+
+  rating  Int      // 1~5
+  content String?
+  tags    String[] // 선택한 체크리스트 항목
+
+  user       User       @relation(fields: [userId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  order      Order      @relation(fields: [orderId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Chat {
+  id      String @id @default(uuid())
+  orderId String @unique
+  userId  String
+
+  order Order @relation(fields: [orderId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  messages Message[]
+
+  updatedAt DateTime @updatedAt
+}
+
+model Message {
+  id       String @id @default(uuid())
+  chatId   String
+  senderId String
+
+  type    String  @default("TEXT") // TEXT, IMAGE, SYSTEM
+  content String
+
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  chat   Chat @relation(fields: [chatId], references: [id])
+  sender User @relation(fields: [senderId], references: [id])
+}
+
+model Report {
+  id String @id @default(uuid())
+
+  reporterId String
+  reporter   User @relation("Reporter", fields: [reporterId], references: [id])
+
+  targetType ReportTarget
+
+  targetUserId       String?
+  targetUser         User?       @relation("ReportedUser", fields: [targetUserId], references: [id])
+  targetRestaurantId String?
+  targetRestaurant   Restaurant? @relation(fields: [targetRestaurantId], references: [id])
+  targetMenuId       String?
+  targetMenu         Menu?       @relation(fields: [targetMenuId], references: [id])
+
+  reason      String
+  description String?
+
+  status    ReportStatus @default(PENDING)
+  adminMemo String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

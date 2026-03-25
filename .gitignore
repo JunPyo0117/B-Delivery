@@ -53,3 +53,4 @@ docker-compose.override.yml
 vendor/
 
 CLAUDE.md
+/src/generated/prisma
