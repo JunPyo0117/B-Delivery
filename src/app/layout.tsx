@@ -32,7 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" suppressHydrationWarning>
-      <body className={`${notoSansKR.variable} font-sans antialiased`}>
+      <body className={`${notoSansKR.variable} font-sans antialiased`} suppressHydrationWarning>
         <AuthSessionProvider>
           <div className="mx-auto min-h-dvh max-w-[480px] bg-background">
             {children}
