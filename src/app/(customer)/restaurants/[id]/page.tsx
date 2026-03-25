@@ -109,6 +109,7 @@ export default async function RestaurantDetailPage({
           }))}
           totalCount={reviewCount}
           averageRating={averageRating}
+          restaurantId={restaurant.id}
         />
       </div>
 
