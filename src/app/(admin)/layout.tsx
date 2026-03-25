@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { AdminSidebar } from "./_components/admin-sidebar";
 
 export default async function AdminLayout({
   children,
@@ -11,5 +12,12 @@ export default async function AdminLayout({
     redirect("/");
   }
 
-  return <>{children}</>;
+  return (
+    <div className="flex min-h-screen">
+      <AdminSidebar />
+      <main className="ml-60 flex-1 bg-muted/30">
+        {children}
+      </main>
+    </div>
+  );
 }
