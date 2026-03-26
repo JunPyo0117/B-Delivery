@@ -60,11 +60,14 @@ export const useChatStore = create<ChatState>((set) => ({
     set((state) => {
       const updated = { ...state.messages };
       for (const chatId of Object.keys(updated)) {
-        updated[chatId] = updated[chatId].map((m) =>
-          m._tempId === tempId
-            ? { ...m, id: ack.id, createdAt: ack.createdAt, _pending: false, _tempId: undefined }
-            : m
-        );
+        // message:new가 ack보다 먼저 도착했을 경우 중복 제거
+        updated[chatId] = updated[chatId]
+          .filter((m) => !(m.id === ack.id && m._tempId !== tempId))
+          .map((m) =>
+            m._tempId === tempId
+              ? { ...m, id: ack.id, createdAt: ack.createdAt, _pending: false, _tempId: undefined }
+              : m
+          );
       }
       return { messages: updated };
     }),
