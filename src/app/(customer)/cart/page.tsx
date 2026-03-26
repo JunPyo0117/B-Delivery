@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, UserPlus, ChevronRight, Store, Trash2, Plus, Minus, ShoppingCart } from "lucide-react";
+import { ArrowLeft, UserPlus, ChevronRight, Store, Trash2, Plus, Minus } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/stores/cart";
@@ -89,8 +89,7 @@ export default function CartPage() {
           setError(result.error);
         } else {
           clearCart();
-          // persist middleware의 localStorage 쓰기 완료 후 이동
-          await new Promise((r) => setTimeout(r, 50));
+          localStorage.removeItem("bdelivery-cart");
           router.push(`/orders/${result.orderId}`);
         }
       } catch {
