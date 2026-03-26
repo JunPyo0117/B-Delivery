@@ -89,6 +89,7 @@ export default function CartPage() {
           setError(result.error);
         } else {
           clearCart();
+          router.push(`/orders/${result.orderId}`);
         }
       } catch {
         setError("주문 처리 중 오류가 발생했습니다.");
