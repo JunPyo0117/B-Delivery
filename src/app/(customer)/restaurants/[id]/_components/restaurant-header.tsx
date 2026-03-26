@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Search, ShoppingCart } from "lucide-react";
@@ -12,7 +13,10 @@ interface RestaurantHeaderProps {
 
 export function RestaurantHeader({ imageUrl, name }: RestaurantHeaderProps) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const totalQuantity = useCartStore((s) => s.getTotalQuantity());
+
+  useEffect(() => setMounted(true), []);
 
   return (
     <div className="relative h-[220px] w-full bg-muted">
@@ -56,7 +60,7 @@ export function RestaurantHeader({ imageUrl, name }: RestaurantHeaderProps) {
             aria-label="장바구니"
           >
             <ShoppingCart className="size-5" />
-            {totalQuantity > 0 && (
+            {mounted && totalQuantity > 0 && (
               <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-[#2DB400] text-[10px] font-bold text-white">
                 {totalQuantity > 99 ? "99+" : totalQuantity}
               </span>
