@@ -12,6 +12,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
+import { KakaoMap } from "@/components/kakao-map";
 
 const ORDER_STEPS = [
   { status: "PENDING", label: "주문 접수", icon: Clock },
@@ -36,7 +37,7 @@ export default async function OrderDetailPage({
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
-      restaurant: { select: { name: true, deliveryFee: true, imageUrl: true } },
+      restaurant: { select: { name: true, deliveryFee: true, imageUrl: true, latitude: true, longitude: true } },
       items: {
         include: { menu: { select: { name: true, imageUrl: true } } },
       },
@@ -211,15 +212,31 @@ export default async function OrderDetailPage({
           </div>
         </div>
 
-        {/* 배달 주소 */}
+        {/* 배달 주소 + 지도 */}
         <div className="bg-white mt-2 px-4 py-4">
           <div className="flex items-center gap-2 mb-2">
             <MapPin className="size-4 text-gray-400" />
             <h3 className="text-[14px] font-bold text-gray-900">배달 주소</h3>
           </div>
-          <p className="text-[13px] text-gray-500 pl-6">
+          <p className="text-[13px] text-gray-500 pl-6 mb-3">
             {order.deliveryAddress}
           </p>
+
+          {/* 가게 위치 지도 */}
+          {order.restaurant.latitude && order.restaurant.longitude && (
+            <div className="mt-2">
+              <p className="text-[12px] text-gray-400 mb-2">가게 위치</p>
+              <KakaoMap
+                lat={order.restaurant.latitude}
+                lng={order.restaurant.longitude}
+                level={4}
+                markers={[
+                  { lat: order.restaurant.latitude, lng: order.restaurant.longitude, label: order.restaurant.name },
+                ]}
+                className="h-44 rounded-lg"
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

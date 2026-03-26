@@ -18,8 +18,8 @@ export default async function CustomerLayout({
 }) {
   const session = await auth();
 
-  // 로그인된 유저의 기본 주소가 없으면 주소 등록으로 유도
-  if (session?.user && !session.user.defaultAddress) {
+  // 로그인된 유저의 기본 주소가 없으면 주소 등록으로 유도 (OWNER는 제외)
+  if (session?.user && !session.user.defaultAddress && session.user.role === "USER") {
     const headersList = await headers();
     const pathname = headersList.get("x-next-pathname") ?? "";
     const isExempt = ADDRESS_EXEMPT_PATHS.some((p) => pathname.startsWith(p));

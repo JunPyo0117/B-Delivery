@@ -4,7 +4,7 @@ import Link from "next/link";
 import {
   ClipboardList,
   UtensilsCrossed,
-  TrendingUp,
+  MessageCircle,
   Clock,
   Store,
 } from "lucide-react";
@@ -38,6 +38,20 @@ export default async function OwnerDashboardPage() {
     (sum, r) => sum + r._count.orders,
     0
   );
+
+  // 읽지 않은 채팅 메시지 수 조회
+  const restaurantIds = restaurants.map((r) => r.id);
+  const unreadChatCount = restaurantIds.length > 0
+    ? await prisma.message.count({
+        where: {
+          isRead: false,
+          senderId: { not: session!.user.id },
+          chat: {
+            order: { restaurantId: { in: restaurantIds } },
+          },
+        },
+      })
+    : 0;
 
   return (
     <div className="p-4 space-y-6">
@@ -85,6 +99,27 @@ export default async function OwnerDashboardPage() {
             <UtensilsCrossed className="h-6 w-6" style={{ color: "#2DB400" }} />
           </div>
           <span className="text-sm font-semibold text-gray-900">메뉴 관리</span>
+        </Link>
+
+        <Link
+          href="/owner/chat"
+          className="relative flex flex-col items-center gap-2 rounded-xl border bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
+        >
+          <div
+            className="flex h-12 w-12 items-center justify-center rounded-full"
+            style={{ backgroundColor: "#E3F2FD" }}
+          >
+            <MessageCircle className="h-6 w-6" style={{ color: "#1976D2" }} />
+          </div>
+          <span className="text-sm font-semibold text-gray-900">고객 채팅</span>
+          {unreadChatCount > 0 && (
+            <span
+              className="absolute -top-1 -right-1 flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-bold text-white"
+              style={{ backgroundColor: "#FF5252" }}
+            >
+              {unreadChatCount}
+            </span>
+          )}
         </Link>
       </div>
 

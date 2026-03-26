@@ -15,14 +15,27 @@ export default async function ChatRoomPage({
 
   const { chatId } = await params;
 
-  const chat = await prisma.chat.findFirst({
-    where: { id: chatId, userId: session.user.id },
-    include: {
-      order: {
-        include: { restaurant: { select: { name: true } } },
+  // 고객 또는 해당 음식점 사장이면 접근 가능
+  let chat;
+  try {
+    chat = await prisma.chat.findFirst({
+      where: {
+        id: chatId,
+        OR: [
+          { userId: session.user.id },
+          { order: { restaurant: { ownerId: session.user.id } } },
+        ],
       },
-    },
-  });
+      include: {
+        order: {
+          include: { restaurant: { select: { name: true } } },
+        },
+      },
+    });
+  } catch (e) {
+    console.error("[ChatRoom] Prisma query error:", e);
+    notFound();
+  }
 
   if (!chat) notFound();
 

@@ -7,7 +7,10 @@ export const metadata = {
 
 export default async function LoginPage() {
   const session = await auth();
-  if (session) redirect("/");
+  if (session) {
+    // OWNER는 사장 대시보드로, 그 외는 홈으로
+    redirect(session.user.role === "OWNER" ? "/owner/dashboard" : "/");
+  }
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-white px-6">

@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { VALID_SORT_OPTIONS, type SortOption } from "@/lib/constants";
@@ -96,6 +97,11 @@ async function getInitialRestaurants(
 export default async function HomePage({ searchParams }: HomePageProps) {
   const resolvedParams = await searchParams;
   const session = await auth();
+
+  // OWNER는 사장 대시보드로 리다이렉트
+  if (session?.user?.role === "OWNER") {
+    redirect("/owner/dashboard");
+  }
 
   // JWT가 stale할 수 있으므로 DB에서 최신 주소를 직접 조회
   let address: string | null = null;
