@@ -45,9 +45,12 @@ function shouldShowSender(msgs: PendingMessage[], idx: number) {
   return false;
 }
 
+const EMPTY_MESSAGES: PendingMessage[] = [];
+const EMPTY_TYPING: string[] = [];
+
 export function MessageList({ chatId, currentUserId }: MessageListProps) {
-  const messages = useChatStore((s) => s.messages[chatId] ?? []);
-  const typingUsers = useChatStore((s) => s.typingUsers[chatId] ?? []);
+  const messages = useChatStore((s) => s.messages[chatId]) ?? EMPTY_MESSAGES;
+  const typingUsers = useChatStore((s) => s.typingUsers[chatId]) ?? EMPTY_TYPING;
   const hasMore = useChatStore((s) => s.hasMore[chatId] ?? true);
   const prependMessages = useChatStore((s) => s.prependMessages);
   const setHasMore = useChatStore((s) => s.setHasMore);
