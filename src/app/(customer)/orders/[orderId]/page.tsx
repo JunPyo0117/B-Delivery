@@ -229,7 +229,7 @@ export default async function OrderDetailPage({
               <KakaoMap
                 lat={order.restaurant.latitude}
                 lng={order.restaurant.longitude}
-                level={4}
+                level={3}
                 markers={[
                   { lat: order.restaurant.latitude, lng: order.restaurant.longitude, label: order.restaurant.name },
                 ]}

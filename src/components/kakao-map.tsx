@@ -78,7 +78,7 @@ export function KakaoMap({
 
       // 커스텀 오버레이 (SVG 핀 + 라벨)
       const content = document.createElement("div")
-      content.style.cssText = "display:flex;flex-direction:column;align-items:center;transform:translateY(-100%);"
+      content.style.cssText = "display:flex;flex-direction:column;align-items:center;"
       content.innerHTML = `
         ${m.label ? `<span style="background:#fff;border:1px solid #ddd;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:600;color:#333;white-space:nowrap;margin-bottom:4px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">${m.label}</span>` : ""}
         <svg width="28" height="40" viewBox="0 0 28 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -91,7 +91,7 @@ export function KakaoMap({
         position,
         content,
         map: mapRef.current!,
-        yAnchor: 0,
+        yAnchor: 1,
       })
 
       overlayRefs.current.push(overlay)
