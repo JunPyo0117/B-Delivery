@@ -16,7 +16,6 @@ function getWsUrl() {
   if (typeof window === "undefined") return "ws://localhost:8080/ws";
   return `ws://${window.location.hostname}:8080/ws`;
 }
-const WS_URL = getWsUrl();
 const MAX_RETRIES = 5;
 
 export function useWebSocket(chatId: string) {
@@ -43,7 +42,7 @@ export function useWebSocket(chatId: string) {
       if (!res.ok) throw new Error("토큰 발급 실패");
       const { token } = await res.json();
 
-      const ws = new WebSocket(`${WS_URL}?token=${token}`);
+      const ws = new WebSocket(`${getWsUrl()}?token=${token}`);
       wsRef.current = ws;
 
       ws.onopen = () => {

@@ -18,7 +18,6 @@ function getWsUrl() {
   if (typeof window === "undefined") return "ws://localhost:8080/ws";
   return `ws://${window.location.hostname}:8080/ws`;
 }
-const WS_URL = getWsUrl();
 const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 1000;
 const MAX_DELAY_MS = 30000;
@@ -143,7 +142,7 @@ export function useOrderStatus(
 
       if (!mountedRef.current) return;
 
-      const ws = new WebSocket(`${WS_URL}?token=${token}`);
+      const ws = new WebSocket(`${getWsUrl()}?token=${token}`);
       wsRef.current = ws;
 
       ws.onopen = () => {
