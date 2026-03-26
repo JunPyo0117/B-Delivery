@@ -2,7 +2,7 @@
 
 - **발견일**: 2026-03-26
 - **심각도**: Critical
-- **상태**: 해결 완료
+- **상태**: 해결 완료 (3건)
 
 ## 증상
 
@@ -86,3 +86,105 @@ const EMPTY: T[] = [];
 useChatStore((s) => s.data) ?? EMPTY
 useChatStore(useShallow((s) => ({ a: s.a, b: s.b })))
 ```
+
+---
+
+## BUG-2: 한글 입력 시 끝 글자가 별도 메시지로 전송됨 (Critical)
+
+### 증상
+
+한글을 키보드로 입력하면 한 글자씩 끊어서 전송됨. 예: "안녕하세요" 입력 시 → "아ㄴ녕", "녕", "안녀ㅇ", "ㅇ" 등 조합 중간 글자가 별도 메시지로 전송.
+
+### 원인
+
+`ChatInput.tsx`의 `handleKeyDown`에서 한글 IME 조합(composition) 상태를 확인하지 않음.
+
+한글 입력 중 Enter를 누르면:
+1. IME가 조합 완료를 위해 `keydown` 이벤트 발생 (`isComposing: true`)
+2. `handleKeyDown`이 이를 "전송" Enter로 처리
+3. 현재까지 입력된 텍스트가 전송되고 입력창이 초기화됨
+4. IME 조합이 끊기면서 다음 글자부터 새 메시지로 시작
+
+### 수정
+
+```diff
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLTextAreaElement>) => {
++     // IME 한글 조합 중에는 Enter 무시
++     if (e.nativeEvent.isComposing) return;
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend]
+  );
+```
+
+### 수정 파일
+- `src/app/(customer)/chat/[chatId]/_components/ChatInput.tsx`
+
+---
+
+## BUG-3: 중복 메시지 key 에러 (Medium)
+
+### 증상
+
+콘솔에 `Encountered two children with the same key` 에러 발생. 동일한 메시지 ID가 메시지 배열에 두 번 존재.
+
+### 원인
+
+WebSocket 연결이 여러 개 생성되거나, 같은 메시지가 `addMessage`로 중복 추가되는 경우 발생. `message_ack`로 확정된 메시지가 `chat_message`로도 도착할 수 있음.
+
+### 수정
+
+`chat.ts` 스토어의 `addMessage`에 중복 ID 체크 추가:
+
+```diff
+  addMessage: (chatId, message) =>
+-   set((state) => ({
+-     messages: {
+-       ...state.messages,
+-       [chatId]: [...(state.messages[chatId] ?? []), message],
+-     },
+-   })),
++   set((state) => {
++     const existing = state.messages[chatId] ?? [];
++     if (message.id && existing.some((m) => m.id === message.id)) {
++       return state;
++     }
++     return {
++       messages: {
++         ...state.messages,
++         [chatId]: [...existing, message],
++       },
++     };
++   }),
+```
+
+### 수정 파일
+- `src/stores/chat.ts`
+
+---
+
+## 양방향 채팅 테스트 결과
+
+고객(Playwright) ↔ 사장(Node.js WebSocket)으로 양방향 실시간 채팅 테스트 완료.
+
+| 테스트 항목 | 결과 |
+|------------|------|
+| 고객 → 사장 메시지 전송 | PASS |
+| 사장 → 고객 실시간 수신 | PASS |
+| 읽음 표시 "1" 표시 | PASS |
+| 사장 읽음 시 "1" 제거 | PASS |
+| 날짜 구분선 | PASS |
+| 발신자 이름 표시 (CS 사장174) | PASS |
+| 중복 메시지 방지 | PASS (수정 후) |
+
+## 수정된 파일 총정리
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `src/app/(customer)/chat/[chatId]/_components/MessageList.tsx` | getSnapshot 무한 루프 수정 |
+| `src/app/(customer)/chat/[chatId]/_components/ChatInput.tsx` | IME 한글 조합 중 Enter 무시 |
+| `src/stores/chat.ts` | 중복 메시지 addMessage 방지 |

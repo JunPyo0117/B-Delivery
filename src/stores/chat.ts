@@ -42,12 +42,19 @@ export const useChatStore = create<ChatState>((set) => ({
     })),
 
   addMessage: (chatId, message) =>
-    set((state) => ({
-      messages: {
-        ...state.messages,
-        [chatId]: [...(state.messages[chatId] ?? []), message],
-      },
-    })),
+    set((state) => {
+      const existing = state.messages[chatId] ?? [];
+      // 중복 메시지 방지 (같은 id가 이미 있으면 무시)
+      if (message.id && existing.some((m) => m.id === message.id)) {
+        return state;
+      }
+      return {
+        messages: {
+          ...state.messages,
+          [chatId]: [...existing, message],
+        },
+      };
+    }),
 
   confirmMessage: (tempId, ack) =>
     set((state) => {

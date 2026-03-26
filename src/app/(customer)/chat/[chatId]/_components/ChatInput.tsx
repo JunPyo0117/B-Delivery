@@ -41,6 +41,8 @@ export function ChatInput({ onSendText, onSendImage, onTyping, disabled }: ChatI
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
+      // IME 한글 조합 중에는 Enter 무시
+      if (e.nativeEvent.isComposing) return;
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         handleSend();
