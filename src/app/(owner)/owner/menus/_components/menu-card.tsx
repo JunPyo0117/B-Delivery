@@ -62,13 +62,9 @@ export function MenuCard({ menu, onEdit }: MenuCardProps) {
 
   return (
     <>
-      <div
-        className={`flex items-center gap-3 px-4 py-3 transition-opacity ${
-          isSoldOut ? "opacity-50" : ""
-        }`}
-      >
+      <div className="flex items-center gap-3 px-4 py-3">
         {/* 썸네일 64x64 */}
-        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-100">
+        <div className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-100 transition-opacity ${isSoldOut ? "opacity-50" : ""}`}>
           {menu.imageUrl ? (
             <Image
               src={menu.imageUrl}
@@ -97,7 +93,7 @@ export function MenuCard({ menu, onEdit }: MenuCardProps) {
         </div>
 
         {/* 메뉴 정보 */}
-        <div className="flex-1 min-w-0">
+        <div className={`flex-1 min-w-0 transition-opacity ${isSoldOut ? "opacity-50" : ""}`}>
           <div className="flex items-center gap-2">
             <h3 className="font-semibold text-[15px] text-gray-900 truncate">
               {menu.name}
