@@ -2,7 +2,6 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
 
 /** 음식점의 배달비, 최소주문금액 조회 */
 export async function getRestaurantDeliveryInfo(restaurantId: string) {
@@ -123,5 +122,5 @@ export async function createOrder(
     select: { id: true },
   });
 
-  redirect(`/orders/${order.id}`);
+  return { orderId: order.id };
 }

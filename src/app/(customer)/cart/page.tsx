@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, UserPlus, ChevronRight, Store, Trash2, Plus, Minus } from "lucide-react";
 import Image from "next/image";
@@ -20,7 +20,6 @@ export default function CartPage() {
     minOrderAmount,
     updateQuantity,
     removeItem,
-    clearCart,
     getTotal,
     getTotalQuantity,
     setDeliveryInfo,
@@ -28,7 +27,6 @@ export default function CartPage() {
 
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>("delivery");
 
@@ -61,41 +59,44 @@ export default function CartPage() {
   const total = subtotal + deliveryFee;
 
   /** 주문 확정 핸들러 */
-  const handlePlaceOrder = () => {
-    if (!restaurantId || items.length === 0) return;
+  const [isOrdering, setIsOrdering] = useState(false);
+
+  const handlePlaceOrder = async () => {
+    if (!restaurantId || items.length === 0 || isOrdering) return;
     setError(null);
+    setIsOrdering(true);
 
-    startTransition(async () => {
-      try {
-        const res = await fetch("/api/user/address");
-        const data = await res.json();
+    try {
+      const res = await fetch("/api/user/address");
+      const data = await res.json();
 
-        if (!data.address) {
-          setError("배달 주소를 설정해 주세요. 마이페이지에서 주소를 등록할 수 있습니다.");
-          return;
-        }
-
-        const result = await createOrder({
-          restaurantId,
-          deliveryAddress: data.address,
-          items: items.map((item) => ({
-            menuId: item.menuId,
-            quantity: item.quantity,
-            price: item.price,
-          })),
-        });
-
-        if ("error" in result) {
-          setError(result.error);
-        } else {
-          clearCart();
-          localStorage.removeItem("bdelivery-cart");
-          router.push(`/orders/${result.orderId}`);
-        }
-      } catch {
-        setError("주문 처리 중 오류가 발생했습니다.");
+      if (!data.address) {
+        setError("배달 주소를 설정해 주세요. 마이페이지에서 주소를 등록할 수 있습니다.");
+        setIsOrdering(false);
+        return;
       }
-    });
+
+      const result = await createOrder({
+        restaurantId,
+        deliveryAddress: data.address,
+        items: items.map((item) => ({
+          menuId: item.menuId,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+      });
+
+      if ("error" in result) {
+        setError(result.error);
+        setIsOrdering(false);
+      } else {
+        useCartStore.getState().clearCart();
+        router.push(`/orders/${result.orderId}`);
+      }
+    } catch {
+      setError("주문 처리 중 오류가 발생했습니다.");
+      setIsOrdering(false);
+    }
   };
 
   // 탭 헤더
@@ -388,10 +389,10 @@ export default function CartPage() {
           <Button
             className="w-full h-12 rounded-lg text-[15px] font-bold"
             style={{ backgroundColor: "#2DB400" }}
-            disabled={isBelowMinimum || isLoading || isPending}
+            disabled={isBelowMinimum || isLoading || isOrdering}
             onClick={handlePlaceOrder}
           >
-            {isPending
+            {isOrdering
               ? "주문 처리 중..."
               : isBelowMinimum
                 ? `최소주문금액 ${minOrderAmount.toLocaleString()}원`
