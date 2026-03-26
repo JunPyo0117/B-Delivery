@@ -26,13 +26,20 @@ export default function CartPage() {
     setDeliveryInfo,
   } = useCartStore();
 
+  const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>("delivery");
 
+  // Zustand persist hydration 대기
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // 음식점 배달 정보 가져오기
   useEffect(() => {
+    if (!mounted) return;
     async function fetchDeliveryInfo() {
       if (restaurantId) {
         try {
@@ -45,12 +52,12 @@ export default function CartPage() {
       setIsLoading(false);
     }
     fetchDeliveryInfo();
-  }, [restaurantId, setDeliveryInfo]);
+  }, [mounted, restaurantId, setDeliveryInfo]);
 
-  const subtotal = getTotal();
-  const totalQuantity = getTotalQuantity();
+  const subtotal = mounted ? getTotal() : 0;
+  const totalQuantity = mounted ? getTotalQuantity() : 0;
   const isBelowMinimum = subtotal < minOrderAmount;
-  const isEmpty = items.length === 0;
+  const isEmpty = !mounted || items.length === 0;
   const total = subtotal + deliveryFee;
 
   /** 주문 확정 핸들러 */
@@ -356,7 +363,7 @@ export default function CartPage() {
       </div>
 
       {/* 하단 주문 버튼 (sticky) */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-gray-200 safe-area-inset-bottom">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-50 bg-white border-t border-gray-200">
         <div className="px-4 py-3">
           {/* 가격 정보 */}
           <div className="flex items-center gap-2 mb-2.5">

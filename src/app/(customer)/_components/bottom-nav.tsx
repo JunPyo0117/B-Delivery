@@ -14,7 +14,7 @@ const tabs = [
 ] as const;
 
 /** 하단 네비게이션 바를 숨길 경로 패턴 */
-const HIDDEN_PATH_PREFIXES = ["/chat/", "/restaurants/"];
+const HIDDEN_PATH_PREFIXES = ["/chat/", "/restaurants/", "/cart"];
 
 /**
  * 글로벌 하단 네비게이션 바
