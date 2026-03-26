@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
@@ -9,15 +10,17 @@ import { useCartStore } from "@/stores/cart";
  * 음식점 상세 페이지 등에서 사용
  */
 export function CartFloatingBar({ hidden = false }: { hidden?: boolean }) {
-  const items = useCartStore((s) => s.items);
+  const [mounted, setMounted] = useState(false);
   const getTotal = useCartStore((s) => s.getTotal);
   const getTotalQuantity = useCartStore((s) => s.getTotalQuantity);
   const restaurantName = useCartStore((s) => s.restaurantName);
 
+  useEffect(() => setMounted(true), []);
+
   const totalQuantity = getTotalQuantity();
   const total = getTotal();
 
-  if (totalQuantity === 0 || hidden) return null;
+  if (!mounted || totalQuantity === 0 || hidden) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 safe-area-inset-bottom">
