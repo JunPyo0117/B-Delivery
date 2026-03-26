@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useSocket } from "@/hooks/useSocket";
 import { useChatStore } from "@/stores/chat";
 import { ChatRoomHeader } from "./ChatRoomHeader";
 import { MessageList } from "./MessageList";
@@ -38,7 +38,7 @@ export function ChatRoom({
   }, [chatId, initialMessages, initialHasMore, setMessages, setHasMore, clearChat]);
 
   const { isConnected, isConnecting, error, sendMessage, sendTyping } =
-    useWebSocket(chatId);
+    useSocket(chatId);
 
   return (
     <div className="flex flex-col h-dvh bg-[#F8F8F8]">

@@ -4,7 +4,7 @@ import { useEffect, useMemo } from "react";
 import { ArrowLeft, MapPin, MessageCircle } from "lucide-react";
 import Link from "next/link";
 
-import { useOrderStatus } from "@/hooks/useOrderStatus";
+import { useOrderSocket } from "@/hooks/useOrderSocket";
 import { useOrderStore } from "@/stores/order";
 import type { OrderStatus } from "@/types/order";
 
@@ -77,7 +77,7 @@ export function OrderStatusClient({ initialData }: OrderStatusClientProps) {
   }, [orderId, initialData.status, setOrderStatus]);
 
   // WebSocket 연결 - 실시간 상태 업데이트
-  const { isConnected } = useOrderStatus({
+  const { isConnected } = useOrderSocket({
     enabled: true,
     onStatusChange: (event) => {
       if (event.orderId === orderId) {

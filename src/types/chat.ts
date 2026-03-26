@@ -1,24 +1,9 @@
-// WebSocket 메시지 봉투 (Go models/types.go와 매핑)
-export interface WSMessage {
-  type: string;
-  payload: unknown;
-}
-
-// ─── 클라이언트 → 서버 ────────────────────────────────
+// ─── Socket.IO 이벤트 페이로드 ────────────────────────
 
 export interface ChatMessagePayload {
   chatId: string;
   type: "TEXT" | "IMAGE";
   content: string;
-}
-
-export interface TypingPayload {
-  chatId: string;
-  isTyping: boolean;
-}
-
-export interface ReadPayload {
-  chatId: string;
 }
 
 // ─── 서버 → 클라이언트 ────────────────────────────────
