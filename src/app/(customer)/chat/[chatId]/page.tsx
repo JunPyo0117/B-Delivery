@@ -49,6 +49,8 @@ export default async function ChatRoomPage({
     },
   });
 
+  console.log(`[ChatRoom SSR] chatId=${chatId}, userId=${session.user.id}, rawMessages=${rawMessages.length}`);
+
   const hasMore = rawMessages.length > INITIAL_MSG_LIMIT;
   const messages = (hasMore ? rawMessages.slice(0, INITIAL_MSG_LIMIT) : rawMessages)
     .reverse()
