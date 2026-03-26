@@ -31,52 +31,35 @@ export function KakaoMap({
 }: KakaoMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<kakao.maps.Map | null>(null)
-  const markerRefs = useRef<kakao.maps.Marker[]>([])
   const overlayRefs = useRef<kakao.maps.CustomOverlay[]>([])
   const { isLoaded } = useKakaoLoader()
 
-  // 지도 초기화
+  // 지도 초기화 + 마커 생성을 하나의 effect로 통합
   useEffect(() => {
     if (!isLoaded || !containerRef.current) return
 
     const center = new kakao.maps.LatLng(lat, lng)
-    const map = new kakao.maps.Map(containerRef.current, { center, level })
 
-    if (!draggable) {
-      // 드래그 비활성화는 setDraggable이 타입에 없으므로 옵션으로만 제어
+    // 지도가 없으면 생성, 있으면 중심/레벨 업데이트
+    if (!mapRef.current) {
+      mapRef.current = new kakao.maps.Map(containerRef.current, { center, level })
+    } else {
+      mapRef.current.setCenter(center)
+      mapRef.current.setLevel(level)
     }
 
-    mapRef.current = map
-  }, [isLoaded, draggable]) // eslint-disable-line react-hooks/exhaustive-deps
+    const map = mapRef.current
 
-  // 중심 좌표 업데이트
-  useEffect(() => {
-    if (!mapRef.current) return
-    mapRef.current.setCenter(new kakao.maps.LatLng(lat, lng))
-  }, [lat, lng])
-
-  // 줌 레벨 업데이트
-  useEffect(() => {
-    if (!mapRef.current) return
-    mapRef.current.setLevel(level)
-  }, [level])
-
-  // 마커 업데이트
-  useEffect(() => {
-    if (!mapRef.current) return
-
-    // 기존 마커·오버레이 제거
-    markerRefs.current.forEach((m) => m.setMap(null))
-    markerRefs.current = []
+    // 기존 오버레이 제거
     overlayRefs.current.forEach((o) => o.setMap(null))
     overlayRefs.current = []
 
+    // 마커(커스텀 오버레이) 생성
     const markerList = markers ?? [{ lat, lng }]
 
     markerList.forEach((m) => {
       const position = new kakao.maps.LatLng(m.lat, m.lng)
 
-      // 커스텀 오버레이 (SVG 핀 + 라벨)
       const content = document.createElement("div")
       content.style.cssText = "display:flex;flex-direction:column;align-items:center;"
       content.innerHTML = `
@@ -90,13 +73,13 @@ export function KakaoMap({
       const overlay = new kakao.maps.CustomOverlay({
         position,
         content,
-        map: mapRef.current!,
+        map,
         yAnchor: 1,
       })
 
       overlayRefs.current.push(overlay)
     })
-  }, [markers, lat, lng])
+  }, [isLoaded, lat, lng, level, markers, draggable])
 
   if (!isLoaded) {
     return (
