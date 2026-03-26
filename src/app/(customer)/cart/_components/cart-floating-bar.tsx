@@ -8,7 +8,7 @@ import { useCartStore } from "@/stores/cart";
  * 장바구니에 아이템이 있을 때 하단에 표시되는 플로팅 바
  * 음식점 상세 페이지 등에서 사용
  */
-export function CartFloatingBar() {
+export function CartFloatingBar({ hidden = false }: { hidden?: boolean }) {
   const items = useCartStore((s) => s.items);
   const getTotal = useCartStore((s) => s.getTotal);
   const getTotalQuantity = useCartStore((s) => s.getTotalQuantity);
@@ -17,7 +17,7 @@ export function CartFloatingBar() {
   const totalQuantity = getTotalQuantity();
   const total = getTotal();
 
-  if (totalQuantity === 0) return null;
+  if (totalQuantity === 0 || hidden) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 safe-area-inset-bottom">

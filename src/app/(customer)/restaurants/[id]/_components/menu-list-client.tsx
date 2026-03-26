@@ -62,7 +62,7 @@ export function MenuListClient({
         onOpenChange={setSheetOpen}
       />
 
-      <CartFloatingBar />
+      <CartFloatingBar hidden={sheetOpen} />
     </>
   );
 }
