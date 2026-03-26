@@ -11,7 +11,12 @@ import type {
   ReadReceiptEvent,
 } from "@/types/chat";
 
-const WS_URL = process.env.NEXT_PUBLIC_CHAT_WS_URL ?? "ws://localhost:8080/ws";
+function getWsUrl() {
+  if (process.env.NEXT_PUBLIC_CHAT_WS_URL) return process.env.NEXT_PUBLIC_CHAT_WS_URL;
+  if (typeof window === "undefined") return "ws://localhost:8080/ws";
+  return `ws://${window.location.hostname}:8080/ws`;
+}
+const WS_URL = getWsUrl();
 const MAX_RETRIES = 5;
 
 export function useWebSocket(chatId: string) {
