@@ -89,6 +89,8 @@ export default function CartPage() {
           setError(result.error);
         } else {
           clearCart();
+          // persist middleware의 localStorage 쓰기 완료 후 이동
+          await new Promise((r) => setTimeout(r, 50));
           router.push(`/orders/${result.orderId}`);
         }
       } catch {
