@@ -1,13 +1,20 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Bell, ChevronDown, ShoppingCart } from "lucide-react";
+import { useCartStore } from "@/stores/cart";
 
 interface HomeHeaderProps {
   address: string | null;
 }
 
 export function HomeHeader({ address }: HomeHeaderProps) {
+  const [mounted, setMounted] = useState(false);
+  const totalQuantity = useCartStore((s) => s.getTotalQuantity());
+
+  useEffect(() => setMounted(true), []);
+
   const displayAddress = address
     ? address.length > 15
       ? address.slice(0, 15) + "..."
@@ -28,8 +35,13 @@ export function HomeHeader({ address }: HomeHeaderProps) {
           <button type="button" aria-label="알림" className="text-gray-700">
             <Bell className="size-[22px]" />
           </button>
-          <Link href="/cart" className="text-gray-700">
+          <Link href="/cart" className="relative text-gray-700" aria-label="장바구니">
             <ShoppingCart className="size-[22px]" />
+            {mounted && totalQuantity > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex size-[18px] items-center justify-center rounded-full bg-[#2DB400] text-[10px] font-bold text-white">
+                {totalQuantity > 99 ? "99+" : totalQuantity}
+              </span>
+            )}
           </Link>
         </div>
       </div>
