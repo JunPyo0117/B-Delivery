@@ -57,7 +57,7 @@ export function ChatRoom({
         </div>
       )}
 
-      <MessageList chatId={chatId} currentUserId={currentUserId} />
+      <MessageList chatId={chatId} currentUserId={currentUserId} initialMessages={initialMessages} />
 
       <ChatInput
         onSendText={(content) => sendMessage("TEXT", content)}

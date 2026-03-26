@@ -11,6 +11,7 @@ import type { PendingMessage } from "@/types/chat";
 interface MessageListProps {
   chatId: string;
   currentUserId: string;
+  initialMessages: PendingMessage[];
 }
 
 function isSameDay(a: string, b: string) {
@@ -45,11 +46,11 @@ function shouldShowSender(msgs: PendingMessage[], idx: number) {
   return false;
 }
 
-const EMPTY_MESSAGES: PendingMessage[] = [];
 const EMPTY_TYPING: string[] = [];
 
-export function MessageList({ chatId, currentUserId }: MessageListProps) {
-  const messages = useChatStore((s) => s.messages[chatId]) ?? EMPTY_MESSAGES;
+export function MessageList({ chatId, currentUserId, initialMessages }: MessageListProps) {
+  const storeMessages = useChatStore((s) => s.messages[chatId]);
+  const messages = storeMessages ?? initialMessages;
   const typingUsers = useChatStore((s) => s.typingUsers[chatId]) ?? EMPTY_TYPING;
   const hasMore = useChatStore((s) => s.hasMore[chatId] ?? true);
   const prependMessages = useChatStore((s) => s.prependMessages);
