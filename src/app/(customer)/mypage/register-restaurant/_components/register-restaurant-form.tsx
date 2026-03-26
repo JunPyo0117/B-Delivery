@@ -3,11 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Search } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/ImageUpload";
 import { AddressSearch } from "@/components/address-search";
 import type { PostcodeResult } from "@/lib/kakao";
@@ -69,24 +66,24 @@ export function RegisterRestaurantForm() {
   }
 
   return (
-    <div className="flex flex-col min-h-dvh">
+    <div className="flex flex-col min-h-dvh bg-white">
       {/* 헤더 */}
-      <header className="flex items-center gap-3 px-4 h-12 border-b">
+      <header className="sticky top-0 z-10 bg-white flex items-center gap-3 px-4 h-14 border-b border-gray-100">
         <button
           type="button"
           onClick={() => router.back()}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-gray-900 hover:text-gray-600 transition-colors"
           aria-label="뒤로가기"
         >
           <ArrowLeft className="size-5" />
         </button>
-        <h1 className="font-bold text-lg">음식점 등록</h1>
+        <h1 className="font-bold text-[17px] text-gray-900">음식점 등록</h1>
       </header>
 
       {/* 폼 */}
-      <div className="flex-1 overflow-y-auto flex flex-col gap-6 p-4">
+      <div className="flex-1 overflow-y-auto px-4 pt-5 pb-4">
         {/* 대표 이미지 */}
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-2 mb-7">
           <ImageUpload
             category="restaurant"
             variant="banner"
@@ -94,38 +91,30 @@ export function RegisterRestaurantForm() {
             onUploaded={(_objectKey, publicUrl) => setImageUrl(publicUrl)}
             onRemoved={() => setImageUrl(null)}
           />
-          <span className="text-xs text-muted-foreground">
-            음식점 대표 이미지
-          </span>
+          <span className="text-[12px] text-gray-400">음식점 대표 이미지</span>
         </div>
 
-        {/* 음식점 이름 */}
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="name">
-            음식점 이름 <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="name"
+        {/* 음식점명 */}
+        <FormField label="음식점명" required>
+          <input
+            type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="음식점 이름을 입력해주세요"
             maxLength={50}
+            className="form-input"
           />
-          <p className="text-xs text-muted-foreground text-right">
+          <p className="text-[11px] text-gray-400 text-right mt-1">
             {name.length}/50
           </p>
-        </div>
+        </FormField>
 
         {/* 카테고리 */}
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="category">
-            카테고리 <span className="text-destructive">*</span>
-          </Label>
+        <FormField label="카테고리" required>
           <select
-            id="category"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="form-input appearance-none"
           >
             <option value="">카테고리를 선택해주세요</option>
             {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
@@ -134,71 +123,80 @@ export function RegisterRestaurantForm() {
               </option>
             ))}
           </select>
-        </div>
+        </FormField>
 
         {/* 소개글 */}
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="description">소개글</Label>
+        <FormField label="소개글">
           <textarea
-            id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="음식점 소개를 입력해주세요"
             maxLength={500}
             rows={3}
-            className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+            className="form-input resize-none"
           />
-          <p className="text-xs text-muted-foreground text-right">
+          <p className="text-[11px] text-gray-400 text-right mt-1">
             {description.length}/500
           </p>
-        </div>
+        </FormField>
 
-        {/* 최소 주문 금액 */}
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="minOrderAmount">
-            최소 주문 금액 <span className="text-destructive">*</span>
-          </Label>
-          <div className="flex items-center gap-2">
-            <Input
-              id="minOrderAmount"
-              type="number"
-              inputMode="numeric"
-              value={minOrderAmount}
-              onChange={(e) => setMinOrderAmount(e.target.value)}
-              placeholder="0"
-              min={0}
+        {/* 음식점 주소 */}
+        <FormField label="음식점 주소" required>
+          <div className="relative">
+            <input
+              type="text"
+              value={address ?? ""}
+              placeholder="주소를 검색해주세요"
+              readOnly
+              className="form-input pr-10"
             />
-            <span className="text-sm text-muted-foreground shrink-0">원</span>
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
           </div>
+          <div className="mt-2">
+            <AddressSearch onSelect={handleAddressSelect} />
+          </div>
+        </FormField>
+
+        {/* 최소주문금액 + 배달비 (반절 행) */}
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          <FormField label="최소주문금액" required className="!mb-0">
+            <div className="relative">
+              <input
+                type="number"
+                inputMode="numeric"
+                value={minOrderAmount}
+                onChange={(e) => setMinOrderAmount(e.target.value)}
+                placeholder="0"
+                min={0}
+                className="form-input pr-8"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-gray-400">
+                원
+              </span>
+            </div>
+          </FormField>
+          <FormField label="배달비" required className="!mb-0">
+            <div className="relative">
+              <input
+                type="number"
+                inputMode="numeric"
+                value={deliveryFee}
+                onChange={(e) => setDeliveryFee(e.target.value)}
+                placeholder="0"
+                min={0}
+                className="form-input pr-8"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-gray-400">
+                원
+              </span>
+            </div>
+          </FormField>
         </div>
 
-        {/* 배달비 */}
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="deliveryFee">
-            배달비 <span className="text-destructive">*</span>
-          </Label>
-          <div className="flex items-center gap-2">
-            <Input
-              id="deliveryFee"
-              type="number"
-              inputMode="numeric"
-              value={deliveryFee}
-              onChange={(e) => setDeliveryFee(e.target.value)}
-              placeholder="0"
-              min={0}
-            />
-            <span className="text-sm text-muted-foreground shrink-0">원</span>
-          </div>
-        </div>
-
-        {/* 예상 배달 시간 */}
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="deliveryTime">
-            예상 배달 시간 <span className="text-destructive">*</span>
-          </Label>
-          <div className="flex items-center gap-2">
-            <Input
-              id="deliveryTime"
+        {/* 배달시간 */}
+        <FormField label="배달시간" required>
+          <div className="relative">
+            <input
               type="number"
               inputMode="numeric"
               value={deliveryTime}
@@ -206,47 +204,84 @@ export function RegisterRestaurantForm() {
               placeholder="30"
               min={10}
               max={120}
+              className="form-input pr-8"
             />
-            <span className="text-sm text-muted-foreground shrink-0">분</span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-gray-400">
+              분
+            </span>
           </div>
-        </div>
-
-        {/* 주소 */}
-        <div className="flex flex-col gap-2">
-          <Label>
-            주소 <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            value={address ?? ""}
-            placeholder="주소를 검색해주세요"
-            readOnly
-          />
-          <AddressSearch onSelect={handleAddressSelect} />
-        </div>
+        </FormField>
 
         {/* 에러 메시지 */}
         {error && (
-          <p className="text-sm text-destructive text-center">{error}</p>
+          <p className="text-[13px] text-[#FF5252] text-center py-2">
+            {error}
+          </p>
         )}
       </div>
 
       {/* 등록 버튼 */}
-      <div className="p-4 border-t">
-        <Button
-          className="w-full"
+      <div className="p-4 pb-8 border-t border-gray-100">
+        <button
+          type="button"
           onClick={handleSubmit}
           disabled={isPending || !isFormValid}
+          className="w-full bg-[#2DB400] text-white rounded-xl py-3.5 text-[15px] font-semibold hover:bg-[#269900] active:bg-[#1F8000] disabled:bg-gray-200 disabled:text-gray-400 transition-colors"
         >
           {isPending ? (
-            <>
-              <Loader2 className="size-4 animate-spin mr-2" />
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 className="size-4 animate-spin" />
               등록 중...
-            </>
+            </span>
           ) : (
-            "등록하기"
+            "음식점 등록하기"
           )}
-        </Button>
+        </button>
       </div>
+
+      {/* 글로벌 폼 인풋 스타일 */}
+      <style jsx global>{`
+        .form-input {
+          width: 100%;
+          background-color: rgb(249 250 251);
+          border-radius: 0.5rem;
+          padding: 0.75rem 0.875rem;
+          font-size: 15px;
+          color: rgb(17 24 39);
+          outline: none;
+          border: 1px solid rgb(243 244 246);
+          transition: border-color 0.15s;
+        }
+        .form-input:focus {
+          border-color: #2DB400;
+        }
+        .form-input::placeholder {
+          color: rgb(156 163 175);
+        }
+      `}</style>
+    </div>
+  );
+}
+
+/** 폼 필드 래퍼 */
+function FormField({
+  label,
+  required,
+  children,
+  className,
+}: {
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`mb-5 ${className ?? ""}`}>
+      <label className="text-[13px] text-gray-500 mb-2 block">
+        {label}
+        {required && <span className="text-[#FF5252] ml-0.5">*</span>}
+      </label>
+      {children}
     </div>
   );
 }

@@ -1,8 +1,6 @@
 import { Suspense } from "react";
 import { getReports, type ReportListParams } from "./actions";
-import { ReportListClient } from "./_components/report-list-client";
-import { Skeleton } from "@/components/ui/skeleton";
-import Link from "next/link";
+import { ReportsClient } from "./_components/reports-client";
 
 export const metadata = { title: "신고 관리 | 관리자" };
 
@@ -26,44 +24,26 @@ export default async function AdminReportsPage({ searchParams }: Props) {
   };
 
   return (
-    <main className="mx-auto max-w-5xl p-4 md:p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">신고 관리</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            신고 목록 조회 및 처리
-          </p>
-        </div>
-        <Link
-          href="/admin"
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
-          대시보드로
-        </Link>
-      </div>
-
-      <Suspense fallback={<ReportListSkeleton />}>
-        <ReportListLoader params={params} />
-      </Suspense>
-    </main>
+    <Suspense fallback={<ReportsPageSkeleton />}>
+      <ReportsLoader params={params} />
+    </Suspense>
   );
 }
 
-async function ReportListLoader({ params }: { params: ReportListParams }) {
+async function ReportsLoader({ params }: { params: ReportListParams }) {
   const data = await getReports(params);
-  return <ReportListClient initialData={data} initialParams={params} />;
+  return <ReportsClient initialData={data} initialParams={params} />;
 }
 
-function ReportListSkeleton() {
+function ReportsPageSkeleton() {
   return (
-    <div className="space-y-4">
-      <div className="flex gap-3">
-        <Skeleton className="h-10 w-32" />
-        <Skeleton className="h-10 w-32" />
+    <div className="flex min-h-screen flex-col bg-gray-50">
+      <div className="h-14" style={{ backgroundColor: "#1A1A2E" }} />
+      <div className="space-y-3 p-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-28 animate-pulse rounded-lg bg-gray-200" />
+        ))}
       </div>
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Skeleton key={i} className="h-20 w-full" />
-      ))}
     </div>
   );
 }

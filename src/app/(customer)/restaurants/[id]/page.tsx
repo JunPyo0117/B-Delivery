@@ -7,7 +7,6 @@ import { DeliveryInfo } from "./_components/delivery-info";
 import { ReviewPreview } from "./_components/review-preview";
 import { MenuTabBar } from "./_components/menu-tab-bar";
 import { MenuListClient } from "./_components/menu-list-client";
-import { Separator } from "@/components/ui/separator";
 
 export default async function RestaurantDetailPage({
   params,
@@ -72,7 +71,7 @@ export default async function RestaurantDetailPage({
   const categories = Object.keys(menusByCategory);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background pb-4">
+    <div className="flex min-h-screen flex-col bg-white pb-4">
       <RestaurantHeader
         imageUrl={restaurant.imageUrl}
         name={restaurant.name}
@@ -88,7 +87,7 @@ export default async function RestaurantDetailPage({
           isLoggedIn={!!session?.user?.id}
         />
 
-        <Separator className="my-3" />
+        <div className="my-3 h-px bg-gray-100" />
 
         <DeliveryInfo
           minOrderAmount={restaurant.minOrderAmount}
@@ -96,7 +95,7 @@ export default async function RestaurantDetailPage({
           deliveryTime={restaurant.deliveryTime}
         />
 
-        <Separator className="my-3" />
+        <div className="my-3 h-px bg-gray-100" />
 
         <ReviewPreview
           reviews={restaurant.reviews.map((r: { id: string; rating: number; content: string | null; tags: string[]; imageUrls: string[]; user: { nickname: string } }) => ({
@@ -113,7 +112,8 @@ export default async function RestaurantDetailPage({
         />
       </div>
 
-      <Separator className="my-3 h-2 bg-muted" />
+      {/* 두꺼운 구분선 */}
+      <div className="my-2 h-2 bg-gray-100" />
 
       {categories.length > 0 && (
         <>

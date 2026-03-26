@@ -58,27 +58,28 @@ export function ReviewListClient({
   return (
     <div>
       {/* 필터 바 */}
-      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-        <span className="text-sm font-medium">
+      <div className="flex items-center gap-2 px-4 py-3">
+        <span className="text-[14px] font-bold text-gray-900">
           최근 리뷰 {totalCount.toLocaleString()}개
         </span>
         <div className="flex-1" />
+
+        {/* 최신순 칩 */}
         <button
-          className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs transition-colors ${
-            false
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-border text-muted-foreground"
-          }`}
+          className="flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors"
         >
+          <span className="text-[11px]">&#x2195;</span>
           최신순
           <ChevronDown className="size-3" />
         </button>
+
+        {/* 사진 리뷰만 보기 칩 */}
         <button
           onClick={handlePhotoToggle}
-          className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs transition-colors ${
+          className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
             photoOnly
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-border text-muted-foreground"
+              ? "border-[#2DB400] bg-[#2DB400]/5 text-[#2DB400]"
+              : "border-gray-200 bg-white text-gray-600"
           }`}
         >
           <Camera className="size-3" />
@@ -86,10 +87,12 @@ export function ReviewListClient({
         </button>
       </div>
 
+      <div className="h-px bg-gray-100" />
+
       {/* 리뷰 목록 */}
       <div className={isPending ? "pointer-events-none opacity-50" : ""}>
         {reviews.length === 0 ? (
-          <div className="py-16 text-center text-sm text-muted-foreground">
+          <div className="py-20 text-center text-sm text-gray-400">
             {photoOnly
               ? "사진 리뷰가 없습니다"
               : "아직 리뷰가 없습니다"}
@@ -106,7 +109,7 @@ export function ReviewListClient({
         <div className="px-4 py-4">
           <Button
             variant="outline"
-            className="w-full"
+            className="w-full rounded-lg border-gray-200 text-sm font-medium text-gray-600"
             onClick={loadMore}
             disabled={isPending}
           >

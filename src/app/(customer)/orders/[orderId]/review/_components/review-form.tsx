@@ -2,10 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
+import { X } from "lucide-react";
 import { StarRating } from "./star-rating";
 import { TagSelector } from "./tag-selector";
 import { ImageUploader } from "./image-uploader";
@@ -67,76 +64,89 @@ export function ReviewForm({ order }: ReviewFormProps) {
   const ratingLabels = ["", "별로예요", "그저 그래요", "보통이에요", "맛있어요", "최고예요"];
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-dvh flex-col bg-white">
       {/* 헤더 */}
-      <header className="sticky top-0 z-10 flex h-12 items-center border-b bg-background px-4">
+      <header className="sticky top-0 z-10 flex h-12 items-center justify-between border-b border-gray-200 bg-white px-4">
         <button
           type="button"
           onClick={() => router.back()}
-          className="mr-3"
-          aria-label="뒤로 가기"
+          className="p-1"
+          aria-label="닫기"
         >
-          <ArrowLeft className="size-5" />
+          <X className="size-5 text-gray-900" />
         </button>
-        <h1 className="text-base font-semibold">리뷰 작성</h1>
+        <h1 className="text-[16px] font-bold text-gray-900">리뷰 작성</h1>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={isPending || rating === 0}
+          className="text-[14px] font-bold disabled:text-gray-300 transition-colors"
+          style={rating > 0 && !isPending ? { color: "#2DB400" } : {}}
+        >
+          {isPending ? "등록중..." : "등록"}
+        </button>
       </header>
 
-      <div className="flex-1 px-4 py-5">
-        {/* 주문 정보 */}
-        <div className="mb-5">
-          <h2 className="text-lg font-bold">{order.restaurantName}</h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            {order.menuSummary}
-          </p>
+      <div className="flex-1">
+        {/* 가게 정보 바 */}
+        <div className="bg-gray-50 px-4 py-3 border-b border-gray-100">
+          <p className="text-[14px] font-bold text-gray-900">{order.restaurantName}</p>
+          <p className="text-[12px] text-gray-500 mt-0.5">{order.menuSummary}</p>
         </div>
 
-        <Separator className="mb-5" />
-
         {/* 별점 */}
-        <div className="mb-6 flex flex-col items-center gap-2">
-          <p className="text-sm font-medium text-muted-foreground">
+        <div className="flex flex-col items-center py-8 px-4">
+          <p className="text-[15px] font-semibold text-gray-900 mb-4">
             음식은 어떠셨나요?
           </p>
-          <StarRating value={rating} onChange={setRating} />
+          <StarRating value={rating} onChange={setRating} size="lg" />
           {rating > 0 && (
-            <p className="text-sm font-semibold text-primary">
+            <p
+              className="text-[14px] font-bold mt-3"
+              style={{ color: "#FFB300" }}
+            >
               {ratingLabels[rating]}
             </p>
           )}
         </div>
 
-        <Separator className="mb-5" />
+        {/* 구분선 */}
+        <div className="h-[1px] bg-gray-100 mx-4" />
 
         {/* 태그 선택 */}
-        <div className="mb-5">
-          <p className="mb-2 text-sm font-medium">이 음식점의 장점을 알려주세요</p>
+        <div className="px-4 py-5">
+          <p className="text-[14px] font-semibold text-gray-900 mb-3">
+            이 음식점의 장점을 알려주세요
+          </p>
           <TagSelector
             selectedTags={selectedTags}
             onToggle={handleTagToggle}
           />
         </div>
 
-        <Separator className="mb-5" />
+        {/* 구분선 */}
+        <div className="h-[1px] bg-gray-100 mx-4" />
 
         {/* 텍스트 리뷰 */}
-        <div className="mb-5">
-          <p className="mb-2 text-sm font-medium">리뷰를 작성해주세요 (선택)</p>
-          <Textarea
-            placeholder="다른 고객들에게 도움이 되는 리뷰를 남겨주세요"
+        <div className="px-4 py-5">
+          <textarea
+            placeholder="다른 고객들에게 도움이 되는 리뷰를 남겨주세요 (선택)"
             value={content}
             onChange={(e) => setContent(e.target.value)}
             maxLength={500}
             rows={4}
-            className="resize-none"
+            className="w-full resize-none rounded-xl bg-gray-50 px-4 py-3 text-[13px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300 transition-shadow"
           />
-          <p className="mt-1 text-right text-xs text-muted-foreground">
+          <p className="mt-1.5 text-right text-[11px] text-gray-400">
             {content.length}/500
           </p>
         </div>
 
         {/* 이미지 업로드 */}
-        <div className="mb-5">
-          <p className="mb-2 text-sm font-medium">사진 첨부 (선택)</p>
+        <div className="px-4 pb-8">
+          <p className="text-[14px] font-semibold text-gray-900 mb-3">
+            사진 첨부 (선택)
+          </p>
           <ImageUploader
             imageUrls={imageUrls}
             onImagesChange={setImageUrls}
@@ -146,22 +156,10 @@ export function ReviewForm({ order }: ReviewFormProps) {
 
         {/* 에러 메시지 */}
         {error && (
-          <div className="mb-4 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <div className="mx-4 mb-4 rounded-lg px-4 py-3 text-[13px]" style={{ backgroundColor: "#FF52521a", color: "#FF5252" }}>
             {error}
           </div>
         )}
-      </div>
-
-      {/* 제출 버튼 */}
-      <div className="sticky bottom-0 border-t bg-background p-4">
-        <Button
-          size="lg"
-          className="h-12 w-full text-base font-semibold"
-          onClick={handleSubmit}
-          disabled={isPending || rating === 0}
-        >
-          {isPending ? "등록 중..." : "리뷰 등록"}
-        </Button>
       </div>
     </div>
   );

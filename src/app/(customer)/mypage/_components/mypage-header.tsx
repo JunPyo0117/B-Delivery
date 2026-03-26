@@ -1,6 +1,6 @@
 "use client";
 
-import { Headphones, Settings, LogOut } from "lucide-react";
+import { Headphones, Settings } from "lucide-react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 

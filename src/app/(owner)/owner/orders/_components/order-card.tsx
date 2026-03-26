@@ -2,31 +2,18 @@
 
 import { useState, useTransition } from "react";
 import { OrderStatus } from "@/generated/prisma/enums";
-import { Button } from "@/components/ui/button";
 import { OrderStatusBadge } from "./order-status-badge";
 import { updateOrderStatus } from "../_actions/update-order-status";
 import type { OwnerOrder } from "../_actions/get-orders";
 
 /** 다음 상태 전이 정보 */
-const NEXT_STATUS: Partial<Record<OrderStatus, { status: OrderStatus; label: string }>> = {
-  PENDING: { status: OrderStatus.COOKING, label: "주문 접수" },
+const NEXT_STATUS: Partial<
+  Record<OrderStatus, { status: OrderStatus; label: string }>
+> = {
+  PENDING: { status: OrderStatus.COOKING, label: "주문 수락" },
   COOKING: { status: OrderStatus.PICKED_UP, label: "픽업 완료" },
   PICKED_UP: { status: OrderStatus.DONE, label: "배달 완료" },
 };
-
-function formatTime(isoString: string) {
-  const date = new Date(isoString);
-  const hours = date.getHours().toString().padStart(2, "0");
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-  return `${hours}:${minutes}`;
-}
-
-function formatDate(isoString: string) {
-  const date = new Date(isoString);
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  return `${month}/${day}`;
-}
 
 function formatPrice(price: number) {
   return price.toLocaleString("ko-KR") + "원";
@@ -78,86 +65,68 @@ export function OrderCard({ order, onStatusChange }: OrderCardProps) {
     });
   }
 
+  const itemsSummary = order.items
+    .map((item) => `${item.menuName} x${item.quantity}`)
+    .join(", ");
+
   return (
-    <div className="rounded-lg border bg-white p-4 space-y-3 shadow-sm">
-      {/* 헤더: 상태 뱃지 + 시간 */}
+    <div className="rounded-xl border bg-white p-4 space-y-3 shadow-sm">
+      {/* 헤더: 주문번호 + 상태 뱃지 */}
       <div className="flex items-center justify-between">
+        <span className="text-[15px] font-bold text-gray-900">
+          주문 #{order.id.slice(-4).toUpperCase()}
+        </span>
         <OrderStatusBadge status={order.status} />
-        <div className="text-right">
-          <p className="text-xs text-muted-foreground">
-            {formatDate(order.createdAt)} {formatTime(order.createdAt)}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {getElapsedTime(order.createdAt)}
-          </p>
-        </div>
       </div>
 
-      {/* 주문 번호 + 고객 */}
+      {/* 주문 항목 요약 */}
+      <p className="text-sm text-gray-500 line-clamp-1">{itemsSummary}</p>
+
+      {/* 가격 + 시간 */}
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium">
-          주문번호: {order.id.slice(-8).toUpperCase()}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {order.customerNickname}
-        </p>
-      </div>
-
-      {/* 주문 항목 */}
-      <div className="space-y-1 border-t pt-2">
-        {order.items.map((item) => (
-          <div key={item.id} className="flex items-center justify-between text-sm">
-            <span>
-              {item.menuName} x {item.quantity}
-            </span>
-            <span className="text-muted-foreground">
-              {formatPrice(item.price * item.quantity)}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* 총액 + 배달 주소 */}
-      <div className="border-t pt-2 space-y-1">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold">총 결제금액</span>
-          <span className="text-sm font-bold text-primary">
-            {formatPrice(order.totalPrice)}
-          </span>
-        </div>
-        <p className="text-xs text-muted-foreground truncate">
-          {order.deliveryAddress}
-        </p>
+        <span className="text-[15px] font-bold text-gray-900">
+          {formatPrice(order.totalPrice)}
+        </span>
+        <span className="text-xs text-gray-400">
+          {getElapsedTime(order.createdAt)}
+        </span>
       </div>
 
       {/* 에러 메시지 */}
       {error && (
-        <p className="text-xs text-red-500 bg-red-50 rounded p-2">{error}</p>
+        <p
+          className="text-xs font-medium rounded-lg p-2"
+          style={{ backgroundColor: "#FFEBEE", color: "#FF5252" }}
+        >
+          {error}
+        </p>
       )}
 
       {/* 액션 버튼 */}
       {(nextAction || order.status === "PENDING") && (
         <div className="flex gap-2 pt-1">
           {order.status === "PENDING" && (
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               onClick={handleCancel}
               disabled={isPending}
-              className="flex-1"
+              className="flex-1 rounded-lg border py-2.5 text-sm font-semibold transition-colors disabled:opacity-50"
+              style={{
+                borderColor: "#FF5252",
+                color: "#FF5252",
+              }}
             >
               주문 거절
-            </Button>
+            </button>
           )}
           {nextAction && (
-            <Button
-              size="sm"
+            <button
               onClick={() => handleStatusChange(nextAction.status)}
               disabled={isPending}
-              className="flex-1"
+              className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-50"
+              style={{ backgroundColor: "#2DB400" }}
             >
               {isPending ? "처리중..." : nextAction.label}
-            </Button>
+            </button>
           )}
         </div>
       )}

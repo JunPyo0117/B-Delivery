@@ -13,6 +13,7 @@ interface ChatRoomProps {
   chatId: string;
   currentUserId: string;
   restaurantName: string;
+  orderId?: string;
   initialMessages: ChatMessageResponse[];
   hasMore: boolean;
 }
@@ -21,6 +22,7 @@ export function ChatRoom({
   chatId,
   currentUserId,
   restaurantName,
+  orderId,
   initialMessages,
   hasMore: initialHasMore,
 }: ChatRoomProps) {
@@ -39,14 +41,14 @@ export function ChatRoom({
     useWebSocket(chatId);
 
   return (
-    <div className="flex flex-col h-dvh bg-background">
-      <ChatRoomHeader restaurantName={restaurantName} />
+    <div className="flex flex-col h-dvh bg-[#F8F8F8]">
+      <ChatRoomHeader restaurantName={restaurantName} orderId={orderId} />
 
       {/* 연결 상태 배너 */}
       {(isConnecting || error) && (
-        <div className="px-4 py-1.5 text-xs text-center bg-amber-50 text-amber-700">
+        <div className="px-4 py-2 text-xs text-center bg-amber-50 text-amber-700 border-b border-amber-100">
           {isConnecting && (
-            <span className="flex items-center justify-center gap-1">
+            <span className="flex items-center justify-center gap-1.5">
               <Loader2 className="size-3 animate-spin" />
               연결 중...
             </span>

@@ -4,9 +4,6 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -33,15 +30,9 @@ const TARGET_TYPE_LABELS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  PENDING: "대기",
+  PENDING: "대기중",
   RESOLVED: "처리됨",
   REJECTED: "기각",
-};
-
-const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  PENDING: "outline",
-  RESOLVED: "default",
-  REJECTED: "secondary",
 };
 
 interface ReportDetailData {
@@ -174,203 +165,198 @@ export function ReportDetailClient({ report }: Props) {
   }
 
   return (
-    <main className="mx-auto max-w-3xl p-4 md:p-6">
-      {/* 헤더 */}
-      <div className="mb-6">
-        <Link
-          href="/admin/reports"
-          className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          신고 목록으로
+    <div className="flex min-h-screen flex-col bg-gray-50">
+      {/* Dark Header */}
+      <header
+        className="flex items-center gap-3 px-4 py-4"
+        style={{ backgroundColor: "#1A1A2E" }}
+      >
+        <Link href="/admin/reports" className="text-white/80 hover:text-white">
+          <ArrowLeft className="h-5 w-5" />
         </Link>
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">신고 상세</h1>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline">
-              {TARGET_TYPE_LABELS[report.targetType]}
-            </Badge>
-            <Badge variant={STATUS_VARIANT[report.status]}>
-              {STATUS_LABELS[report.status]}
-            </Badge>
-          </div>
-        </div>
-      </div>
+        <h1 className="text-lg font-bold text-white">신고 상세</h1>
+      </header>
 
-      {/* 신고 내용 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">신고 내용</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">사유</span>
-            <span className="font-medium">{report.reason}</span>
-          </div>
-          {report.description && (
-            <>
-              <Separator />
-              <div>
-                <span className="text-muted-foreground">상세 설명</span>
-                <p className="mt-1 rounded-lg bg-muted/50 p-3">
+      <div className="flex-1 px-3 py-3 space-y-3">
+        {/* Status + Type Badge */}
+        <div className="flex items-center gap-2">
+          <span
+            className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+              report.status === "PENDING"
+                ? "bg-orange-100 text-orange-600"
+                : report.status === "RESOLVED"
+                  ? "bg-green-100 text-green-600"
+                  : "bg-gray-100 text-gray-600"
+            }`}
+          >
+            {STATUS_LABELS[report.status]}
+          </span>
+          <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-medium text-gray-600">
+            {TARGET_TYPE_LABELS[report.targetType]}
+          </span>
+        </div>
+
+        {/* Report Content */}
+        <div className="rounded-xl bg-white">
+          <h3 className="px-4 pt-4 pb-2 text-sm font-semibold text-gray-900">신고 내용</h3>
+          <div className="divide-y divide-gray-100">
+            <div className="flex justify-between px-4 py-2.5">
+              <span className="text-sm text-gray-500">사유</span>
+              <span className="text-sm font-medium text-gray-900">{report.reason}</span>
+            </div>
+            {report.description && (
+              <div className="px-4 py-2.5">
+                <span className="text-sm text-gray-500">상세 설명</span>
+                <p className="mt-1 rounded-lg bg-gray-50 p-3 text-sm text-gray-700">
                   {report.description}
                 </p>
               </div>
-            </>
-          )}
-          <Separator />
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">신고일시</span>
-            <span>
-              {new Date(report.createdAt).toLocaleString("ko-KR")}
-            </span>
-          </div>
-          {report.adminMemo && (
-            <>
-              <Separator />
-              <div>
-                <span className="text-muted-foreground">관리자 메모</span>
-                <p className="mt-1 rounded-lg bg-muted/50 p-3">
+            )}
+            <div className="flex justify-between px-4 py-2.5">
+              <span className="text-sm text-gray-500">신고일시</span>
+              <span className="text-sm text-gray-900">
+                {new Date(report.createdAt).toLocaleString("ko-KR")}
+              </span>
+            </div>
+            {report.adminMemo && (
+              <div className="px-4 py-2.5">
+                <span className="text-sm text-gray-500">관리자 메모</span>
+                <p className="mt-1 rounded-lg bg-gray-50 p-3 text-sm text-gray-700">
                   {report.adminMemo}
                 </p>
               </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </div>
+        </div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
-        {/* 신고자 정보 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">신고자</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">닉네임</span>
+        {/* Reporter Info */}
+        <div className="rounded-xl bg-white">
+          <h3 className="px-4 pt-4 pb-2 text-sm font-semibold text-gray-900">신고자</h3>
+          <div className="divide-y divide-gray-100">
+            <div className="flex justify-between px-4 py-2.5">
+              <span className="text-sm text-gray-500">닉네임</span>
               <Link
                 href={`/admin/users/${report.reporter.id}`}
-                className="text-primary hover:underline"
+                className="text-sm font-medium"
+                style={{ color: "#2DB400" }}
               >
                 {report.reporter.nickname}
               </Link>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">이메일</span>
-              <span>{report.reporter.email}</span>
+            <div className="flex justify-between px-4 py-2.5">
+              <span className="text-sm text-gray-500">이메일</span>
+              <span className="text-sm text-gray-900">{report.reporter.email}</span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        {/* 대상 정보 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">신고 대상</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
+        {/* Target Info */}
+        <div className="rounded-xl bg-white">
+          <h3 className="px-4 pt-4 pb-2 text-sm font-semibold text-gray-900">신고 대상</h3>
+          <div className="divide-y divide-gray-100">
             {report.targetType === "USER" && report.targetUser && (
               <>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">유저</span>
+                <div className="flex justify-between px-4 py-2.5">
+                  <span className="text-sm text-gray-500">유저</span>
                   <Link
                     href={`/admin/users/${report.targetUser.id}`}
-                    className="text-primary hover:underline"
+                    className="text-sm font-medium"
+                    style={{ color: "#2DB400" }}
                   >
                     {report.targetUser.nickname}
                   </Link>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">상태</span>
-                  <Badge
-                    variant={
+                <div className="flex justify-between px-4 py-2.5">
+                  <span className="text-sm text-gray-500">상태</span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                       report.targetUser.status === "BANNED"
-                        ? "destructive"
-                        : "default"
-                    }
+                        ? "bg-red-100 text-red-600"
+                        : "bg-green-100 text-green-600"
+                    }`}
                   >
                     {report.targetUser.status === "ACTIVE"
                       ? "활성"
                       : report.targetUser.status === "BANNED"
                         ? "정지"
                         : "탈퇴"}
-                  </Badge>
+                  </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">누적 신고</span>
-                  <span>{report.targetUser._count.receivedReports}건</span>
+                <div className="flex justify-between px-4 py-2.5">
+                  <span className="text-sm text-gray-500">누적 신고</span>
+                  <span className="text-sm text-gray-900">{report.targetUser._count.receivedReports}건</span>
                 </div>
               </>
             )}
-            {report.targetType === "RESTAURANT" &&
-              report.targetRestaurant && (
-                <>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">음식점</span>
-                    <span className="font-medium">
-                      {report.targetRestaurant.name}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">영업 상태</span>
-                    <Badge
-                      variant={
-                        report.targetRestaurant.isOpen
-                          ? "default"
-                          : "secondary"
-                      }
-                    >
-                      {report.targetRestaurant.isOpen ? "영업중" : "비공개"}
-                    </Badge>
-                  </div>
-                </>
-              )}
+            {report.targetType === "RESTAURANT" && report.targetRestaurant && (
+              <>
+                <div className="flex justify-between px-4 py-2.5">
+                  <span className="text-sm text-gray-500">음식점</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {report.targetRestaurant.name}
+                  </span>
+                </div>
+                <div className="flex justify-between px-4 py-2.5">
+                  <span className="text-sm text-gray-500">영업 상태</span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                      report.targetRestaurant.isOpen
+                        ? "bg-green-100 text-green-600"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {report.targetRestaurant.isOpen ? "영업중" : "비공개"}
+                  </span>
+                </div>
+              </>
+            )}
             {report.targetType === "MENU" && report.targetMenu && (
               <>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">메뉴</span>
-                  <span className="font-medium">
+                <div className="flex justify-between px-4 py-2.5">
+                  <span className="text-sm text-gray-500">메뉴</span>
+                  <span className="text-sm font-medium text-gray-900">
                     {report.targetMenu.name}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">상태</span>
-                  <Badge
-                    variant={
-                      report.targetMenu.isSoldOut ? "secondary" : "default"
-                    }
+                <div className="flex justify-between px-4 py-2.5">
+                  <span className="text-sm text-gray-500">상태</span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                      report.targetMenu.isSoldOut
+                        ? "bg-gray-100 text-gray-600"
+                        : "bg-green-100 text-green-600"
+                    }`}
                   >
                     {report.targetMenu.isSoldOut ? "품절" : "판매중"}
-                  </Badge>
+                  </span>
                 </div>
               </>
             )}
             {report.targetType === "CHAT" && (
-              <p className="text-muted-foreground">채팅 메시지 신고</p>
+              <div className="px-4 py-2.5">
+                <p className="text-sm text-gray-500">채팅 메시지 신고</p>
+              </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
 
-      {/* 처리 액션 */}
-      {isPendingReport && (
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle className="text-base">처리</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
+        {/* Action Buttons */}
+        {isPendingReport && (
+          <div className="flex gap-2">
             <Button
               variant="outline"
+              className="flex-1"
               onClick={() => setActionType("reject")}
             >
               <XCircle className="mr-2 h-4 w-4" />
               기각
             </Button>
 
-            {(report.targetType === "USER" ||
-              report.targetType === "CHAT") &&
+            {(report.targetType === "USER" || report.targetType === "CHAT") &&
               report.targetUserId && (
                 <Button
                   variant="destructive"
+                  className="flex-1"
                   onClick={() => setActionType("ban")}
                 >
                   <Ban className="mr-2 h-4 w-4" />
@@ -382,6 +368,7 @@ export function ReportDetailClient({ report }: Props) {
               report.targetRestaurantId && (
                 <Button
                   variant="destructive"
+                  className="flex-1"
                   onClick={() => setActionType("hideRestaurant")}
                 >
                   <EyeOff className="mr-2 h-4 w-4" />
@@ -392,17 +379,18 @@ export function ReportDetailClient({ report }: Props) {
             {report.targetType === "MENU" && report.targetMenuId && (
               <Button
                 variant="destructive"
+                className="flex-1"
                 onClick={() => setActionType("hideMenu")}
               >
                 <EyeOff className="mr-2 h-4 w-4" />
                 메뉴 숨김
               </Button>
             )}
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
+      </div>
 
-      {/* 처리 확인 다이얼로그 */}
+      {/* Action Dialog */}
       <Dialog
         open={actionType !== null}
         onOpenChange={(open) => {
@@ -449,6 +437,6 @@ export function ReportDetailClient({ report }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </main>
+    </div>
   );
 }

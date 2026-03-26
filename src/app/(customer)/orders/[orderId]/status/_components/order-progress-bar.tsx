@@ -1,13 +1,13 @@
 "use client";
 
-import { CheckCircle2, Clock, ChefHat, Truck, CircleX } from "lucide-react";
+import { CircleX } from "lucide-react";
 import type { OrderStatus } from "@/types/order";
 
 const ORDER_STEPS = [
-  { status: "PENDING" as const, label: "주문 접수", icon: Clock },
-  { status: "COOKING" as const, label: "조리중", icon: ChefHat },
-  { status: "PICKED_UP" as const, label: "배달 중", icon: Truck },
-  { status: "DONE" as const, label: "배달 완료", icon: CheckCircle2 },
+  { status: "PENDING" as const, label: "주문접수" },
+  { status: "COOKING" as const, label: "조리중" },
+  { status: "PICKED_UP" as const, label: "배달중" },
+  { status: "DONE" as const, label: "배달완료" },
 ];
 
 interface OrderProgressBarProps {
@@ -20,64 +20,59 @@ export function OrderProgressBar({ status }: OrderProgressBarProps) {
 
   if (isCancelled) {
     return (
-      <div className="flex flex-col items-center gap-2 text-muted-foreground py-6">
-        <CircleX className="size-12 text-muted-foreground/60" />
-        <p className="text-lg font-semibold">주문이 취소되었습니다</p>
+      <div className="flex flex-col items-center gap-2 text-gray-400 py-6">
+        <CircleX className="size-12 text-gray-300" />
+        <p className="text-[16px] font-bold text-gray-500">주문이 취소되었습니다</p>
       </div>
     );
   }
 
   return (
-    <div className="py-6">
-      <p className="text-center text-lg font-semibold mb-6">
-        {ORDER_STEPS[currentStepIndex]?.label ?? status}
-      </p>
+    <div className="py-6 px-2">
+      {/* 단계 인디케이터 */}
+      <div className="flex items-center justify-between relative">
+        {/* 연결선 (배경) */}
+        <div className="absolute top-[10px] left-[10px] right-[10px] h-[2px] bg-gray-200 z-0" />
+        {/* 연결선 (진행) */}
+        <div
+          className="absolute top-[10px] left-[10px] h-[2px] z-[1] transition-all duration-500"
+          style={{
+            backgroundColor: "#2DB400",
+            width: currentStepIndex >= 0
+              ? `${(currentStepIndex / (ORDER_STEPS.length - 1)) * 100}%`
+              : "0%",
+            maxWidth: "calc(100% - 20px)",
+          }}
+        />
 
-      {/* 아이콘 단계 */}
-      <div className="flex items-center justify-between px-2">
         {ORDER_STEPS.map((step, idx) => {
-          const Icon = step.icon;
           const isCompleted = idx <= currentStepIndex;
           const isCurrent = idx === currentStepIndex;
-
           return (
-            <div
-              key={step.status}
-              className="flex flex-col items-center gap-1.5 flex-1"
-            >
+            <div key={step.status} className="flex flex-col items-center z-10">
               <div
-                className={`size-11 rounded-full flex items-center justify-center transition-all duration-500 ${
+                className={`size-5 rounded-full border-2 flex items-center justify-center transition-all ${
                   isCompleted
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
-                } ${isCurrent ? "ring-2 ring-primary ring-offset-2 scale-110" : ""}`}
+                    ? "border-transparent"
+                    : "border-gray-300 bg-white"
+                } ${isCurrent ? "scale-125" : ""}`}
+                style={isCompleted ? { backgroundColor: "#2DB400" } : {}}
               >
-                <Icon className="size-5" />
+                {isCompleted && (
+                  <div className="size-2 rounded-full bg-white" />
+                )}
               </div>
               <span
-                className={`text-[11px] transition-colors duration-300 ${
-                  isCompleted
-                    ? "text-primary font-semibold"
-                    : "text-muted-foreground"
+                className={`text-[11px] mt-2 ${
+                  isCompleted ? "font-semibold" : "text-gray-400"
                 }`}
+                style={isCompleted ? { color: "#2DB400" } : {}}
               >
                 {step.label}
               </span>
             </div>
           );
         })}
-      </div>
-
-      {/* 프로그레스 바 */}
-      <div className="mx-10 mt-3 flex gap-1">
-        {ORDER_STEPS.slice(0, -1).map((_, idx) => (
-          <div
-            key={idx}
-            className={`flex-1 h-1.5 rounded-full transition-all duration-500 ${
-              idx < currentStepIndex ? "bg-primary" : "bg-muted"
-            }`}
-          />
-        ))}
       </div>
     </div>
   );

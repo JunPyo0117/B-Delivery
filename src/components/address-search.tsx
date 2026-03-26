@@ -14,18 +14,21 @@ interface AddressSearchProps {
 
 /** 카카오 우편번호 팝업을 트리거하는 주소 검색 컴포넌트 */
 export function AddressSearch({ onSelect, children }: AddressSearchProps) {
-  const { isLoaded } = useKakaoLoader()
+  const { isLoaded, isPostcodeReady } = useKakaoLoader()
   const [isSearching, setIsSearching] = useState(false)
 
+  // Postcode 팝업은 Kakao Map SDK 없이도 동작 가능
+  const canSearch = isPostcodeReady
+
   async function handleClick() {
-    if (!isLoaded || isSearching) return
+    if (!canSearch || isSearching) return
 
     setIsSearching(true)
     try {
       const result = await openPostcodePopup()
       onSelect(result)
-    } catch {
-      // 사용자가 팝업을 닫은 경우 무시
+    } catch (err) {
+      console.error("[AddressSearch] 주소 검색 실패:", err)
     } finally {
       setIsSearching(false)
     }
@@ -33,7 +36,7 @@ export function AddressSearch({ onSelect, children }: AddressSearchProps) {
 
   if (children) {
     return (
-      <button type="button" onClick={handleClick} disabled={!isLoaded || isSearching}>
+      <button type="button" onClick={handleClick} disabled={!canSearch || isSearching}>
         {children}
       </button>
     )
@@ -43,10 +46,10 @@ export function AddressSearch({ onSelect, children }: AddressSearchProps) {
     <Button
       variant="outline"
       onClick={handleClick}
-      disabled={!isLoaded || isSearching}
+      disabled={!canSearch || isSearching}
     >
       <MapPin data-icon="inline-start" className="size-4" />
-      {isSearching ? "검색 중..." : "주소 검색"}
+      {!isPostcodeReady ? "로딩 중..." : isSearching ? "검색 중..." : "주소 검색"}
     </Button>
   )
 }

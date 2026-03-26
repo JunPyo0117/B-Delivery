@@ -16,12 +16,19 @@ export default async function OwnerOrdersPage() {
 
   if (!restaurant) {
     return (
-      <div className="p-4">
-        <h1 className="text-2xl font-bold">주문 관리</h1>
-        <div className="mt-8 rounded-lg border bg-white p-8 text-center">
-          <p className="text-muted-foreground">
-            등록된 음식점이 없습니다. 음식점을 먼저 등록해주세요.
-          </p>
+      <div>
+        <div
+          className="px-4 py-5"
+          style={{ backgroundColor: "#2DB400" }}
+        >
+          <h1 className="text-lg font-bold text-white">주문 관리</h1>
+        </div>
+        <div className="p-4">
+          <div className="rounded-xl border bg-white p-8 text-center">
+            <p className="text-gray-500">
+              등록된 음식점이 없습니다. 음식점을 먼저 등록해주세요.
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -57,16 +64,5 @@ export default async function OwnerOrdersPage() {
     updatedAt: order.updatedAt.toISOString(),
   }));
 
-  return (
-    <div className="p-4 space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold">주문 관리</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {restaurant.name}
-        </p>
-      </div>
-
-      <OrderList initialOrders={initialOrders} />
-    </div>
-  );
+  return <OrderList initialOrders={initialOrders} restaurantName={restaurant.name} />;
 }

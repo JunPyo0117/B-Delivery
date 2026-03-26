@@ -21,9 +21,9 @@ export default async function OwnerLayout({
   }
 
   return (
-    <div className="flex flex-col min-h-dvh">
+    <div className="flex flex-col min-h-dvh bg-gray-50">
       <OwnerNav />
-      <main className="flex-1 bg-gray-50">{children}</main>
+      <main className="flex-1">{children}</main>
     </div>
   );
 }

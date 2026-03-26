@@ -32,6 +32,8 @@ async function syncUserDefaultAddress(
     where: { id: userId },
     data: { defaultAddress: address, latitude, longitude },
   });
+  // 홈 화면 헤더 주소도 갱신
+  revalidatePath("/");
 }
 
 export async function createAddress(
@@ -225,6 +227,7 @@ export async function setDefaultAddress(
 
   revalidatePath("/mypage/addresses");
   revalidatePath("/mypage");
+  revalidatePath("/");
 
   return { success: true };
 }

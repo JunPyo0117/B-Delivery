@@ -58,24 +58,36 @@ export function openPostcodePopup(): Promise<PostcodeResult> {
     return Promise.reject(new Error("브라우저 환경에서만 사용 가능"))
   }
 
-  return new Promise((resolve, reject) => {
+  if (typeof daum === "undefined" || !daum.Postcode) {
+    return Promise.reject(new Error("우편번호 서비스가 로드되지 않았습니다"))
+  }
+
+  return new Promise((resolve) => {
     new daum.Postcode({
       oncomplete: async (data) => {
         const address = data.roadAddress || data.jibunAddress
 
+        // Kakao Map SDK로 좌표 변환 시도 (실패해도 주소만 반환)
+        let lat = 0
+        let lng = 0
         try {
-          const coord = await addressToCoord(address)
-          resolve({
-            roadAddress: data.roadAddress,
-            jibunAddress: data.jibunAddress,
-            zonecode: data.zonecode,
-            buildingName: data.buildingName,
-            lat: coord.lat,
-            lng: coord.lng,
-          })
-        } catch {
-          reject(new Error("주소의 좌표를 변환할 수 없습니다"))
+          if (typeof kakao !== "undefined" && kakao.maps?.services) {
+            const coord = await addressToCoord(address)
+            lat = coord.lat
+            lng = coord.lng
+          }
+        } catch (err) {
+          console.warn("[Kakao] 좌표 변환 실패, 주소만 반환합니다:", err)
         }
+
+        resolve({
+          roadAddress: data.roadAddress,
+          jibunAddress: data.jibunAddress,
+          zonecode: data.zonecode,
+          buildingName: data.buildingName,
+          lat,
+          lng,
+        })
       },
     }).open()
   })

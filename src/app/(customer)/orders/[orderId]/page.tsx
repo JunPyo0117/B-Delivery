@@ -8,6 +8,8 @@ import {
   ChefHat,
   Truck,
   CircleX,
+  MapPin,
+  ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -34,7 +36,7 @@ export default async function OrderDetailPage({
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
-      restaurant: { select: { name: true, deliveryFee: true } },
+      restaurant: { select: { name: true, deliveryFee: true, imageUrl: true } },
       items: {
         include: { menu: { select: { name: true, imageUrl: true } } },
       },
@@ -67,14 +69,14 @@ export default async function OrderDetailPage({
   });
 
   return (
-    <div className="flex flex-col min-h-dvh bg-muted/30">
+    <div className="flex flex-col min-h-dvh bg-gray-50">
       {/* 헤더 */}
-      <header className="sticky top-0 z-40 bg-background border-b">
+      <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
         <div className="flex items-center h-12 px-4">
           <Link href="/orders" className="mr-3 p-1" aria-label="뒤로가기">
-            <ArrowLeft className="size-5" />
+            <ArrowLeft className="size-5 text-gray-900" />
           </Link>
-          <h1 className="text-base font-semibold">주문상세</h1>
+          <h1 className="text-[16px] font-bold text-gray-900">주문상세</h1>
         </div>
       </header>
 
@@ -82,42 +84,47 @@ export default async function OrderDetailPage({
         {/* 주문 상태 프로그레스 - 클릭 시 상태 페이지로 이동 */}
         <Link
           href={`/orders/${orderId}/status`}
-          className="block bg-background px-4 py-6 hover:bg-muted/20 transition-colors"
+          className="block bg-white px-4 py-6 hover:bg-gray-50/50 transition-colors"
         >
           {isCancelled ? (
-            <div className="flex flex-col items-center gap-2 text-muted-foreground">
-              <CircleX className="size-12 text-muted-foreground/60" />
-              <p className="text-lg font-semibold">주문이 취소되었습니다</p>
+            <div className="flex flex-col items-center gap-2 text-gray-400">
+              <CircleX className="size-12 text-gray-300" />
+              <p className="text-[16px] font-bold text-gray-500">주문이 취소되었습니다</p>
             </div>
           ) : (
             <>
-              <p className="text-center text-lg font-semibold mb-6">
+              <p className="text-center text-[17px] font-bold text-gray-900 mb-6">
                 {ORDER_STEPS[currentStepIndex]?.label ?? order.status}
               </p>
-              <div className="flex items-center justify-between px-2">
+
+              {/* 단계 아이콘 */}
+              <div className="flex items-center justify-between px-4">
                 {ORDER_STEPS.map((step, idx) => {
                   const Icon = step.icon;
                   const isCompleted = idx <= currentStepIndex;
+                  const isCurrent = idx === currentStepIndex;
                   return (
                     <div
                       key={step.status}
-                      className="flex flex-col items-center gap-1 flex-1"
+                      className="flex flex-col items-center gap-1.5 flex-1"
                     >
                       <div
-                        className={`size-10 rounded-full flex items-center justify-center ${
+                        className={`size-10 rounded-full flex items-center justify-center transition-all ${
                           isCompleted
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground"
-                        }`}
+                            ? "text-white"
+                            : "bg-gray-100 text-gray-400"
+                        } ${isCurrent ? "ring-2 ring-offset-2 scale-110" : ""}`}
+                        style={isCompleted ? { backgroundColor: "#2DB400", ...(isCurrent ? { ringColor: "#2DB400" } : {}) } : {}}
                       >
                         <Icon className="size-5" />
                       </div>
                       <span
                         className={`text-[10px] ${
                           isCompleted
-                            ? "text-primary font-semibold"
-                            : "text-muted-foreground"
+                            ? "font-semibold"
+                            : "text-gray-400"
                         }`}
+                        style={isCompleted ? { color: "#2DB400" } : {}}
                       >
                         {step.label}
                       </span>
@@ -125,49 +132,53 @@ export default async function OrderDetailPage({
                   );
                 })}
               </div>
+
               {/* 프로그레스 바 */}
-              <div className="mx-8 mt-2 flex gap-1">
+              <div className="mx-10 mt-3 flex gap-1">
                 {ORDER_STEPS.slice(0, -1).map((_, idx) => (
                   <div
                     key={idx}
-                    className={`flex-1 h-1 rounded-full ${
-                      idx < currentStepIndex ? "bg-primary" : "bg-muted"
-                    }`}
+                    className="flex-1 h-1 rounded-full"
+                    style={{ backgroundColor: idx < currentStepIndex ? "#2DB400" : "#e5e7eb" }}
                   />
                 ))}
               </div>
+
               {/* 실시간 상태 보기 안내 */}
               {!isDone && (
-                <p className="text-center text-xs text-primary mt-3">
-                  실시간 주문 상태 보기 &rarr;
-                </p>
+                <div className="flex items-center justify-center gap-1 mt-4">
+                  <span className="text-[12px] font-semibold" style={{ color: "#2DB400" }}>
+                    실시간 주문 상태 보기
+                  </span>
+                  <ChevronRight className="size-3.5" style={{ color: "#2DB400" }} />
+                </div>
               )}
             </>
           )}
         </Link>
 
         {/* 가게 정보 */}
-        <div className="bg-background mt-2 px-4 py-4">
-          <h3 className="font-semibold text-sm">{order.restaurant.name}</h3>
-          <p className="text-xs text-muted-foreground mt-1">{dateStr}</p>
+        <div className="bg-white mt-2 px-4 py-4">
+          <div className="flex items-center gap-2">
+            <h3 className="text-[14px] font-bold text-gray-900">{order.restaurant.name}</h3>
+          </div>
+          <p className="text-[12px] text-gray-400 mt-1">{dateStr}</p>
         </div>
 
         {/* 주문 메뉴 */}
-        <div className="bg-background mt-2 px-4 py-4">
-          <h3 className="font-semibold text-sm mb-3">주문 메뉴</h3>
+        <div className="bg-white mt-2 px-4 py-4">
+          <h3 className="text-[14px] font-bold text-gray-900 mb-3">주문 메뉴</h3>
           <div className="space-y-3">
             {order.items.map((item) => (
               <div
                 key={item.id}
-                className="flex justify-between items-center text-sm"
+                className="flex justify-between items-center"
               >
-                <div>
-                  <span>{item.menu.name}</span>
-                  <span className="text-muted-foreground ml-1">
-                    {item.quantity}개
-                  </span>
+                <div className="flex items-center gap-1">
+                  <span className="text-[13px] text-gray-700">{item.menu.name}</span>
+                  <span className="text-[13px] text-gray-400">{item.quantity}개</span>
                 </div>
-                <span className="font-medium">
+                <span className="text-[13px] font-semibold text-gray-900">
                   {(item.price * item.quantity).toLocaleString()}원
                 </span>
               </div>
@@ -176,24 +187,24 @@ export default async function OrderDetailPage({
         </div>
 
         {/* 결제 정보 */}
-        <div className="bg-background mt-2 px-4 py-4">
-          <h3 className="font-semibold text-sm mb-3">결제정보</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">주문금액</span>
-              <span>{menuTotal.toLocaleString()}원</span>
+        <div className="bg-white mt-2 px-4 py-4">
+          <h3 className="text-[14px] font-bold text-gray-900 mb-3">결제정보</h3>
+          <div className="space-y-2.5">
+            <div className="flex justify-between text-[13px]">
+              <span className="text-gray-500">주문금액</span>
+              <span className="text-gray-700">{menuTotal.toLocaleString()}원</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">배달비</span>
-              <span>
+            <div className="flex justify-between text-[13px]">
+              <span className="text-gray-500">배달비</span>
+              <span className="text-gray-700">
                 {deliveryFee === 0
                   ? "무료"
                   : `${deliveryFee.toLocaleString()}원`}
               </span>
             </div>
-            <div className="border-t pt-2 flex justify-between font-semibold">
-              <span>총 결제금액</span>
-              <span className="text-primary">
+            <div className="border-t border-gray-100 pt-3 flex justify-between">
+              <span className="text-[14px] font-bold text-gray-900">총 결제금액</span>
+              <span className="text-[15px] font-extrabold" style={{ color: "#2DB400" }}>
                 {order.totalPrice.toLocaleString()}원
               </span>
             </div>
@@ -201,9 +212,12 @@ export default async function OrderDetailPage({
         </div>
 
         {/* 배달 주소 */}
-        <div className="bg-background mt-2 px-4 py-4">
-          <h3 className="font-semibold text-sm mb-2">배달 주소</h3>
-          <p className="text-sm text-muted-foreground">
+        <div className="bg-white mt-2 px-4 py-4">
+          <div className="flex items-center gap-2 mb-2">
+            <MapPin className="size-4 text-gray-400" />
+            <h3 className="text-[14px] font-bold text-gray-900">배달 주소</h3>
+          </div>
+          <p className="text-[13px] text-gray-500 pl-6">
             {order.deliveryAddress}
           </p>
         </div>

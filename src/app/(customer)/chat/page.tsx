@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { ChatHeader } from "./_components/ChatHeader";
 import { BusinessHoursBanner } from "./_components/BusinessHoursBanner";
 import { OrderCard } from "./_components/OrderCard";
+import { ChatListBottomBar } from "./_components/ChatListBottomBar";
 import type { ChatOrderItem } from "@/types/chat";
 
 export default async function ChatPage() {
@@ -39,56 +40,55 @@ export default async function ChatPage() {
   });
 
   return (
-    <div className="flex flex-col min-h-dvh bg-background">
+    <div className="flex flex-col min-h-dvh bg-white">
       <ChatHeader title="실시간 채팅 상담" />
 
-      {/* 탭 */}
-      <div className="flex gap-2 px-4 mt-3">
-        <span className="px-3 py-1 text-xs font-bold rounded-full bg-[#2AC1BC] text-white">
+      {/* 카테고리 칩 */}
+      <div className="flex gap-2 px-4 mt-4">
+        <span className="px-4 py-1.5 text-[13px] font-bold rounded-full bg-[#2DB400] text-white">
           배민
         </span>
-        <span className="px-3 py-1 text-xs rounded-full bg-gray-100 text-gray-500">
+        <span className="px-4 py-1.5 text-[13px] font-medium rounded-full border border-gray-300 text-gray-500">
           기타문의
         </span>
       </div>
 
       <BusinessHoursBanner />
 
-      {/* 주문 선택 안내 */}
-      <div className="px-4 mt-4">
-        <p className="text-sm text-gray-600 mb-3">
+      {/* 시스템 안내 메시지 */}
+      <div className="px-4 mt-5">
+        <p className="text-[14px] text-gray-600 mb-3">
           문의하고 싶은 주문을 선택해주세요.
         </p>
 
-        <div className="space-y-2">
+        {/* 주문 카드 목록 */}
+        <div className="space-y-2.5">
           {orderItems.map((order) => (
             <OrderCard key={order.orderId} order={order} />
           ))}
         </div>
 
         {orderItems.length === 0 && (
-          <p className="text-center text-sm text-gray-400 py-8">
-            주문 내역이 없습니다.
-          </p>
+          <div className="flex items-center justify-center py-12">
+            <p className="text-[14px] text-gray-400">
+              주문 내역이 없습니다.
+            </p>
+          </div>
         )}
       </div>
 
       {/* 하단 링크 */}
-      <div className="px-4 mt-4 space-y-2 text-center">
-        <p className="text-sm text-[#2AC1BC] font-medium">
+      <div className="px-4 mt-6 mb-4 space-y-2.5 text-center">
+        <button className="block w-full text-[14px] text-[#2DB400] font-medium hover:underline transition-colors">
           제가 찾는 주문이 없어요
-        </p>
-        <p className="text-sm text-[#2AC1BC] font-medium">
+        </button>
+        <button className="block w-full text-[14px] text-[#2DB400] font-medium hover:underline transition-colors">
           주문 말고 다른 문의가 있어요
-        </p>
+        </button>
       </div>
 
-      {/* 비활성 입력 영역 */}
-      <div className="mt-auto sticky bottom-14 border-t bg-gray-50 px-4 py-3">
-        <p className="text-sm text-gray-400 text-center">
-          현재는 텍스트 입력이 불가합니다.
-        </p>
-      </div>
+      {/* 하단 입력 바 (비활성) */}
+      <ChatListBottomBar />
     </div>
   );
 }

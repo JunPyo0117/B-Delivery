@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Plus, UtensilsCrossed } from "lucide-react";
 import { MenuCard } from "./menu-card";
 import { MenuFormDialog } from "./menu-form-dialog";
@@ -53,56 +52,72 @@ export function MenuList({ initialMenus }: MenuListProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* 헤더 */}
-      <div className="flex items-center justify-between">
+    <div>
+      {/* Green header */}
+      <div
+        className="px-4 py-4 flex items-center justify-between"
+        style={{ backgroundColor: "#2DB400" }}
+      >
         <div>
-          <h1 className="text-2xl font-bold">메뉴 관리</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="text-lg font-bold text-white">메뉴 관리</h1>
+          <p className="text-xs text-white/70 mt-0.5">
             총 {initialMenus.length}개 메뉴
           </p>
         </div>
-        <Button onClick={() => setFormOpen(true)}>
+        <button
+          onClick={() => setFormOpen(true)}
+          className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+          style={{
+            backgroundColor: "rgba(255,255,255,0.2)",
+            color: "white",
+          }}
+        >
           <Plus className="h-4 w-4" />
-          메뉴 등록
-        </Button>
+          메뉴 추가
+        </button>
       </div>
 
       {/* 메뉴 목록 */}
-      {initialMenus.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border bg-white py-16">
-          <UtensilsCrossed className="h-12 w-12 text-muted-foreground/50" />
-          <p className="mt-4 text-lg font-medium text-muted-foreground">
-            등록된 메뉴가 없습니다
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            새 메뉴를 등록해보세요
-          </p>
-          <Button className="mt-4" onClick={() => setFormOpen(true)}>
-            <Plus className="h-4 w-4" />
-            첫 메뉴 등록하기
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {categories.map((category) => (
-            <div key={category}>
-              <h2 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                {category}
-              </h2>
-              <div className="space-y-2">
-                {groupedMenus[category].map((menu) => (
-                  <MenuCard
-                    key={menu.id}
-                    menu={menu}
-                    onEdit={() => handleEdit(menu)}
-                  />
-                ))}
+      <div className="p-4">
+        {initialMenus.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border bg-white py-16">
+            <UtensilsCrossed className="h-12 w-12 text-gray-300" />
+            <p className="mt-4 text-base font-medium text-gray-500">
+              등록된 메뉴가 없습니다
+            </p>
+            <p className="mt-1 text-sm text-gray-400">
+              새 메뉴를 등록해보세요
+            </p>
+            <button
+              className="mt-4 flex items-center gap-1.5 rounded-lg px-5 py-2.5 text-sm font-semibold text-white"
+              style={{ backgroundColor: "#2DB400" }}
+              onClick={() => setFormOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+              첫 메뉴 등록하기
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {categories.map((category) => (
+              <div key={category}>
+                <h2 className="mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  {category}
+                </h2>
+                <div className="rounded-xl border bg-white overflow-hidden divide-y divide-gray-100">
+                  {groupedMenus[category].map((menu) => (
+                    <MenuCard
+                      key={menu.id}
+                      menu={menu}
+                      onEdit={() => handleEdit(menu)}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* 등록/수정 다이얼로그 */}
       <MenuFormDialog

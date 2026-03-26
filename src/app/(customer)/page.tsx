@@ -97,8 +97,22 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const resolvedParams = await searchParams;
   const session = await auth();
 
-  const latitude = session?.user?.latitude;
-  const longitude = session?.user?.longitude;
+  // JWT가 stale할 수 있으므로 DB에서 최신 주소를 직접 조회
+  let address: string | null = null;
+  let latitude: number | null = null;
+  let longitude: number | null = null;
+
+  if (session?.user?.id) {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { defaultAddress: true, latitude: true, longitude: true },
+    });
+    if (dbUser) {
+      address = dbUser.defaultAddress;
+      latitude = dbUser.latitude;
+      longitude = dbUser.longitude;
+    }
+  }
 
   let initialData: {
     restaurants: RestaurantListItem[];
@@ -115,10 +129,19 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   }
 
   return (
-    <div className="flex flex-col">
-      <HomeHeader address={session?.user?.defaultAddress ?? null} />
+    <div className="flex flex-col min-h-dvh bg-[#F8F8F8]">
+      <HomeHeader address={address} />
       <SearchBar />
-      <CategoryGrid />
+
+      {/* 카테고리 + 정렬 영역 */}
+      <div className="bg-white">
+        <CategoryGrid />
+      </div>
+
+      {/* 구분선 */}
+      <div className="h-2 bg-[#F2F2F2]" />
+
+      {/* 정렬 칩 + 음식점 목록 */}
       <SortSelect />
       <RestaurantList
         initialRestaurants={initialData.restaurants}

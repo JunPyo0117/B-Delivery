@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { Separator } from "@/components/ui/separator";
 import { ReviewHeader } from "./_components/review-header";
 import { RatingDistribution } from "./_components/rating-distribution";
 import { ReviewListClient } from "./_components/review-list-client";
@@ -28,7 +27,7 @@ export default async function ReviewListPage({
   ]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-white">
       <ReviewHeader />
 
       {/* 별점 분포 */}
@@ -38,7 +37,7 @@ export default async function ReviewListPage({
         distribution={stats.distribution}
       />
 
-      <Separator className="h-2 bg-muted" />
+      <div className="h-2 bg-gray-100" />
 
       {/* 리뷰 목록 (필터 포함) */}
       <ReviewListClient

@@ -23,17 +23,17 @@ export default async function AddressesPage() {
   });
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col min-h-dvh bg-white">
       {/* 헤더 */}
-      <header className="flex items-center gap-3 px-4 h-12 border-b">
+      <header className="sticky top-0 z-10 bg-white flex items-center gap-3 px-4 h-14 border-b border-gray-100">
         <Link
           href="/mypage"
-          className="text-muted-foreground hover:text-foreground"
+          className="text-gray-900 hover:text-gray-600 transition-colors"
           aria-label="뒤로가기"
         >
           <ArrowLeft className="size-5" />
         </Link>
-        <h1 className="font-bold text-lg">주소 관리</h1>
+        <h1 className="font-bold text-[17px] text-gray-900">주소 관리</h1>
       </header>
 
       <AddressList addresses={addresses} />

@@ -2,10 +2,10 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { MapPin, Pencil, Trash2, Loader2 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { deleteAddress, setDefaultAddress } from "../actions";
 
 interface AddressCardProps {
@@ -19,6 +19,7 @@ interface AddressCardProps {
 }
 
 export function AddressCard({ address }: AddressCardProps) {
+  const router = useRouter();
   const { update: updateSession } = useSession();
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isSetting, startSetTransition] = useTransition();
@@ -27,6 +28,7 @@ export function AddressCard({ address }: AddressCardProps) {
     startSetTransition(async () => {
       await setDefaultAddress(address.id);
       await updateSession();
+      router.refresh();
     });
   }
 
@@ -36,65 +38,82 @@ export function AddressCard({ address }: AddressCardProps) {
     startDeleteTransition(async () => {
       await deleteAddress(address.id);
       await updateSession();
+      router.refresh();
     });
   }
 
   const isPending = isDeleting || isSetting;
 
   return (
-    <div className="flex items-start gap-3 p-4 border rounded-lg">
-      <MapPin className="size-5 text-muted-foreground shrink-0 mt-0.5" />
+    <div className="flex items-start gap-3 px-4 py-4">
+      {/* 아이콘 */}
+      <div className="mt-0.5">
+        <MapPin
+          className={`size-5 ${
+            address.isDefault ? "text-[#2DB400]" : "text-gray-400"
+          }`}
+        />
+      </div>
 
+      {/* 주소 정보 */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-sm">{address.label}</span>
+        <div className="flex items-center gap-2 mb-1">
           {address.isDefault && (
-            <span className="text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
-              기본
+            <span className="text-[11px] font-semibold text-[#2DB400] bg-[#2DB400]/10 px-2 py-0.5 rounded-full">
+              기본 배달 주소
             </span>
           )}
         </div>
-        <p className="text-sm text-muted-foreground truncate mt-0.5">
+        <p className="text-[15px] font-semibold text-gray-900">
+          {address.label}
+        </p>
+        <p className="text-[13px] text-gray-600 mt-0.5 leading-relaxed">
           {address.address}
         </p>
         {address.addressDetail && (
-          <p className="text-sm text-muted-foreground truncate">
+          <p className="text-[13px] text-gray-400 mt-0.5">
             {address.addressDetail}
           </p>
         )}
 
-        <div className="flex items-center gap-2 mt-2">
+        {/* 액션 버튼 */}
+        <div className="flex items-center gap-3 mt-2.5">
           {!address.isDefault && (
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              type="button"
               onClick={handleSetDefault}
               disabled={isPending}
+              className="text-[12px] text-gray-500 hover:text-gray-700 disabled:text-gray-300 transition-colors underline underline-offset-2"
             >
               {isSetting ? (
-                <Loader2 className="size-3 animate-spin" />
+                <Loader2 className="size-3 animate-spin inline" />
               ) : (
                 "기본 주소로 설정"
               )}
-            </Button>
+            </button>
           )}
-          <Link href={`/mypage/addresses/${address.id}/edit`}>
-            <Button variant="ghost" size="icon-sm" disabled={isPending}>
-              <Pencil className="size-3.5" />
-            </Button>
+          <Link
+            href={`/mypage/addresses/${address.id}/edit`}
+            className="text-[12px] text-gray-500 hover:text-gray-700 transition-colors flex items-center gap-0.5"
+          >
+            <Pencil className="size-3" />
+            수정
           </Link>
-          <Button
-            variant="ghost"
-            size="icon-sm"
+          <button
+            type="button"
             onClick={handleDelete}
             disabled={isPending}
+            className="text-[12px] text-gray-400 hover:text-[#FF5252] disabled:text-gray-300 transition-colors flex items-center gap-0.5"
           >
             {isDeleting ? (
-              <Loader2 className="size-3.5 animate-spin" />
+              <Loader2 className="size-3 animate-spin" />
             ) : (
-              <Trash2 className="size-3.5 text-destructive" />
+              <>
+                <Trash2 className="size-3" />
+                삭제
+              </>
             )}
-          </Button>
+          </button>
         </div>
       </div>
     </div>

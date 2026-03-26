@@ -4,9 +4,6 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +23,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  ACTIVE: "활성",
+  ACTIVE: "활동중",
   BANNED: "정지",
   WITHDRAWN: "탈퇴",
 };
@@ -37,12 +34,6 @@ const ORDER_STATUS_LABELS: Record<string, string> = {
   PICKED_UP: "배달 중",
   DONE: "완료",
   CANCELLED: "취소",
-};
-
-const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  ACTIVE: "default",
-  BANNED: "destructive",
-  WITHDRAWN: "secondary",
 };
 
 interface UserDetailData {
@@ -116,210 +107,198 @@ export function UserDetailClient({ user }: Props) {
   }
 
   return (
-    <main className="mx-auto max-w-4xl p-4 md:p-6">
-      {/* 헤더 */}
-      <div className="mb-6">
-        <Link
-          href="/admin/users"
-          className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          유저 목록으로
+    <div className="flex min-h-screen flex-col bg-gray-50">
+      {/* Dark Header */}
+      <header
+        className="flex items-center gap-3 px-4 py-4"
+        style={{ backgroundColor: "#1A1A2E" }}
+      >
+        <Link href="/admin/users" className="text-white/80 hover:text-white">
+          <ArrowLeft className="h-5 w-5" />
         </Link>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{user.nickname}</h1>
-            <p className="text-sm text-muted-foreground">{user.email}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline">{ROLE_LABELS[user.role]}</Badge>
-            <Badge variant={STATUS_VARIANT[user.status]}>
-              {STATUS_LABELS[user.status]}
-            </Badge>
+        <h1 className="text-lg font-bold text-white">사용자 상세</h1>
+      </header>
+
+      <div className="flex-1 px-3 py-3 space-y-3">
+        {/* User Profile Card */}
+        <div className="rounded-xl bg-white p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-gray-200">
+              {user.image ? (
+                <img src={user.image} alt="" className="h-12 w-12 rounded-full object-cover" />
+              ) : (
+                <span className="text-base font-bold text-gray-500">
+                  {user.nickname?.charAt(0)?.toUpperCase() || "?"}
+                </span>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <p className="text-base font-bold text-gray-900">{user.nickname}</p>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                    user.status === "BANNED"
+                      ? "bg-red-100 text-red-600"
+                      : user.status === "WITHDRAWN"
+                        ? "bg-orange-100 text-orange-600"
+                        : "bg-green-100 text-green-600"
+                  }`}
+                >
+                  {STATUS_LABELS[user.status]}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500">{user.email}</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* 유저 정보 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">기본 정보</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">가입일</span>
-              <span>
+        {/* Basic Info */}
+        <div className="rounded-xl bg-white">
+          <h3 className="px-4 pt-4 pb-2 text-sm font-semibold text-gray-900">기본 정보</h3>
+          <div className="divide-y divide-gray-100">
+            <div className="flex justify-between px-4 py-2.5">
+              <span className="text-sm text-gray-500">역할</span>
+              <span className="text-sm font-medium text-gray-900">{ROLE_LABELS[user.role]}</span>
+            </div>
+            <div className="flex justify-between px-4 py-2.5">
+              <span className="text-sm text-gray-500">가입일</span>
+              <span className="text-sm text-gray-900">
                 {new Date(user.createdAt).toLocaleDateString("ko-KR")}
               </span>
             </div>
-            <Separator />
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">기본 주소</span>
-              <span className="max-w-[200px] truncate text-right">
+            <div className="flex justify-between px-4 py-2.5">
+              <span className="text-sm text-gray-500">기본 주소</span>
+              <span className="max-w-[180px] truncate text-right text-sm text-gray-900">
                 {user.defaultAddress || "-"}
               </span>
             </div>
-            <Separator />
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">주문 수</span>
-              <span>{user._count.orders}건</span>
+            <div className="flex justify-between px-4 py-2.5">
+              <span className="text-sm text-gray-500">주문 수</span>
+              <span className="text-sm text-gray-900">{user._count.orders}건</span>
             </div>
-            <Separator />
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">리뷰 수</span>
-              <span>{user._count.reviews}건</span>
+            <div className="flex justify-between px-4 py-2.5">
+              <span className="text-sm text-gray-500">리뷰 수</span>
+              <span className="text-sm text-gray-900">{user._count.reviews}건</span>
             </div>
-            <Separator />
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">피신고 수</span>
-              <span>{user._count.receivedReports}건</span>
+            <div className="flex justify-between px-4 py-2.5">
+              <span className="text-sm text-gray-500">피신고 수</span>
+              <span className="text-sm text-gray-900">{user._count.receivedReports}건</span>
             </div>
             {user.restaurant && (
-              <>
-                <Separator />
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">운영 음식점</span>
-                  <span>{user.restaurant.name}</span>
-                </div>
-              </>
+              <div className="flex justify-between px-4 py-2.5">
+                <span className="text-sm text-gray-500">운영 음식점</span>
+                <span className="text-sm text-gray-900">{user.restaurant.name}</span>
+              </div>
             )}
             {user.bannedAt && (
-              <>
-                <Separator />
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">정지일</span>
-                  <span className="text-destructive">
-                    {new Date(user.bannedAt).toLocaleDateString("ko-KR")}
-                  </span>
-                </div>
-              </>
+              <div className="flex justify-between px-4 py-2.5">
+                <span className="text-sm text-gray-500">정지일</span>
+                <span className="text-sm text-red-500">
+                  {new Date(user.bannedAt).toLocaleDateString("ko-KR")}
+                </span>
+              </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        {/* 관리 액션 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">관리</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {user.status === "ACTIVE" ? (
-              <Button
-                variant="destructive"
-                className="w-full"
-                onClick={() => setDialogType("ban")}
-              >
-                <ShieldAlert className="mr-2 h-4 w-4" />
-                회원 정지
-              </Button>
-            ) : user.status === "BANNED" ? (
-              <Button
-                variant="default"
-                className="w-full"
-                onClick={() => setDialogType("unban")}
-              >
-                <ShieldCheck className="mr-2 h-4 w-4" />
-                정지 해제
-              </Button>
-            ) : null}
-
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          {user.status === "ACTIVE" ? (
             <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                setSelectedRole(user.role);
-                setDialogType("role");
-              }}
+              variant="destructive"
+              className="flex-1"
+              onClick={() => setDialogType("ban")}
             >
-              <UserX className="mr-2 h-4 w-4" />
-              역할 변경
+              <ShieldAlert className="mr-2 h-4 w-4" />
+              회원 정지
             </Button>
-          </CardContent>
-        </Card>
-      </div>
+          ) : user.status === "BANNED" ? (
+            <Button
+              className="flex-1"
+              onClick={() => setDialogType("unban")}
+            >
+              <ShieldCheck className="mr-2 h-4 w-4" />
+              정지 해제
+            </Button>
+          ) : null}
 
-      {/* 주문 이력 */}
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle className="text-base">
-            최근 주문 ({user._count.orders}건)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {user.orders.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">
-              주문 내역이 없습니다.
-            </p>
-          ) : (
-            <div className="space-y-3">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => {
+              setSelectedRole(user.role);
+              setDialogType("role");
+            }}
+          >
+            <UserX className="mr-2 h-4 w-4" />
+            역할 변경
+          </Button>
+        </div>
+
+        {/* Recent Orders */}
+        {user.orders.length > 0 && (
+          <div className="rounded-xl bg-white">
+            <h3 className="px-4 pt-4 pb-2 text-sm font-semibold text-gray-900">
+              최근 주문 ({user._count.orders}건)
+            </h3>
+            <div className="divide-y divide-gray-100 px-4 pb-4">
               {user.orders.map((order) => (
-                <div
-                  key={order.id}
-                  className="rounded-lg border p-3 text-sm"
-                >
+                <div key={order.id} className="py-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium">
+                    <span className="text-sm font-medium text-gray-900">
                       {order.restaurant.name}
                     </span>
-                    <Badge variant="outline">
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
                       {ORDER_STATUS_LABELS[order.status]}
-                    </Badge>
+                    </span>
                   </div>
-                  <div className="mt-1 text-muted-foreground">
+                  <p className="mt-0.5 text-xs text-gray-500 truncate">
                     {order.items
                       .map((item) => `${item.menu.name} x${item.quantity}`)
                       .join(", ")}
-                  </div>
-                  <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+                  </p>
+                  <div className="mt-0.5 flex justify-between text-xs text-gray-400">
                     <span>
                       {new Date(order.createdAt).toLocaleDateString("ko-KR")}
                     </span>
-                    <span className="font-medium text-foreground">
+                    <span className="font-medium text-gray-700">
                       {order.totalPrice.toLocaleString()}원
                     </span>
                   </div>
                 </div>
               ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        )}
 
-      {/* 피신고 이력 */}
-      {user.receivedReports.length > 0 && (
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle className="text-base">
+        {/* Received Reports */}
+        {user.receivedReports.length > 0 && (
+          <div className="rounded-xl bg-white">
+            <h3 className="px-4 pt-4 pb-2 text-sm font-semibold text-gray-900">
               피신고 이력 ({user._count.receivedReports}건)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
+            </h3>
+            <div className="divide-y divide-gray-100 px-4 pb-4">
               {user.receivedReports.map((report) => (
-                <div
-                  key={report.id}
-                  className="rounded-lg border p-3 text-sm"
-                >
+                <div key={report.id} className="py-2.5">
                   <div className="flex items-center justify-between">
-                    <span>{report.reason}</span>
-                    <Badge
-                      variant={
+                    <span className="text-sm text-gray-900">{report.reason}</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
                         report.status === "PENDING"
-                          ? "outline"
+                          ? "bg-orange-100 text-orange-600"
                           : report.status === "REJECTED"
-                            ? "secondary"
-                            : "default"
-                      }
+                            ? "bg-gray-100 text-gray-600"
+                            : "bg-green-100 text-green-600"
+                      }`}
                     >
                       {report.status === "PENDING"
                         ? "대기"
                         : report.status === "REJECTED"
                           ? "기각"
                           : "처리됨"}
-                    </Badge>
+                    </span>
                   </div>
-                  <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+                  <div className="mt-0.5 flex justify-between text-xs text-gray-400">
                     <span>신고자: {report.reporter.nickname}</span>
                     <span>
                       {new Date(report.createdAt).toLocaleDateString("ko-KR")}
@@ -328,11 +307,11 @@ export function UserDetailClient({ user }: Props) {
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
+      </div>
 
-      {/* 정지/해제 다이얼로그 */}
+      {/* Dialogs */}
       <Dialog
         open={dialogType === "ban"}
         onOpenChange={(open) => !open && setDialogType(null)}
@@ -393,7 +372,6 @@ export function UserDetailClient({ user }: Props) {
         </DialogContent>
       </Dialog>
 
-      {/* 역할 변경 다이얼로그 */}
       <Dialog
         open={dialogType === "role"}
         onOpenChange={(open) => !open && setDialogType(null)}
@@ -407,7 +385,7 @@ export function UserDetailClient({ user }: Props) {
           </DialogHeader>
           <div className="py-4">
             <select
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value as Role)}
             >
@@ -430,6 +408,6 @@ export function UserDetailClient({ user }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </main>
+    </div>
   );
 }

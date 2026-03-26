@@ -17,7 +17,7 @@ export default async function OrdersPage() {
     include: {
       restaurant: { select: { name: true, imageUrl: true } },
       items: {
-        include: { menu: { select: { name: true } } },
+        include: { menu: { select: { name: true, imageUrl: true } } },
       },
       review: { select: { id: true } },
     },
@@ -37,21 +37,10 @@ export default async function OrdersPage() {
       id: item.id,
       quantity: item.quantity,
       price: item.price,
-      menu: { name: item.menu.name },
+      menu: { name: item.menu.name, imageUrl: item.menu.imageUrl },
     })),
     hasReview: !!order.review,
   }));
 
-  return (
-    <div className="flex flex-col min-h-dvh">
-      {/* 헤더 */}
-      <header className="sticky top-0 z-40 bg-background border-b">
-        <div className="flex items-center h-12 px-4">
-          <h1 className="text-base font-semibold">주문내역</h1>
-        </div>
-      </header>
-
-      <OrderTabs orders={orderData} />
-    </div>
-  );
+  return <OrderTabs orders={orderData} />;
 }

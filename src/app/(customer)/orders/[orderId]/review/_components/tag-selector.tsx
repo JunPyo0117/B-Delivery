@@ -1,6 +1,5 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import { REVIEW_TAGS } from "../actions";
 
 interface TagSelectorProps {
@@ -18,12 +17,12 @@ export function TagSelector({ selectedTags, onToggle }: TagSelectorProps) {
             key={tag}
             type="button"
             onClick={() => onToggle(tag)}
-            className={cn(
-              "rounded-full border px-3 py-1.5 text-sm transition-colors",
+            className={`rounded-full px-3.5 py-2 text-[13px] font-medium transition-all ${
               isSelected
-                ? "border-primary bg-primary/10 text-primary font-medium"
-                : "border-muted-foreground/30 text-muted-foreground hover:border-muted-foreground/50"
-            )}
+                ? "text-white shadow-sm"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+            style={isSelected ? { backgroundColor: "#2DB400" } : {}}
           >
             {isSelected && "✓ "}
             {tag}

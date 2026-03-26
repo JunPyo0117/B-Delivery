@@ -4,11 +4,12 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { ShoppingCart, Search, Heart, ChevronDown } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
 import { getReorderItems } from "../actions";
 
 /** 주문 내역 탭 타입 */
-type TabType = "active" | "done";
+type TabType = "delivery" | "grocery";
 
 /** 서버에서 넘겨받는 주문 데이터 타입 */
 export interface OrderData {
@@ -24,7 +25,7 @@ export interface OrderData {
     id: string;
     quantity: number;
     price: number;
-    menu: { name: string };
+    menu: { name: string; imageUrl?: string | null };
   }[];
   hasReview: boolean;
 }
@@ -36,16 +37,6 @@ const STATUS_LABEL: Record<string, string> = {
   DONE: "배달 완료",
   CANCELLED: "취소됨",
 };
-
-const STATUS_STYLE: Record<string, string> = {
-  PENDING: "bg-yellow-100 text-yellow-800",
-  COOKING: "bg-orange-100 text-orange-800",
-  PICKED_UP: "bg-blue-100 text-blue-800",
-  DONE: "bg-green-100 text-green-800",
-  CANCELLED: "bg-gray-100 text-gray-500",
-};
-
-const ACTIVE_STATUSES = new Set(["PENDING", "COOKING", "PICKED_UP"]);
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("ko-KR", {
@@ -60,15 +51,10 @@ function formatPrice(price: number) {
 }
 
 export default function OrderTabs({ orders }: { orders: OrderData[] }) {
-  const [tab, setTab] = useState<TabType>("active");
+  const [tab, setTab] = useState<TabType>("delivery");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { clearCart, addItem } = useCartStore();
-
-  const activeOrders = orders.filter((o) => ACTIVE_STATUSES.has(o.status));
-  const doneOrders = orders.filter((o) => !ACTIVE_STATUSES.has(o.status));
-
-  const currentOrders = tab === "active" ? activeOrders : doneOrders;
 
   const handleReorder = async (orderId: string) => {
     startTransition(async () => {
@@ -108,158 +94,234 @@ export default function OrderTabs({ orders }: { orders: OrderData[] }) {
     });
   };
 
+  // 날짜별로 그룹핑
+  const groupedOrders = orders.reduce<Record<string, OrderData[]>>((acc, order) => {
+    const dateKey = formatDate(order.createdAt);
+    if (!acc[dateKey]) acc[dateKey] = [];
+    acc[dateKey].push(order);
+    return acc;
+  }, {});
+
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col min-h-dvh bg-gray-50">
+      {/* 헤더 */}
+      <header className="sticky top-0 z-40 bg-white">
+        <div className="flex items-center justify-between h-12 px-4">
+          <h1 className="text-[17px] font-bold text-gray-900">주문내역</h1>
+          <Link href="/cart" className="p-1" aria-label="장바구니">
+            <ShoppingCart className="size-5 text-gray-900" />
+          </Link>
+        </div>
+      </header>
+
       {/* 탭 바 */}
-      <div className="sticky top-12 z-30 bg-background border-b">
+      <div className="sticky top-12 z-30 bg-white border-b border-gray-200">
         <div className="flex">
           <button
-            onClick={() => setTab("active")}
-            className={`flex-1 py-3 text-sm font-semibold text-center transition-colors relative ${
-              tab === "active"
-                ? "text-foreground"
-                : "text-muted-foreground"
+            onClick={() => setTab("delivery")}
+            className={`flex-1 py-3 text-[13px] font-semibold text-center relative transition-colors ${
+              tab === "delivery" ? "text-gray-900" : "text-gray-400"
             }`}
           >
-            배달 중
-            {activeOrders.length > 0 && (
-              <span className="ml-1 text-xs text-primary">
-                {activeOrders.length}
-              </span>
-            )}
-            {tab === "active" && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground" />
+            배달·픽업
+            {tab === "delivery" && (
+              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900" />
             )}
           </button>
           <button
-            onClick={() => setTab("done")}
-            className={`flex-1 py-3 text-sm font-semibold text-center transition-colors relative ${
-              tab === "done"
-                ? "text-foreground"
-                : "text-muted-foreground"
+            onClick={() => setTab("grocery")}
+            className={`flex-1 py-3 text-[13px] font-semibold text-center relative transition-colors ${
+              tab === "grocery" ? "text-gray-900" : "text-gray-400"
             }`}
           >
-            완료
-            {tab === "done" && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground" />
+            장보기·쇼핑
+            {tab === "grocery" && (
+              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900" />
             )}
           </button>
         </div>
       </div>
 
+      {/* 검색바 */}
+      <div className="bg-white px-4 py-3">
+        <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2.5">
+          <Search className="size-4 text-gray-400 shrink-0" />
+          <span className="text-[13px] text-gray-400">
+            주문한 메뉴나 가게를 찾아볼 수 있어요
+          </span>
+        </div>
+      </div>
+
+      {/* 필터 칩 */}
+      <div className="bg-white px-4 pb-3 flex gap-2">
+        {["주소", "조회기간", "주문 상태·정보"].map((label) => (
+          <button
+            key={label}
+            className="flex items-center gap-0.5 rounded-full border border-gray-300 px-3 py-1.5 text-[12px] text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            {label}
+            <ChevronDown className="size-3 text-gray-400" />
+          </button>
+        ))}
+      </div>
+
       {/* 주문 목록 */}
-      {currentOrders.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-          <p className="text-base font-medium">
-            {tab === "active"
-              ? "진행 중인 주문이 없어요"
-              : "완료된 주문이 없어요"}
-          </p>
+      {orders.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+          <ShoppingCart className="size-12 text-gray-200 mb-3" />
+          <p className="text-[14px] font-medium text-gray-500">주문 내역이 없어요</p>
           <Link
             href="/"
-            className="mt-3 text-sm text-primary font-semibold hover:underline"
+            className="mt-3 text-[13px] text-[#2DB400] font-semibold hover:underline"
           >
             맛있는 음식 주문하러 가기
           </Link>
         </div>
       ) : (
-        <div className="divide-y">
-          {/* 날짜 그룹별로 렌더링 */}
-          {currentOrders.map((order) => {
-            const dateStr = formatDate(order.createdAt);
-            const itemSummary =
-              order.items.length === 1
-                ? `${order.items[0].menu.name} ${order.items[0].quantity}개`
-                : `${order.items[0].menu.name} 외 ${order.items.length - 1}개`;
+        <div className="flex-1">
+          {Object.entries(groupedOrders).map(([date, dateOrders]) => (
+            <div key={date}>
+              {/* 날짜 헤더 */}
+              <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                <p className="text-[12px] font-semibold text-gray-500">{date}</p>
+              </div>
 
-            const isDone = order.status === "DONE";
-            const isCancelled = order.status === "CANCELLED";
+              {dateOrders.map((order) => {
+                const isDone = order.status === "DONE";
+                const isCancelled = order.status === "CANCELLED";
+                const isActive = !isDone && !isCancelled;
+                const itemSummary = order.items
+                  .map((item) => `${item.menu.name} ${item.quantity}개`)
+                  .join(", ");
+                const firstItemImage = order.items[0]?.menu?.imageUrl;
 
-            return (
-              <div key={order.id} className="bg-background">
-                {/* 날짜 헤더 */}
-                <div className="flex items-center justify-between px-4 pt-4 pb-2">
-                  <p className="text-xs text-muted-foreground">{dateStr}</p>
-                  <Link
-                    href={`/orders/${order.id}`}
-                    className="text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    주문상세 &gt;
-                  </Link>
-                </div>
-
-                {/* 주문 카드 */}
-                <div className="px-4 pb-4">
-                  <div className="flex items-start gap-3">
-                    {/* 음식점 이미지 */}
-                    <div className="relative size-14 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                      {order.restaurant.imageUrl ? (
-                        <Image
-                          src={order.restaurant.imageUrl}
-                          alt={order.restaurant.name}
-                          fill
-                          className="object-cover"
-                          sizes="56px"
-                        />
-                      ) : (
-                        <div className="size-full flex items-center justify-center text-muted-foreground text-xs">
-                          No img
+                return (
+                  <div key={order.id} className="bg-white mx-0 mb-2">
+                    {/* 가게 정보 + 주문상세 링크 */}
+                    <div className="flex items-center justify-between px-4 pt-3 pb-1">
+                      <div className="flex items-center gap-2">
+                        {/* 가게 이미지 */}
+                        <div className="relative size-7 rounded-full overflow-hidden bg-gray-100 shrink-0">
+                          {order.restaurant.imageUrl ? (
+                            <Image
+                              src={order.restaurant.imageUrl}
+                              alt={order.restaurant.name}
+                              fill
+                              className="object-cover"
+                              sizes="28px"
+                            />
+                          ) : (
+                            <div className="size-full flex items-center justify-center text-gray-300 text-[8px]">
+                              🏪
+                            </div>
+                          )}
                         </div>
-                      )}
+                        <span className="text-[14px] font-bold text-gray-900">
+                          {order.restaurant.name}
+                        </span>
+                        {/* 상태 뱃지 (진행중일 때만) */}
+                        {isActive && (
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-[#2DB400]/10 text-[#2DB400]">
+                            {STATUS_LABEL[order.status] ?? order.status}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button className="p-1" aria-label="찜하기">
+                          <Heart className="size-4 text-gray-300" />
+                        </button>
+                      </div>
                     </div>
 
-                    {/* 주문 정보 */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-sm truncate">
-                          {order.restaurant.name}
-                        </p>
-                        <span
-                          className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0 ${
-                            STATUS_STYLE[order.status] ?? ""
-                          }`}
-                        >
-                          {STATUS_LABEL[order.status] ?? order.status}
+                    {/* 주문 상세 링크 */}
+                    <Link
+                      href={`/orders/${order.id}`}
+                      className="block px-4 pb-3"
+                    >
+                      <div className="flex items-center justify-between text-[11px] text-gray-400 mb-2">
+                        <span>주문상세</span>
+                      </div>
+
+                      {/* 메뉴 썸네일 + 아이템 목록 */}
+                      <div className="flex gap-3">
+                        {/* 아이템 썸네일 */}
+                        <div className="relative size-[60px] shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                          {firstItemImage ? (
+                            <Image
+                              src={firstItemImage}
+                              alt="메뉴"
+                              fill
+                              className="object-cover"
+                              sizes="60px"
+                            />
+                          ) : order.restaurant.imageUrl ? (
+                            <Image
+                              src={order.restaurant.imageUrl}
+                              alt="메뉴"
+                              fill
+                              className="object-cover"
+                              sizes="60px"
+                            />
+                          ) : (
+                            <div className="size-full flex items-center justify-center text-gray-300 text-[10px]">
+                              🍽️
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          {order.items.map((item) => (
+                            <p
+                              key={item.id}
+                              className="text-[12px] text-gray-500 leading-relaxed truncate"
+                            >
+                              · {item.menu.name} {item.quantity}개
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* 가격 */}
+                      <div className="flex items-center gap-2 mt-2.5">
+                        <span className="text-[11px] text-gray-900 font-medium">결제금액</span>
+                        <span className="text-[14px] font-bold text-gray-900">
+                          {formatPrice(order.totalPrice)}원
                         </span>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-0.5 truncate">
-                        {itemSummary}
-                      </p>
-                      <p className="text-sm font-semibold mt-1">
-                        {formatPrice(order.totalPrice)}원
-                      </p>
-                    </div>
-                  </div>
+                    </Link>
 
-                  {/* 완료 주문 액션 버튼 */}
-                  {(isDone || isCancelled) && (
-                    <div className="flex gap-2 mt-3">
+                    {/* 액션 버튼 */}
+                    <div className="flex gap-2 px-4 pb-4">
                       <button
                         onClick={() => handleReorder(order.id)}
                         disabled={isPending}
-                        className="flex-1 h-9 rounded-lg border border-input bg-background text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
+                        className="flex-1 h-10 rounded-lg border border-gray-300 bg-white text-[13px] font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
                       >
                         같은 메뉴 담기
                       </button>
-                      {isDone && !order.hasReview && (
+                      {isDone && !order.hasReview ? (
                         <Link
                           href={`/orders/${order.id}/review`}
-                          className="flex-1 h-9 rounded-lg bg-primary text-primary-foreground text-sm font-medium flex items-center justify-center hover:bg-primary/90 transition-colors"
+                          className="flex-1 h-10 rounded-lg text-[13px] font-bold flex items-center justify-center text-white transition-colors"
+                          style={{ backgroundColor: "#2DB400" }}
                         >
                           리뷰 작성
                         </Link>
-                      )}
-                      {isDone && order.hasReview && (
-                        <span className="flex-1 h-9 rounded-lg bg-muted text-muted-foreground text-sm font-medium flex items-center justify-center">
-                          리뷰 작성 완료
-                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleReorder(order.id)}
+                          disabled={isPending}
+                          className="flex-1 h-10 rounded-lg text-[13px] font-bold flex items-center justify-center text-white transition-colors disabled:opacity-50"
+                          style={{ backgroundColor: "#2DB400" }}
+                        >
+                          바로 주문
+                        </button>
                       )}
                     </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </div>
       )}
     </div>

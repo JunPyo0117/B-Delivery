@@ -33,6 +33,18 @@ function shouldShowTime(msgs: PendingMessage[], idx: number) {
   return diff > 60_000;
 }
 
+/** 발신자가 바뀌었거나 첫 메시지일 때 sender 표시 */
+function shouldShowSender(msgs: PendingMessage[], idx: number) {
+  const current = msgs[idx];
+  if (idx === 0) return true;
+  const prev = msgs[idx - 1];
+  if (!prev) return true;
+  if (prev.senderId !== current.senderId) return true;
+  // 날짜가 바뀌면 다시 표시
+  if (!isSameDay(prev.createdAt, current.createdAt)) return true;
+  return false;
+}
+
 export function MessageList({ chatId, currentUserId }: MessageListProps) {
   const messages = useChatStore((s) => s.messages[chatId] ?? []);
   const typingUsers = useChatStore((s) => s.typingUsers[chatId] ?? []);
@@ -125,24 +137,26 @@ export function MessageList({ chatId, currentUserId }: MessageListProps) {
       <div ref={topSentinel} className="h-1" />
 
       {loadingMore && (
-        <div className="flex justify-center py-2">
+        <div className="flex justify-center py-3">
           <Loader2 className="size-5 animate-spin text-gray-400" />
         </div>
       )}
 
-      <div className="py-2">
+      <div className="py-3">
         {messages.map((msg, idx) => {
           const prev = messages[idx - 1];
           const showDate =
             idx === 0 || (prev && !isSameDay(prev.createdAt, msg.createdAt));
+          const isOwn = msg.senderId === currentUserId || msg.senderId === "__self__";
 
           return (
             <div key={msg._tempId ?? msg.id}>
               {showDate && <DateSeparator date={msg.createdAt} />}
               <MessageBubble
                 message={msg}
-                isOwn={msg.senderId === currentUserId || msg.senderId === "__self__"}
+                isOwn={isOwn}
                 showTime={shouldShowTime(messages, idx)}
+                showSender={!isOwn && shouldShowSender(messages, idx)}
               />
             </div>
           );

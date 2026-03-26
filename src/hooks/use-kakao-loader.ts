@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 
 interface KakaoLoaderState {
   isLoaded: boolean
+  isPostcodeReady: boolean
   error: Error | null
 }
 
@@ -12,16 +13,31 @@ const POSTCODE_URL = "//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2
 
 function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const existing = document.querySelector(`script[src="${src}"]`)
+    // 프로토콜 상대 URL을 브라우저가 절대 URL로 변환할 수 있으므로 유연하게 검색
+    const normalizedSrc = src.replace(/^\/\//, "")
+    const existing = document.querySelector(
+      `script[src*="${normalizedSrc}"]`
+    ) as HTMLScriptElement | null
+
     if (existing) {
-      resolve()
+      // 이미 로드 완료된 경우
+      if (existing.dataset.loaded === "true") {
+        resolve()
+        return
+      }
+      // 아직 로딩 중인 경우 이벤트 대기
+      existing.addEventListener("load", () => resolve(), { once: true })
+      existing.addEventListener("error", () => reject(new Error(`스크립트 로딩 실패: ${src}`)), { once: true })
       return
     }
 
     const script = document.createElement("script")
     script.src = src
     script.async = true
-    script.onload = () => resolve()
+    script.onload = () => {
+      script.dataset.loaded = "true"
+      resolve()
+    }
     script.onerror = () => reject(new Error(`스크립트 로딩 실패: ${src}`))
     document.head.appendChild(script)
   })
@@ -31,37 +47,61 @@ function loadScript(src: string): Promise<void> {
 export function useKakaoLoader(): KakaoLoaderState {
   const [state, setState] = useState<KakaoLoaderState>({
     isLoaded: false,
+    isPostcodeReady: false,
     error: null,
   })
 
   useEffect(() => {
-    // 이미 로드 완료된 경우
-    if (typeof kakao !== "undefined" && kakao.maps?.services) {
-      setState({ isLoaded: true, error: null })
+    // 이미 모두 로드 완료된 경우
+    if (
+      typeof kakao !== "undefined" &&
+      kakao.maps?.services &&
+      typeof daum !== "undefined" &&
+      daum.Postcode
+    ) {
+      setState({ isLoaded: true, isPostcodeReady: true, error: null })
       return
     }
 
     let cancelled = false
 
     async function init() {
+      // 1) Postcode 스크립트 먼저 독립 로드 (API 키 불필요)
       try {
-        // Kakao SDK 로드 + Postcode 병렬 로드
-        await Promise.all([loadScript(KAKAO_SDK_URL), loadScript(POSTCODE_URL)])
+        await loadScript(POSTCODE_URL)
+        if (!cancelled) {
+          setState((prev) => ({ ...prev, isPostcodeReady: true }))
+        }
+      } catch (err) {
+        console.error("[KakaoLoader] Postcode 스크립트 로딩 실패:", err)
+      }
+
+      // 2) Kakao Map SDK 로드 (API 키 필요, 실패해도 Postcode는 동작)
+      try {
+        await loadScript(KAKAO_SDK_URL)
 
         // Kakao SDK 초기화 (autoload=false이므로 수동 호출)
-        await new Promise<void>((resolve) => {
+        await new Promise<void>((resolve, reject) => {
+          if (typeof kakao === "undefined" || !kakao.maps) {
+            reject(new Error("Kakao SDK가 정의되지 않음"))
+            return
+          }
           kakao.maps.load(resolve)
         })
 
         if (!cancelled) {
-          setState({ isLoaded: true, error: null })
+          setState((prev) => ({ ...prev, isLoaded: true, error: null }))
         }
       } catch (err) {
+        console.error("[KakaoLoader] Kakao Map SDK 로딩 실패:", err)
         if (!cancelled) {
-          setState({
-            isLoaded: false,
-            error: err instanceof Error ? err : new Error("Kakao SDK 초기화 실패"),
-          })
+          setState((prev) => ({
+            ...prev,
+            error:
+              err instanceof Error
+                ? err
+                : new Error("Kakao SDK 초기화 실패"),
+          }))
         }
       }
     }

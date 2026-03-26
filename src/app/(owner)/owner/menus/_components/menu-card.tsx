@@ -4,8 +4,7 @@ import { useState, useTransition } from "react";
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toggleSoldOut, deleteMenu } from "../actions";
 import {
   Dialog,
@@ -64,12 +63,12 @@ export function MenuCard({ menu, onEdit }: MenuCardProps) {
   return (
     <>
       <div
-        className={`flex gap-3 rounded-lg border bg-white p-3 transition-opacity ${
-          isSoldOut ? "opacity-60" : ""
+        className={`flex items-center gap-3 px-4 py-3 transition-opacity ${
+          isSoldOut ? "opacity-50" : ""
         }`}
       >
-        {/* 이미지 */}
-        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
+        {/* 썸네일 64x64 */}
+        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-100">
           {menu.imageUrl ? (
             <Image
               src={menu.imageUrl}
@@ -79,72 +78,73 @@ export function MenuCard({ menu, onEdit }: MenuCardProps) {
               unoptimized
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-2xl text-muted-foreground">
-              🍽
-            </div>
-          )}
-          {isSoldOut && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-              <span className="text-xs font-bold text-white">품절</span>
+            <div className="flex h-full w-full items-center justify-center text-xl text-gray-300">
+              <svg
+                className="h-7 w-7"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"
+                />
+              </svg>
             </div>
           )}
         </div>
 
-        {/* 정보 */}
-        <div className="flex flex-1 flex-col justify-between min-w-0">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="font-medium truncate">{menu.name}</h3>
-              <Badge variant="secondary" className="shrink-0 text-xs">
-                {menu.category}
-              </Badge>
-            </div>
-            {menu.description && (
-              <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
-                {menu.description}
-              </p>
+        {/* 메뉴 정보 */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-[15px] text-gray-900 truncate">
+              {menu.name}
+            </h3>
+            {isSoldOut && (
+              <span
+                className="shrink-0 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold text-white"
+                style={{ backgroundColor: "#FF5252" }}
+              >
+                품절
+              </span>
             )}
-            <p className="mt-1 font-semibold text-sm">{formattedPrice}원</p>
           </div>
-
+          <p className="text-sm font-semibold text-gray-900 mt-0.5">
+            {formattedPrice}원
+          </p>
+          <p className="text-xs text-gray-400 mt-0.5">{menu.category}</p>
           {error && (
-            <p className="text-xs text-destructive mt-1">{error}</p>
+            <p className="text-xs mt-1" style={{ color: "#FF5252" }}>
+              {error}
+            </p>
           )}
         </div>
 
-        {/* 액션 */}
-        <div className="flex flex-col items-end justify-between shrink-0">
-          {/* 품절 토글 */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-muted-foreground">
-              {isSoldOut ? "품절" : "판매중"}
-            </span>
-            <Switch
-              checked={!isSoldOut}
-              onCheckedChange={handleToggleSoldOut}
-              disabled={isPending}
-            />
-          </div>
-
-          {/* 수정/삭제 */}
-          <div className="flex gap-1">
-            <Button
-              variant="ghost"
-              size="icon-xs"
+        {/* 오른쪽: 토글 + 수정 */}
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <Switch
+            checked={!isSoldOut}
+            onCheckedChange={handleToggleSoldOut}
+            disabled={isPending}
+            className="data-[state=checked]:bg-[#2DB400]"
+          />
+          <div className="flex items-center gap-2">
+            <button
               onClick={onEdit}
-              title="수정"
+              className="text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-xs"
+              수정
+            </button>
+            <span className="text-gray-200">|</span>
+            <button
               onClick={() => setDeleteDialogOpen(true)}
-              title="삭제"
-              className="text-destructive hover:text-destructive"
+              className="text-xs font-medium transition-colors"
+              style={{ color: "#FF5252" }}
             >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+              삭제
+            </button>
           </div>
         </div>
       </div>

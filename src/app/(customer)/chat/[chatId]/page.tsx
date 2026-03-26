@@ -55,6 +55,7 @@ export default async function ChatRoomPage({
       chatId={chatId}
       currentUserId={session.user.id}
       restaurantName={chat.order.restaurant.name}
+      orderId={chat.order.id}
       initialMessages={messages}
       hasMore={hasMore}
     />
