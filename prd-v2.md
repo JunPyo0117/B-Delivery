@@ -173,6 +173,48 @@ stateDiagram-v2
 - **Object Storage:** MinIO + **CDN (이미지 최적화)**
 - **Connection Pool:** PgBouncer (커넥션 풀 관리)
 
+### 4.5 프로젝트 구조 (FSD — Feature-Sliced Design)
+
+프론트엔드는 FSD 아키텍처를 따른다. 기능 단위로 코드를 응집시키고, 레이어 간 의존성 방향을 단방향으로 강제한다.
+
+```
+app → pages → widgets → features → entities → shared
+         상위 레이어는 하위만 import 가능 (역방향 금지)
+```
+
+```
+src/
+├── app/                      # 라우팅만 (page.tsx → pages/ import)
+│   ├── (customer)/           # 고객 라우트
+│   ├── (owner)/              # 사장 라우트
+│   ├── (rider)/              # 배달기사 라우트
+│   ├── (admin)/              # 관리자 라우트
+│   └── api/                  # API Routes
+├── pages/                    # 페이지 조합 (위젯 조합)
+├── widgets/                  # 독립 UI 블록 (자체 데이터 페칭)
+├── features/                 # 사용자 인터랙션 단위
+│   ├── auth/                 # 인증
+│   ├── cart/                 # 장바구니
+│   ├── order/                # 주문 상태
+│   ├── chat/                 # 채팅
+│   ├── delivery/             # 배달 요청/수락/매칭
+│   ├── rider-location/       # 기사 위치 추적
+│   ├── review/               # 리뷰
+│   ├── favorite/             # 찜
+│   ├── search/               # 검색
+│   └── menu-option/          # 메뉴 옵션 선택
+├── entities/                 # 비즈니스 엔티티 (UI + 타입 + API)
+│   ├── restaurant/ menu/ order/ user/ rider/ delivery/ chat/ review/
+├── shared/                   # 인프라, 공용 유틸
+│   ├── api/                  # prisma, redis, minio
+│   ├── config/               # 상수
+│   ├── lib/                  # kakao, image-compress
+│   └── ui/                   # shadcn/ui
+└── generated/                # Prisma 자동 생성
+```
+
+각 슬라이스 내부는 `ui/`, `model/`, `api/`, `lib/` 세그먼트로 구성하며, 외부에서는 `index.ts` re-export만 접근 가능.
+
 
 ## 5. 시스템 아키텍처 (Docker Composition)
 

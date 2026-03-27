@@ -13,6 +13,7 @@
 - 에러 발생 시 에러 로그 전체를 분석할 것 (요약하지 말 것)
 - UI 구현 시 반드시 `ui/` 폴더의 스크린샷을 참조
 - PRD 원본: `prd-v2.md` — 기능명세, DB 스키마, 환경변수 정의 (v1: `prd.md`는 참고용)
+- 발생한 모든 버그 사항 수
 
 ## 아키텍처
 
@@ -37,35 +38,100 @@
 - `npx prisma generate` — Prisma 클라이언트 생성
 - `npx prisma db seed` — 테스트 데이터 시드
 
-## 프로젝트 구조
+## 프로젝트 구조 (FSD — Feature-Sliced Design)
 
 ```
 src/
-├── app/                  # Next.js App Router 페이지
-│   ├── (auth)/           # 로그인 관련
-│   ├── (customer)/       # 고객: 홈, 음식점, 장바구니, 주문
-│   ├── (owner)/          # 사장: 주문관리, 메뉴관리, 배달요청
-│   ├── (rider)/          # 배달기사: 대기, 배달진행, 내역
-│   ├── (admin)/          # 관리자: 대시보드
-│   └── api/              # API Routes
-├── components/           # 공용 컴포넌트
-│   ├── ui/               # shadcn/ui 컴포넌트
-│   └── providers/        # SessionProvider 등
-├── lib/                  # 유틸리티 (prisma, minio, redis, kakao)
-├── stores/               # Zustand 스토어 (cart, order, chat)
-├── hooks/                # 커스텀 훅 (useWebSocket 등)
-└── types/                # TypeScript 타입 정의
-chat-server/              # Node.js 채팅 서버 (TypeScript + Socket.IO)
-prisma/                   # Prisma 스키마 + 마이그레이션
-ui/                       # 디자인 스크린샷 참조
+├── app/                      # Layer 0: 라우팅만 담당 (page.tsx → pages/ import)
+│   ├── (auth)/               # 로그인
+│   ├── (customer)/           # 고객 라우트
+│   ├── (owner)/              # 사장 라우트
+│   ├── (rider)/              # 배달기사 라우트
+│   ├── (admin)/              # 관리자 라우트
+│   └── api/                  # API Routes
+│
+├── pages/                    # Layer 1: 페이지 조합 (위젯을 조합하여 페이지 구성)
+│   ├── home/
+│   ├── restaurant-detail/
+│   ├── cart/
+│   ├── order-status/
+│   ├── rider-dashboard/
+│   └── ...
+│
+├── widgets/                  # Layer 2: 독립적 UI 블록 (자체 데이터 페칭)
+│   ├── restaurant-card/
+│   ├── order-status-tracker/
+│   ├── chat-room/
+│   ├── delivery-request-panel/
+│   ├── rider-delivery-card/
+│   └── bottom-navigation/
+│
+├── features/                 # Layer 3: 사용자 인터랙션 단위 (액션 + 상태)
+│   ├── auth/                 # 로그인/인증
+│   ├── cart/                 # 장바구니 (addItem, store, placeOrder)
+│   ├── order/                # 주문 상태 관리
+│   ├── chat/                 # 채팅 (socket, store, UI)
+│   ├── review/               # 리뷰 작성/관리
+│   ├── favorite/             # 찜
+│   ├── delivery/             # 배달 요청/수락/매칭
+│   ├── rider-location/       # 기사 위치 추적
+│   ├── search/               # 검색
+│   └── menu-option/          # 메뉴 옵션 선택
+│
+├── entities/                 # Layer 4: 비즈니스 엔티티 (UI + 타입 + API)
+│   ├── restaurant/
+│   ├── menu/
+│   ├── order/
+│   ├── user/
+│   ├── rider/
+│   ├── delivery/
+│   ├── chat/
+│   └── review/
+│
+├── shared/                   # Layer 5: 인프라, 공용 유틸
+│   ├── api/                  # prisma, redis, minio 클라이언트
+│   ├── config/               # 상수, 환경변수
+│   ├── lib/                  # kakao, image-compress, cn
+│   ├── ui/                   # shadcn/ui 컴포넌트
+│   └── types/                # 글로벌 타입 (next-auth.d.ts 등)
+│
+└── generated/                # Prisma 자동 생성
+
+chat-server/                  # Node.js 채팅 서버 (TypeScript + Socket.IO)
+prisma/                       # Prisma 스키마 + 마이그레이션
+ui/                           # 디자인 스크린샷 참조
+```
+
+### FSD 의존성 규칙
+
+```
+app → pages → widgets → features → entities → shared
+         상위 레이어는 하위만 import 가능 (역방향 금지)
+```
+
+- `features/cart/`는 `entities/menu/` import 가능
+- `entities/menu/`는 `features/cart/` import **불가**
+- `shared/`는 어떤 상위 레이어도 import **불가**
+
+### FSD 파일 네이밍
+
+각 슬라이스(폴더) 내부 구조:
+```
+features/cart/
+├── ui/                 # 컴포넌트 (AddToCartButton.tsx)
+├── model/              # 상태, 훅 (cartStore.ts)
+├── api/                # 서버 통신 (placeOrder.ts)
+├── lib/                # 내부 유틸
+└── index.ts            # Public API (re-export)
 ```
 
 ## 코딩 컨벤션
 
 - 컴포넌트: PascalCase (`RestaurantCard.tsx`)
 - 유틸/훅: camelCase (`useWebSocket.ts`)
+- 슬라이스 외부 접근: 반드시 `index.ts`를 통한 re-export만 사용
 - Server Actions: `src/app/api/` 또는 인라인 `"use server"`
-- 상태관리: 서버 상태 → Server Components, 클라이언트 상태 → Zustand
+- 상태관리: 서버 상태 → Server Components, 클라이언트 상태 → Zustand (features/*/model/)
 - 이미지 업로드: 클라이언트 → Presigned URL → MinIO 직접 업로드
 - 실시간 (주문 상태): Next.js API → Redis Stream → Chat Server → WebSocket → 클라이언트
 - 실시간 (채팅): 클라이언트 → Socket.IO → Chat Server → PostgreSQL 저장 + Socket.IO 브로드캐스트
