@@ -100,6 +100,12 @@ export function registerChatHandlers(nsp: Namespace): void {
           // 발신자의 다른 디바이스에도 전달
           socket.to(`user:${userId}`).emit("message:new", response);
 
+          // 수신자의 user room에도 전달 (채팅 목록 실시간 업데이트용)
+          const recipientId = userId === participants.ownerId
+            ? participants.customerId
+            : participants.ownerId;
+          nsp.to(`user:${recipientId}`).emit("message:new", response);
+
           // ack 콜백 반환
           if (callback) {
             callback({ id: msgId, createdAt });
