@@ -1,13 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans_KR } from "next/font/google";
 import AuthSessionProvider from "@/components/providers/session-provider";
 import "./globals.css";
-
-const notoSansKR = Noto_Sans_KR({
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-sans",
-});
 
 export const metadata: Metadata = {
   title: {
@@ -32,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" suppressHydrationWarning>
-      <body className={`${notoSansKR.variable} font-sans antialiased`} suppressHydrationWarning>
+      <body className="font-sans antialiased" suppressHydrationWarning>
         <AuthSessionProvider>
           <div className="mx-auto min-h-dvh max-w-[480px] bg-background">
             {children}
