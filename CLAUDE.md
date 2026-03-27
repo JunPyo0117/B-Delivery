@@ -170,6 +170,9 @@ features/cart/
 | Skill | Purpose |
 |-------|---------|
 | `verify-implementation` | 프로젝트의 모든 verify 스킬을 순차 실행하여 통합 검증 보고서를 생성합니다 |
+| `verify-api-auth` | API Route 및 보호된 페이지의 인증·역할 기반 접근 제어를 검증합니다 |
+| `verify-order-flow` | 주문 상태 전이 규칙이 PRD와 일치하고 코드 전반에 일관되게 적용되는지 검증합니다 |
+| `verify-env-vars` | 코드에서 사용하는 환경변수가 .env.example에 문서화되어 있는지 검증합니다 |
 | `manage-skills` | 세션 변경사항을 분석하고, 검증 스킬을 생성/업데이트하며, CLAUDE.md를 관리합니다 |
 | `merge-worktree` | Worktree 브랜치를 타겟 브랜치로 Squash-merge합니다 |
 
