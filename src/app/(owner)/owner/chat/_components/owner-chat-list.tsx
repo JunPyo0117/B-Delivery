@@ -59,7 +59,7 @@ export function OwnerChatList({
                   <span className="text-[14px] font-semibold text-gray-900 truncate">
                     {chat.user.nickname}
                   </span>
-                  <span className="text-[11px] text-gray-400 shrink-0 ml-2">
+                  <span className="text-[11px] text-gray-400 shrink-0 ml-2" suppressHydrationWarning>
                     {timeStr}
                   </span>
                 </div>
