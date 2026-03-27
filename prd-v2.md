@@ -31,7 +31,7 @@
 ### 성능 목표 (10만 유저 기준)
 - API 응답시간: p95 < 500ms
 - 반경 검색: 음식점 1만개 기준 < 200ms (공간 인덱스 활용)
-- WebSocket 동시접속: 1만명 이상
+- WebSocket 동시접속: 1만명 이상 (Centrifugo)
 - 이미지 로딩: CDN 적용 < 1초
 - 배달기사 위치 갱신: 5초 간격, 지연 < 1초
 
@@ -145,7 +145,7 @@ stateDiagram-v2
   - Kakao Map API (JS 키 필요) — 음식점 위치 지도 표시, 배달기사 실시간 위치 추적
   - Kakao 우편번호 서비스 (키 불필요, 스크립트 로드만) — 배달 주소 검색 팝업
 - **State Management:** Zustand
-- **Real-time:** Socket.IO Client
+- **Real-time:** centrifuge-js (Centrifugo 공식 클라이언트)
 
 ### 4.2 Backend (App Server)
 - **Framework:** Next.js API Routes (Server Actions)
@@ -153,17 +153,23 @@ stateDiagram-v2
 - **Storage:** Presigned URL Strategy (MinIO)
 - **Spatial Query:** PostGIS 확장 또는 Prisma raw query + 공간 인덱스
 
-### 4.3 Backend (Chat & Real-time Server)
-- **Language:** Node.js (TypeScript)
-- **Framework:** Socket.IO
-- **Protocol:** WebSocket
-- **Messaging:** Redis Streams (Next.js → Redis → Chat Server → Client 이벤트 파이프라인)
-- **Scaling:** Socket.IO Redis Adapter (수평 스케일링)
+### 4.3 Backend (Real-time Server — Centrifugo)
+- **Server:** Centrifugo v6 (Go 기반 실시간 메시징 서버)
+- **Protocol:** WebSocket (centrifuge protocol)
+- **인증:** JWT (HMAC-SHA256) — Centrifugo 내장 검증 + Connect Proxy
+- **비즈니스 로직:** Centrifugo Proxy → Next.js API Routes 위임
+  - **Connect Proxy** (`/api/centrifugo/connect`): 인증 + 서버 사이드 채널 구독
+  - **Subscribe Proxy** (`/api/centrifugo/subscribe`): 채널별 접근 권한 검증
+  - **Publish Proxy** (`/api/centrifugo/publish`): 메시지 저장 + 브로드캐스트
+  - **RPC Proxy** (`/api/centrifugo/rpc`): 타이핑, 읽음 처리, 배달 수락 등
+- **Messaging:** Redis Streams (Next.js → Redis → Order Worker → Centrifugo Server API)
+- **Scaling:** Centrifugo 내장 Redis Engine (수평 스케일링, 별도 어댑터 불필요)
 - **Feature:**
   - 고객센터 실시간 1:1 채팅, 읽음 처리, 메시지 작성 중 표시
   - 주문 상태 변경 실시간 푸시
   - **배달기사 위치 실시간 추적 및 푸시**
   - **배달 요청 브로드캐스트 (근처 기사에게)**
+  - **단일 WebSocket 연결**로 채팅 + 주문 상태 + 기사 위치 모두 처리
 
 ### 4.4 Data & Infra
 - **Runtime:** Docker
@@ -240,8 +246,9 @@ graph TB
     subgraph "Application Layer"
         WebApp1[Next.js :3000 ①]
         WebApp2[Next.js :3000 ②]
-        ChatServer1[Chat Server :8080 ①]
-        ChatServer2[Chat Server :8080 ②]
+        Centrifugo1[Centrifugo :8080 ①]
+        Centrifugo2[Centrifugo :8080 ②]
+        OrderWorker[Order Worker]
     end
 
     subgraph "Data Layer"
@@ -253,19 +260,25 @@ graph TB
 
     Customer & Owner & Rider & Admin --> LB
     LB --> WebApp1 & WebApp2
-    Customer & Owner & Rider -->|WebSocket| ChatServer1 & ChatServer2
+    Customer & Owner & Rider -->|WebSocket| Centrifugo1 & Centrifugo2
+
+    Centrifugo1 & Centrifugo2 -->|Proxy HTTP| WebApp1 & WebApp2
+    Centrifugo1 & Centrifugo2 --> Redis
 
     WebApp1 & WebApp2 --> PG_Primary
     WebApp1 & WebApp2 --> PG_Read
     WebApp1 & WebApp2 --> Redis
     WebApp1 & WebApp2 --> MinIO
+    WebApp1 & WebApp2 -->|Server API| Centrifugo1 & Centrifugo2
 
-    ChatServer1 & ChatServer2 --> Redis
-    ChatServer1 & ChatServer2 --> PG_Primary
+    OrderWorker --> Redis
+    OrderWorker -->|Server API| Centrifugo1 & Centrifugo2
 
     MinIO --> ImgCDN
     ImgCDN --> Customer & Owner & Rider
 ```
+
+> **Centrifugo Proxy 패턴:** 클라이언트 → Centrifugo (WebSocket) → Proxy HTTP → Next.js API Routes (비즈니스 로직) → Centrifugo Server API (발행). Centrifugo는 WebSocket 릴레이만 담당하고, 모든 비즈니스 로직은 Next.js에서 처리한다.
 
 ### 5.2 서비스 컨테이너 정의
 
@@ -274,39 +287,65 @@ graph TB
 | `postgres` | `postgres:15-alpine` + PostGIS | 5432 | 5432 | 메인 데이터베이스 (공간 인덱스) |
 | `postgres-read` | `postgres:15-alpine` | 5432 | 5433 | 읽기 전용 레플리카 |
 | `pgbouncer` | `pgbouncer` | 6432 | 6432 | 커넥션 풀링 |
-| `redis` | `redis:7-alpine` | 6379 | 6379 | 캐시, Stream, GEO, Pub/Sub |
+| `redis` | `redis:7-alpine` | 6379 | 6379 | 캐시, Stream, GEO, Centrifugo Engine |
 | `minio` | `minio/minio` | 9000, 9001 | 9000, 9001 | 이미지 스토리지 & 콘솔 |
-| `chat-server` | `node:20` (Custom) | 8080 | 8080 | Socket.IO 실시간 서버 |
-| `web-app` | `node:20` (Next.js) | 3000 | 3000 | 메인 웹 애플리케이션 |
+| `centrifugo` | `centrifugal/centrifugo:v6` | 8080 | 8080 | 실시간 메시징 서버 (WebSocket) |
+| `order-worker` | `node:20` (경량 스크립트) | - | - | Redis Stream → Centrifugo 발행 워커 |
+| `web-app` | `node:20` (Next.js) | 3000 | 3000 | 메인 웹 애플리케이션 + Centrifugo Proxy |
 
 **중요:** 모든 컨테이너는 `bdelivery_net` 네트워크 브리지를 통해 DNS로 통신한다.
 
-### 5.3 배달기사 위치 추적 아키텍처
+### 5.3 Centrifugo 채널 구조
+
+| 용도 | 채널 패턴 | 예시 | Proxy |
+|------|-----------|------|-------|
+| 채팅방 (1:1) | `chat:<chatId>` | `chat:abc-123` | Subscribe + Publish |
+| 개인 채널 (채팅 목록, 읽음, 주문 알림) | `user#<userId>` | `user#user-456` | Connect (서버 사이드 구독) |
+| 주문 상태 | `order#<userId>` | `order#user-456` | Connect (서버 사이드 구독) |
+| 배달기사 위치 (특정 주문) | `rider_location:<orderId>` | `rider_location:order-789` | Subscribe |
+| 배달 요청 (기사 브로드캐스트) | `delivery_requests#<riderId>` | `delivery_requests#rider-001` | Connect (서버 사이드 구독) |
+| 사장 신규 주문 알림 | `owner_orders#<ownerId>` | `owner_orders#owner-123` | Connect (서버 사이드 구독) |
+
+> `#` 접미사 채널은 Connect Proxy 응답에서 서버 사이드 구독으로 자동 할당. 클라이언트가 직접 구독하지 않음.
+
+### 5.4 Centrifugo Proxy 엔드포인트
+
+| Proxy 타입 | 엔드포인트 | 역할 |
+|------------|-----------|------|
+| Connect | `POST /api/centrifugo/connect` | JWT 검증, 사용자 정보 반환, 개인 채널 서버 사이드 구독 |
+| Subscribe | `POST /api/centrifugo/subscribe` | 채널별 접근 권한 검증 (채팅 참여자인지, 해당 주문의 고객인지 등) |
+| Publish | `POST /api/centrifugo/publish` | 메시지 저장, 검증, 수신자 알림 발행 |
+| RPC | `POST /api/centrifugo/rpc` | 타이핑/읽음 처리, 배달 수락/거절, 위치 업데이트 등 |
+
+### 5.5 배달기사 위치 추적 아키텍처
 
 ```mermaid
 sequenceDiagram
     participant Rider as 배달기사 브라우저
-    participant Chat as Chat Server
+    participant Centrifugo as Centrifugo
+    participant API as Next.js API (RPC Proxy)
     participant Redis as Redis GEO
     participant Customer as 고객 브라우저
 
-    Rider->>Chat: WebSocket 연결 (JWT)
+    Rider->>Centrifugo: WebSocket 연결 (JWT)
+    Centrifugo->>API: Connect Proxy → 개인 채널 구독
     loop 5초 간격
-        Rider->>Chat: location:update {lat, lng}
-        Chat->>Redis: GEOADD rider:locations riderId lat lng
+        Rider->>Centrifugo: RPC "location:update" {lat, lng}
+        Centrifugo->>API: RPC Proxy
+        API->>Redis: GEOADD rider:locations riderId lat lng
+        API->>Centrifugo: Server API → rider_location:orderId 채널 발행
     end
 
-    Note over Chat,Redis: 배달 요청 시 근처 기사 검색
-    Chat->>Redis: GEORADIUS rider:locations storeLat storeLng 3km
-    Redis-->>Chat: 온라인 + 미배달 중인 기사 목록
-    Chat->>Rider: delivery:request {orderId, storeInfo, dropoffInfo}
+    Note over API,Redis: 배달 요청 시 근처 기사 검색
+    API->>Redis: GEORADIUS rider:locations storeLat storeLng 3km
+    Redis-->>API: 온라인 + 미배달 중인 기사 목록
+    API->>Centrifugo: Server API → delivery_requests#riderId 채널 발행
 
-    Note over Chat,Customer: 배달 중 위치 실시간 전달
-    Rider->>Chat: location:update {lat, lng}
-    Chat->>Customer: rider:location {lat, lng, estimatedMinutes}
+    Note over Centrifugo,Customer: 배달 중 위치 실시간 전달
+    Centrifugo->>Customer: rider_location:orderId 채널 → {lat, lng, estimatedMinutes}
 ```
 
-### 5.4 주문 상태 실시간 업데이트 흐름
+### 5.6 주문 상태 실시간 업데이트 흐름
 
 ```mermaid
 sequenceDiagram
@@ -314,26 +353,32 @@ sequenceDiagram
     participant API as Next.js API
     participant DB as PostgreSQL
     participant Redis as Redis Stream
-    participant Chat as Chat Server
+    participant Worker as Order Worker
+    participant Centrifugo as Centrifugo
     participant Customer as 고객 브라우저
     participant Rider as 배달기사 브라우저
 
     Owner->>API: 주문 상태 변경 (조리중)
     API->>DB: Order.status 업데이트
     API->>Redis: order_updates_stream 이벤트 발행
-    Chat->>Redis: XREADGROUP (Stream 구독)
-    Chat->>Customer: WebSocket 상태 변경 푸시
+    Worker->>Redis: XREADGROUP (Stream 구독)
+    Worker->>Centrifugo: Server API → order#userId 채널 발행
+    Centrifugo->>Customer: 상태 변경 푸시
 
     Owner->>API: 배달 요청
     API->>DB: Delivery 생성 (REQUESTED)
     API->>Redis: delivery_requests_stream 이벤트 발행
-    Chat->>Redis: GEORADIUS (근처 기사 검색)
-    Chat->>Rider: WebSocket 배달 요청 브로드캐스트
+    Worker->>Redis: XREADGROUP + GEORADIUS (근처 기사 검색)
+    Worker->>Centrifugo: Server API → delivery_requests#riderId 채널 발행
+    Centrifugo->>Rider: 배달 요청 브로드캐스트
 
-    Rider->>Chat: 배달 수락
-    Chat->>DB: Delivery.status = ACCEPTED, riderId 할당
-    Chat->>Owner: WebSocket 기사 배정 알림
-    Chat->>Customer: WebSocket 기사 배정 알림
+    Rider->>Centrifugo: RPC "delivery:accept" {orderId}
+    Centrifugo->>API: RPC Proxy
+    API->>DB: Delivery.status = ACCEPTED, riderId 할당
+    API->>Centrifugo: Server API → owner_orders#ownerId (기사 배정 알림)
+    API->>Centrifugo: Server API → order#userId (기사 배정 알림)
+    Centrifugo->>Owner: 기사 배정 알림
+    Centrifugo->>Customer: 기사 배정 알림
 ```
 
 
@@ -459,7 +504,7 @@ sequenceDiagram
   - N분 계산: 직선거리 기반 예상 시간 (거리 / 이동수단별 평균속도)
   - **이동수단별 평균속도:** 도보 4km/h, 자전거 15km/h, 오토바이 30km/h, 자동차 25km/h
 - **취소 버튼:** PENDING/COOKING 상태에서만 표시
-- 상태 변경 흐름: 사장/기사가 버튼 클릭 → Next.js API → DB 업데이트 + Redis Stream → Chat Server → WebSocket 푸시
+- 상태 변경 흐름: 사장/기사가 버튼 클릭 → Next.js API → DB 업데이트 + Redis Stream → Order Worker → Centrifugo Server API → WebSocket 푸시
 
 ---
 
@@ -481,7 +526,7 @@ sequenceDiagram
 - 각 리스트 아이템 표시: 상대방 이름, 마지막 메시지, 전송 시간, 읽지 않은 메시지 수 뱃지
 
 **6.8.4 채팅방 (Message Room)**
-- **실시간 통신:** WebSocket 기반 메시지 즉시 송수신
+- **실시간 통신:** Centrifugo WebSocket 기반 메시지 즉시 송수신
 - **헤더:** 연결된 주문 정보 고정 (주문 번호, 음식점명) → 클릭 시 주문 상세 이동
   - 일반 문의인 경우 "일반 문의" 표시
 - **메시지 타입:**
@@ -579,7 +624,7 @@ sequenceDiagram
 - 등록 후 관리자 승인 없이 즉시 노출
 
 #### 6.12 주문 관리
-- 신규 주문 목록 실시간 수신 (WebSocket)
+- 신규 주문 목록 실시간 수신 (Centrifugo WebSocket — `owner_orders#ownerId` 채널)
 - **주문 상태 변경:**
   - 접수 (PENDING → COOKING)
   - **배달 요청** (COOKING → WAITING_RIDER) — 근처 기사에게 브로드캐스트
@@ -1223,7 +1268,7 @@ model Report {
 ### 8.1 최적화 및 보안
 - **이미지 최적화:** 클라이언트에서 이미지 리사이징 및 WebP 압축 후 Presigned URL로 MinIO 직접 업로드
 - **CDN:** MinIO 앞단에 CDN 배치 → 이미지 로딩 < 1초
-- **채팅 보안:** WebSocket 연결 시 HTTP 헤더의 JWT 토큰 유효성 필수 검증
+- **실시간 보안:** Centrifugo JWT 인증 (HMAC-SHA256) + Connect Proxy에서 세션 검증. 채널 구독 시 Subscribe Proxy에서 권한 검증
 - **위치 정보:** PostGIS 공간 인덱스 활용 → 반경 검색 O(log n)
 - **Rate Limiting:** Redis 기반 — 주문: 분당 5회, 검색: 분당 30회, 위치 업데이트: 5초 간격
 
@@ -1241,9 +1286,9 @@ model Report {
 |------|------|----------|
 | API 응답시간 (p95) | < 500ms | 서버 로그 분석 |
 | 반경 검색 (음식점 1만개) | < 200ms | PostGIS 공간 인덱스 |
-| WebSocket 동시접속 | 1만명+ | Socket.IO Redis Adapter |
+| WebSocket 동시접속 | 1만명+ | Centrifugo Redis Engine (내장 수평 스케일링) |
 | 이미지 로딩 | < 1초 | CDN + WebP |
-| 배달기사 위치 지연 | < 1초 | Redis GEO + WebSocket |
+| 배달기사 위치 지연 | < 1초 | Redis GEO + Centrifugo WebSocket |
 | DB 커넥션 | 200+ 동시 | PgBouncer |
 | 배달 매칭 시간 | < 30초 | Redis GEORADIUS |
 
@@ -1287,10 +1332,13 @@ MINIO_CDN_URL="https://cdn.bdelivery.com"   # NEW: CDN URL
 # Kakao Map API
 NEXT_PUBLIC_KAKAO_MAP_KEY="your-kakao-map-js-key"
 
-# Chat Server
-CHAT_SERVER_URL="http://localhost:8080"
+# Centrifugo
+NEXT_PUBLIC_CENTRIFUGO_URL="ws://localhost:8080/connection/websocket"
+CENTRIFUGO_API_URL="http://centrifugo:8080/api"
+CENTRIFUGO_API_KEY="your-centrifugo-api-key"
+# NEXTAUTH_SECRET을 Centrifugo JWT HMAC 서명 키로 재사용
 
-# Delivery (NEW)
+# Delivery
 DELIVERY_REQUEST_TIMEOUT_SEC=30              # 배달 요청 수락 제한시간
 DELIVERY_SEARCH_RADIUS_KM=3                  # 기사 검색 반경
 RIDER_LOCATION_UPDATE_INTERVAL_MS=5000       # 기사 위치 갱신 간격
