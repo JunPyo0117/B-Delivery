@@ -23,7 +23,7 @@
 
 - **Frontend**: Next.js 16 (App Router), TypeScript, Tailwind CSS, shadcn/ui, Zustand
 - **Backend**: Next.js API Routes (Server Actions), NextAuth.js v5 (Google OAuth)
-- **Chat Server**: Node.js (TypeScript + Socket.IO), Redis Adapter (수평 스케일링)
+- **Real-time Server**: Centrifugo v6 (WebSocket, Proxy 패턴 → Next.js API Routes)
 - **DB**: PostgreSQL + PostGIS (공간 인덱스) + Prisma ORM, PgBouncer (커넥션 풀)
 - **Cache/Messaging**: Redis (Cache + Streams + GEO + Pub/Sub)
 - **Storage**: MinIO (Presigned URL) + CDN (이미지 최적화)
@@ -97,7 +97,8 @@ src/
 │
 └── generated/                # Prisma 자동 생성
 
-chat-server/                  # Node.js 채팅 서버 (TypeScript + Socket.IO)
+centrifugo/                   # Centrifugo 설정 (config.json)
+scripts/                      # Order Worker (Redis Stream → Centrifugo 발행)
 prisma/                       # Prisma 스키마 + 마이그레이션
 ui/                           # 디자인 스크린샷 참조
 ```
@@ -133,10 +134,11 @@ features/cart/
 - Server Actions: `src/app/api/` 또는 인라인 `"use server"`
 - 상태관리: 서버 상태 → Server Components, 클라이언트 상태 → Zustand (features/*/model/)
 - 이미지 업로드: 클라이언트 → Presigned URL → MinIO 직접 업로드
-- 실시간 (주문 상태): Next.js API → Redis Stream → Chat Server → WebSocket → 클라이언트
-- 실시간 (채팅): 클라이언트 → Socket.IO → Chat Server → PostgreSQL 저장 + Socket.IO 브로드캐스트
-- 실시간 (기사 위치): RIDER 브라우저 → Socket.IO → Chat Server → Redis GEO → 고객 WebSocket 푸시
-- 배달 매칭: Next.js API → Redis Stream → Chat Server → GEORADIUS로 근처 기사 검색 → 브로드캐스트
+- 실시간 (주문 상태): Next.js API → Redis Stream → Order Worker → Centrifugo Server API → 클라이언트
+- 실시간 (채팅): 클라이언트 → Centrifugo → Publish Proxy → Next.js API (DB 저장) → Centrifugo 브로드캐스트
+- 실시간 (기사 위치): RIDER → Centrifugo RPC → Next.js API → Redis GEO → Centrifugo → 고객 채널 발행
+- 배달 매칭: Next.js API → Redis Stream → Order Worker → GEORADIUS → Centrifugo → 기사 개인 채널
+- 채팅 구조: 고객센터 허브 모델 (고객/사장/기사 ↔ ADMIN, ChatType: CUSTOMER_SUPPORT/OWNER_SUPPORT/RIDER_SUPPORT)
 
 ## 사용자 역할
 
@@ -145,7 +147,7 @@ features/cart/
 | USER | 홈, 음식점, 장바구니, 주문, 마이페이지, 채팅 | 하단 4탭: 홈 / 찜 / 주문내역 / 마이페이지 | 모바일 반응형 |
 | OWNER | 사장 대시보드 (칸반 콜보드, 매출, 인기메뉴, 리뷰), 주문관리, 메뉴관리, 리뷰관리, 매출통계, 채팅, 가게설정 | 좌측 사이드바 (240px) | **PC 전용 (min-width: 1024px)** |
 | RIDER | 콜 대시보드 (배달요청 수신, 오늘 통계), 배달진행, 수익 대시보드 (일/주/월별 수익), 마이페이지 | 하단 3탭: 배달대기 / 배달내역 / 마이페이지 | 모바일 반응형 |
-| ADMIN | 관리자 대시보드 (KPI, 사용자관리, 신고관리, 배달기사관리) | 좌측 사이드바 | PC 전용 |
+| ADMIN | 관리자 대시보드 (KPI, 사용자관리, 신고관리, 배달기사관리), **고객센터 상담 화면** (3패널: 채팅리스트/채팅방/상담정보) | 좌측 사이드바 | PC 전용 |
 
 > 역할은 1개만 보유 가능. OWNER/RIDER 등록은 `role == USER`일 때만 가능.
 
