@@ -39,7 +39,7 @@ export function useChatList(
 
       // 새 채팅방에서 온 메시지 → 서버에서 목록 다시 가져오기
       if (idx === -1) {
-        onNewChatRef.current?.();
+        setTimeout(() => onNewChatRef.current?.(), 0);
         return prev;
       }
 
