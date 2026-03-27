@@ -24,14 +24,24 @@ export interface ChatListItem {
   unreadCount: number;
 }
 
-export function useChatList(initialChats: ChatListItem[]) {
+export function useChatList(
+  initialChats: ChatListItem[],
+  onNewChat?: () => void,
+) {
   const [chats, setChats] = useState<ChatListItem[]>(initialChats);
   const socketRef = useRef<Socket | null>(null);
+  const onNewChatRef = useRef(onNewChat);
+  onNewChatRef.current = onNewChat;
 
   const handleNewMessage = useCallback((data: ChatMessageResponse) => {
     setChats((prev) => {
       const idx = prev.findIndex((c) => c.id === data.chatId);
-      if (idx === -1) return prev;
+
+      // 새 채팅방에서 온 메시지 → 서버에서 목록 다시 가져오기
+      if (idx === -1) {
+        onNewChatRef.current?.();
+        return prev;
+      }
 
       const updated = [...prev];
       const chat = { ...updated[idx] };

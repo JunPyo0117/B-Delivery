@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useChatList, type ChatListItem } from "@/hooks/useChatList";
 
 export function OwnerChatList({
@@ -8,7 +9,8 @@ export function OwnerChatList({
 }: {
   initialChats: ChatListItem[];
 }) {
-  const chats = useChatList(initialChats);
+  const router = useRouter();
+  const chats = useChatList(initialChats, () => router.refresh());
 
   return (
     <div className="bg-white min-h-[60vh]">
