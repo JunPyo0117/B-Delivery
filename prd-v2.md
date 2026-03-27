@@ -41,6 +41,11 @@
 - 추천 알고리즘 고도화
 - 검색 랭킹 최적화
 - 광고 음식점 상단 노출
+- RIDER/OWNER 등록 심사 (신원 확인, 사업자 인증 등)
+- 지역 히트맵 (주문 집중 지역 시각화)
+- 검색 트렌드 / 워드클라우드
+- 배달 반경 티어 관리 (행정구역별 반경 정책)
+- 금칙어 자동 필터링
 
 
 ## 3. 사용자 플로우
@@ -97,22 +102,37 @@ stateDiagram-v2
     COOKING --> CANCELLED: 사장 취소 (재료 소진 등)
     WAITING_RIDER --> RIDER_ASSIGNED: 기사 수락
     WAITING_RIDER --> COOKING: 매칭 실패 (재요청 가능)
+    RIDER_ASSIGNED --> WAITING_RIDER: 기사 취소 (사고/고장 등)
     RIDER_ASSIGNED --> PICKED_UP: 기사 픽업
     PICKED_UP --> DONE: 기사 배달 완료
     DONE --> [*]
     CANCELLED --> [*]
 ```
 
+#### OrderStatus ↔ DeliveryStatus 매핑
+
+| OrderStatus | DeliveryStatus | 설명 |
+|-------------|---------------|------|
+| WAITING_RIDER | REQUESTED | 배달 요청, 기사 매칭 대기 |
+| RIDER_ASSIGNED | ACCEPTED | 기사 수락 완료 |
+| RIDER_ASSIGNED | AT_STORE | 기사가 가게에 도착 (Order는 그대로) |
+| PICKED_UP | PICKED_UP | 기사 픽업 완료 |
+| PICKED_UP | DELIVERING | 고객에게 이동 중 (Order는 그대로) |
+| DONE | DONE | 배달 완료 |
+| CANCELLED | CANCELLED | 취소 |
+
+> **규칙:** Order.status는 고객에게 보여주는 큰 단계, Delivery.status는 기사의 세부 진행 상태. Order.status 변경은 PICKED_UP, DONE 시점에만 발생하고, AT_STORE/DELIVERING은 Delivery.status만 변경.
+
 #### 취소 가능 주체 & 조건
 
-| 주문 상태 | 고객 취소 | 사장 거절/취소 | 비고 |
-|-----------|----------|--------------|------|
-| PENDING | O | O | 자유 취소 |
-| COOKING | O (취소 수수료 안내) | O (사유 필수) | 조리 시작 후 취소는 사유 기록 |
-| WAITING_RIDER | X | O | 기사 매칭 전까지만 |
-| RIDER_ASSIGNED | X | X | CS를 통해서만 취소 가능 |
-| PICKED_UP | X | X | CS를 통해서만 취소 가능 |
-| DONE | X | X | 취소 불가 |
+| 주문 상태 | 고객 취소 | 사장 거절/취소 | 기사 취소 | 비고 |
+|-----------|----------|--------------|----------|------|
+| PENDING | O | O | - | 자유 취소 |
+| COOKING | O (취소 수수료 안내) | O (사유 필수) | - | 조리 시작 후 취소는 사유 기록 |
+| WAITING_RIDER | X | O | - | 기사 매칭 전까지만 |
+| RIDER_ASSIGNED | X | X | O (사유 필수) | 기사 취소 시 WAITING_RIDER로 재매칭 |
+| PICKED_UP | X | X | X | CS를 통해서만 취소 가능 |
+| DONE | X | X | X | 취소 불가 |
 
 
 ## 4. 기술 스택 (Tech Stack)
@@ -299,9 +319,11 @@ sequenceDiagram
 ### 공통 UI
 
 #### 하단 네비게이션 (Global)
-- **고객:** 4탭 고정 — 홈 / 찜 / 주문내역 / 마이페이지
-- **배달기사:** 3탭 — 배달대기 / 배달내역 / 마이페이지
-- 모든 페이지 하단에 항상 표시
+- **고객 (USER):** 4탭 — 홈 / 찜 / 주문내역 / 마이페이지
+- **사장 (OWNER):** 4탭 — 홈 / 주문관리 / 메뉴관리 / 마이페이지
+- **배달기사 (RIDER):** 3탭 — 배달대기 / 배달내역 / 마이페이지
+- **관리자 (ADMIN):** 사이드바 네비게이션 (하단 탭 없음)
+- 모든 페이지 하단에 항상 표시 (ADMIN 제외)
 
 ---
 
@@ -311,6 +333,7 @@ sequenceDiagram
 - 소셜 로그인 (Google)
 - 이메일 가입 없음
 - 역할: USER (기본) / OWNER / RIDER / ADMIN
+- **역할 규칙:** 사용자는 1개의 역할만 보유 가능. OWNER 또는 RIDER 등록은 `role == USER`일 때만 가능. 이미 OWNER인 사용자는 RIDER 등록 불가 (역도 동일).
 
 #### 6.2 사용자 프로필 화면
 - 닉네임, 프로필 사진, 기본 배달 주소
@@ -331,7 +354,8 @@ sequenceDiagram
 *UI 참조: `ui/1.메인페이지.png`*
 - 반경 3km 내 음식점 리스트 (무한 스크롤)
 - **카테고리 아이콘 (가로 스크롤):**
-  - 전체 / 치킨 / 중식 / 피자 / 분식 / 패스트푸드 / 카페·디저트 / 짬·탕 / 한그릇 / 기타
+  - 전체 / 한식 / 중식 / 일식 / 치킨 / 피자 / 분식 / 족발·보쌈 / 패스트푸드 / 카페·디저트 / 짬·탕 / 한그릇 / 기타
+  - enum 매핑: KOREAN / CHINESE / JAPANESE / CHICKEN / PIZZA / BUNSIK / JOKBAL / FASTFOOD / CAFE / JJAMBBONG / RICE_BOWL / ETC
   - 아이콘 형태로 표시, 선택 시 해당 카테고리 음식점만 필터링
 - 정렬: 배달 빠른 순, 평점 순, 최소 주문금액 순
 - 카드 정보: 썸네일, 음식점명, 카테고리, 평점(별점), 리뷰 수, 배달 예상 시간, 최소 주문금액
@@ -380,6 +404,7 @@ sequenceDiagram
   2. 가격 변동 체크: 장바구니 담은 시점 가격 vs 현재 DB 가격 비교 → 차이 있으면 "가격이 변경되었습니다" 안내
   3. 영업 상태 체크: 해당 음식점이 영업 중인지 확인
   4. 최소 주문금액 체크
+- **배달 요청사항 입력 (선택):** "문 앞에 놓아주세요", "벨 누르지 마세요" 등 자유 텍스트
 - 검증 통과 시 주문 완료 → 주문 상태 페이지로 이동
 
 #### 6.7 주문 상태
@@ -388,7 +413,8 @@ sequenceDiagram
 - **WAITING_RIDER 상태:** "배달기사를 찾고 있어요..." 애니메이션
 - **RIDER_ASSIGNED 상태:** 배달기사 정보 표시 (닉네임, 이동 수단)
 - **PICKED_UP 상태:** 지도에 **배달기사 실시간 위치 핀** + "배달 중, 도착 예정 N분" 텍스트
-  - N분 계산: 직선거리 기반 예상 시간 (거리 / 평균속도)
+  - N분 계산: 직선거리 기반 예상 시간 (거리 / 이동수단별 평균속도)
+  - **이동수단별 평균속도:** 도보 4km/h, 자전거 15km/h, 오토바이 30km/h, 자동차 25km/h
 - **취소 버튼:** PENDING/COOKING 상태에서만 표시
 - 상태 변경 흐름: 사장/기사가 버튼 클릭 → Next.js API → DB 업데이트 + Redis Stream → Chat Server → WebSocket 푸시
 
@@ -397,16 +423,21 @@ sequenceDiagram
 #### 6.8 채팅 (고객센터 1:1 Chat)
 *UI 참조: `ui/12. 상담 채팅 페이지.png`*
 
-**6.8.1 채팅 시작 방식**
+**6.8.1 채팅 구조**
+- **고객센터 응답자:** `role == ADMIN`인 사용자가 응답. 채팅방 생성 시 대기 중인 ADMIN이 자동 배정됨.
+- Chat 모델에 `adminId`로 담당 관리자를 기록.
+- ADMIN이 부재 시 시스템 메시지: "현재 상담 대기 중입니다. 순서대로 연결해 드릴게요."
+
+**6.8.2 채팅 시작 방식**
 - 채팅 진입 시 **문의할 주문 먼저 선택** (최근 주문 목록 표시)
 - 주문 선택 → 해당 주문과 연결된 채팅방 생성 또는 기존 채팅방 이동
 - **"주문 말고 다른 문의가 있어요" 버튼 → orderId 없이 일반 문의 채팅방 생성 (NEW)**
 
-**6.8.2 채팅 목록**
+**6.8.3 채팅 목록**
 - 채팅방 리스트 (최신 메시지 순 정렬)
 - 각 리스트 아이템 표시: 상대방 이름, 마지막 메시지, 전송 시간, 읽지 않은 메시지 수 뱃지
 
-**6.8.3 채팅방 (Message Room)**
+**6.8.4 채팅방 (Message Room)**
 - **실시간 통신:** WebSocket 기반 메시지 즉시 송수신
 - **헤더:** 연결된 주문 정보 고정 (주문 번호, 음식점명) → 클릭 시 주문 상세 이동
   - 일반 문의인 경우 "일반 문의" 표시
@@ -534,10 +565,15 @@ sequenceDiagram
   - 온라인: 위치 전송 시작 (5초 간격), 배달 요청 수신
   - 오프라인: 위치 전송 중단, 배달 요청 수신 안 함
 - **현재 위치 지도 표시** (카카오 맵)
+- **기사는 한 번에 1건의 배달만 수행 가능** (배달 중에는 새 요청 수신 안 함)
 - **배달 요청 카드 (수신 시):**
   - 가게명, 가게 위치, 고객 위치, 예상 거리, 예상 배달비
   - **수락 / 거절** 버튼
-  - 수락 제한시간: 30초 (초과 시 자동 거절 → 다음 기사에게 전달)
+  - 수락 제한시간: 30초 (초과 시 자동 거절)
+- **배달 매칭 알고리즘:**
+  1. 가게 반경 3km 내 온라인 + 미배달 중인 기사에게 **동시 브로드캐스트** (선착순 수락)
+  2. 30초 내 수락 없음 → 반경 5km로 확장하여 2차 브로드캐스트
+  3. 2차에도 수락 없음 → 사장에게 "기사 매칭 실패" 알림, WAITING_RIDER → COOKING 롤백 (재요청 가능)
 - **오늘 배달 통계:** 완료 건수, 총 수익
 
 #### 6.16 배달 진행 화면
@@ -667,6 +703,8 @@ enum RestaurantCategory {
   JOKBAL      // 족발·보쌈
   CAFE        // 카페·디저트
   FASTFOOD    // 패스트푸드
+  JJAMBBONG   // 짬·탕
+  RICE_BOWL   // 한그릇
   ETC         // 기타
 }
 
@@ -744,13 +782,15 @@ model Restaurant {
 
   name             String
   category         RestaurantCategory
+  address          String              // 음식점 주소 텍스트
   imageUrl         String?
   description      String?
+  notice           String?             // 사장님 공지 (리뷰 페이지 상단 고정)
   minOrderAmount   Int
   deliveryFee      Int
   deliveryTime     Int                 // 예상 배달 시간 (분)
   isOpen           Boolean             @default(true)
-  openTime         String?             // "09:00"
+  openTime         String?             // "09:00" (요일 구분 없이 단일 영업시간)
   closeTime        String?             // "22:00"
 
   latitude         Float
@@ -765,7 +805,9 @@ model Restaurant {
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
 
-  @@index([latitude, longitude])       // 공간 검색 인덱스
+  // NOTE: Prisma @@index는 B-Tree. PostGIS GiST 인덱스는 raw SQL migration으로 별도 생성 필요:
+  // CREATE INDEX idx_restaurant_geo ON "Restaurant" USING GIST (ST_MakePoint(longitude, latitude));
+  @@index([latitude, longitude])
 }
 
 // ─── Menu & Options ───
@@ -833,17 +875,19 @@ model Order {
 
   status          OrderStatus @default(PENDING)
   totalPrice      Int
+  deliveryFee     Int              // 주문 시점 배달비 스냅샷 (고객 부담)
   deliveryAddress String
-  deliveryLat     Float?      // NEW: 배달 좌표
-  deliveryLng     Float?
+  deliveryLat     Float            // 배달 좌표 (non-nullable)
+  deliveryLng     Float
+  deliveryNote    String?          // 배달 요청사항 ("문 앞에 놓아주세요" 등)
 
-  cancelReason    String?     // NEW: 취소 사유
-  cancelledBy     String?     // NEW: 취소 주체 (userId)
+  cancelReason    String?          // 취소 사유
+  cancelledBy     String?          // 취소 주체 (userId)
 
   items           OrderItem[]
   review          Review?
   chat            Chat?
-  delivery        Delivery?   // NEW
+  delivery        Delivery?
 
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -881,9 +925,8 @@ model Delivery {
 
   distance       Float?         // 배달 거리 (km)
   estimatedTime  Int?           // 예상 배달 시간 (분)
-  deliveryFee    Int            // 기사 배달 수수료
+  riderFee       Int            // 기사 배달 수수료 (플랫폼 → 기사 지급액)
 
-  requestedAt    DateTime       @default(now())
   acceptedAt     DateTime?
   pickedUpAt     DateTime?
   completedAt    DateTime?
@@ -959,8 +1002,9 @@ model Review {
 
 model Chat {
   id       String    @id @default(uuid())
-  orderId  String?   @unique  // CHANGED: nullable (일반 문의 지원)
+  orderId  String?   @unique  // nullable (일반 문의 지원)
   userId   String
+  adminId  String?            // 담당 관리자 (고객센터 응답자)
 
   order    Order?    @relation(fields: [orderId], references: [id])
   user     User      @relation(fields: [userId], references: [id])
