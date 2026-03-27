@@ -102,6 +102,19 @@ export default async function OwnerDashboardPage() {
         </Link>
 
         <Link
+          href="/owner/restaurant-info"
+          className="flex flex-col items-center gap-2 rounded-xl border bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
+        >
+          <div
+            className="flex h-12 w-12 items-center justify-center rounded-full"
+            style={{ backgroundColor: "#FFF3E0" }}
+          >
+            <Store className="h-6 w-6" style={{ color: "#FF6B00" }} />
+          </div>
+          <span className="text-sm font-semibold text-gray-900">가게 정보</span>
+        </Link>
+
+        <Link
           href="/owner/chat"
           className="relative flex flex-col items-center gap-2 rounded-xl border bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
         >

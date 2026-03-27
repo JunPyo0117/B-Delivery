@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, ClipboardList, UtensilsCrossed, MessageCircle } from "lucide-react";
+import { LayoutDashboard, ClipboardList, UtensilsCrossed, MessageCircle, Store } from "lucide-react";
 
 const NAV_ITEMS = [
   {
@@ -20,6 +20,11 @@ const NAV_ITEMS = [
     href: "/owner/menus",
     label: "메뉴관리",
     icon: UtensilsCrossed,
+  },
+  {
+    href: "/owner/restaurant-info",
+    label: "가게정보",
+    icon: Store,
   },
   {
     href: "/owner/chat",
