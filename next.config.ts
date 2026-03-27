@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
   allowedDevOrigins: ["172.30.1.51"],
   images: {
+    dangerouslyAllowLocalIP: true,
     remotePatterns: [
       {
         protocol: "http",
