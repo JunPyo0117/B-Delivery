@@ -1,6 +1,6 @@
 "use client";
 
-import { REVIEW_TAGS } from "../actions";
+import { REVIEW_TAGS } from "../constants";
 
 interface TagSelectorProps {
   selectedTags: string[];
