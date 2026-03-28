@@ -40,7 +40,16 @@
     "proxy": {
       "endpoint": "http://host.docker.internal:3000/api/centrifugo/rpc",
       "timeout": "3s"
-    }
+    },
+    "without_namespace": {
+      "proxy_enabled": true
+    },
+    "namespaces": [
+      { "name": "typing", "proxy_enabled": true },
+      { "name": "message", "proxy_enabled": true },
+      { "name": "location", "proxy_enabled": true },
+      { "name": "delivery", "proxy_enabled": true }
+    ]
   },
   "http_api": {
     "key": "${CENTRIFUGO_HTTP_API_KEY}"
