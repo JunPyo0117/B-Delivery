@@ -19,6 +19,48 @@ export async function POST(request: Request) {
     const data = body.data as Record<string, unknown>;
 
     switch (method) {
+      case "message:send": {
+        const chatId = data.chatId as string;
+        const type = (data.type as string) || "TEXT";
+        const content = data.content as string;
+
+        const chat = await prisma.chat.findFirst({
+          where: { id: chatId, OR: [{ userId }, { adminId: userId }] },
+        });
+        if (!chat) {
+          return NextResponse.json({ error: { code: 403, message: "Not a participant" } });
+        }
+
+        const message = await prisma.message.create({
+          data: { chatId, senderId: userId, type, content },
+          include: { sender: { select: { nickname: true } } },
+        });
+
+        await prisma.chat.update({ where: { id: chatId }, data: { updatedAt: new Date() } });
+
+        const enriched = {
+          id: message.id,
+          chatId,
+          senderId: userId,
+          nickname: message.sender.nickname,
+          type: message.type,
+          content: message.content,
+          isRead: false,
+          createdAt: message.createdAt.toISOString(),
+        };
+
+        // 채팅 채널에 브로드캐스트
+        await publish(`chat:${chatId}`, { type: "message:new", ...enriched });
+
+        // 수신자 개인 채널에도 알림
+        const recipientId = chat.userId === userId ? chat.adminId : chat.userId;
+        if (recipientId) {
+          await publish(`user#${recipientId}`, { type: "message:new", ...enriched });
+        }
+
+        return NextResponse.json({ result: { data: enriched } });
+      }
+
       case "typing:start":
       case "typing:stop": {
         const chatId = data.chatId as string;
