@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/shared/api/prisma";
 import { FavoriteList } from "./_components/favorite-list";
 import type { FavoriteRestaurantItem } from "@/types/restaurant";
 

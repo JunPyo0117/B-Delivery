@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/shared/api/prisma";
 import { Star } from "lucide-react";
 import { ReviewStats } from "./_components/review-stats";
 import { ReviewList } from "./_components/review-list";

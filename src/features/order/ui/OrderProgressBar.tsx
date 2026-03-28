@@ -2,7 +2,7 @@
 
 import type { OrderStatus } from "@/generated/prisma/client"
 import { ORDER_STATUS_STEPS, ORDER_STATUS_LABELS } from "@/entities/order"
-import { cn } from "@/lib/utils"
+import { cn } from "@/shared/lib/utils"
 
 interface OrderProgressBarProps {
   currentStatus: OrderStatus

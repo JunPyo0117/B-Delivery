@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/shared/api/prisma";
 import { redirect } from "next/navigation";
 import { OwnerSidebar } from "./_components/owner-sidebar";
 import { PcOnlyGuard } from "./_components/pc-only-guard";

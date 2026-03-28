@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/shared/api/prisma";
 import Link from "next/link";
 import {
   ClipboardList,

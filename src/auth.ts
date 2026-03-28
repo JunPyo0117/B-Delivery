@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import type { Provider } from "next-auth/providers";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/shared/api/prisma";
 
 const providers: Provider[] = [
   Google({

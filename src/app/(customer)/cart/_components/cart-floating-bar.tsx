@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
-import { useCartStore } from "@/stores/cart";
+import { useCartStore } from "@/features/cart/model/cartStore";
 
 /**
  * 장바구니에 아이템이 있을 때 하단에 표시되는 플로팅 바

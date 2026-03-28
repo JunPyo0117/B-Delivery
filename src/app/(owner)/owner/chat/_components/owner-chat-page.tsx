@@ -7,7 +7,7 @@ import {
   getChatMessages,
   type OwnerChatMessage,
 } from "../_actions/chat-actions";
-import type { ChatListItem } from "@/hooks/useChatList";
+interface ChatListItem { id: string; chatType: string; lastMessage: string; updatedAt: string; };
 
 /** ChatListItem에 owner-support 전용 필드를 추가한 확장 타입 */
 type OwnerChatListItem = ChatListItem & {

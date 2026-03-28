@@ -2,10 +2,10 @@
 
 import Image from "next/image"
 import { Minus, Plus } from "lucide-react"
-import { Drawer, DrawerContent, DrawerFooter } from "@/components/ui/drawer"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Drawer, DrawerContent, DrawerFooter } from "@/shared/ui/drawer"
+import { Button } from "@/shared/ui/button"
+import { Badge } from "@/shared/ui/badge"
+import { Checkbox } from "@/shared/ui/checkbox"
 import { formatPrice } from "@/shared/lib"
 import type {
   MenuItemData,

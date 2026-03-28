@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useTransition, useRef } from "react";
 import { OrderStatus } from "@/generated/prisma/enums";
 import { getOwnerOrders, type OwnerOrder } from "../_actions/get-orders";
 import { OrderCard } from "./order-card";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/lib/utils";
 import { Bell, RefreshCw } from "lucide-react";
 
 type TabFilter = "PENDING" | "COOKING" | "PICKED_UP" | "DONE";

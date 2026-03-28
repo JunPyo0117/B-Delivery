@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ShoppingCart } from "lucide-react";
-import { useCartStore } from "@/stores/cart";
+import { useCartStore } from "@/features/cart/model/cartStore";
 
 export function ReviewHeader() {
   const router = useRouter();

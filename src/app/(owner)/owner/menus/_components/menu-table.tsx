@@ -3,8 +3,8 @@
 import { useState, useTransition, useCallback } from "react";
 import Image from "next/image";
 import { Plus, UtensilsCrossed, MoreVertical, Pencil, Trash2, Loader2, ImageIcon } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
+import { Switch } from "@/shared/ui/switch";
+import { Button } from "@/shared/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from "@/shared/ui/dialog";
 import { toggleSoldOut, deleteMenu, type MenuWithOptions } from "../actions";
 import { MenuSlidePanel } from "./menu-slide-panel";
 

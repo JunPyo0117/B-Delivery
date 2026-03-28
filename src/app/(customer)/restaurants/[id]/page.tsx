@@ -1,4 +1,4 @@
-import { RestaurantDetailPage } from "@/views/restaurant-detail";
+import { RestaurantDetailPage } from "@/pages/restaurant-detail";
 
 export default async function RestaurantDetailRoute({
   params,

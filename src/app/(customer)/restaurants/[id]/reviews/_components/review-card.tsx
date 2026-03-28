@@ -1,5 +1,5 @@
 import { Star, Flag } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import type { ReviewItem } from "../actions";
 
 interface ReviewCardProps {

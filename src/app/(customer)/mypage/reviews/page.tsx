@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/shared/api/prisma";
 import { ReviewList } from "./_components/review-list";
 
 export default async function MypageReviewsPage() {

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react"
 import { Camera, Send } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/shared/ui/button"
 import { cn } from "@/shared/lib"
 
 interface ChatInputProps {

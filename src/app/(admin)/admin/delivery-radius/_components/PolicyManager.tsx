@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
+import { Badge } from "@/shared/ui/badge";
+import { Switch } from "@/shared/ui/switch";
 import {
   Card,
   CardContent,
@@ -13,8 +13,8 @@ import {
   CardTitle,
   CardDescription,
   CardAction,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+} from "@/shared/ui/card";
+import { Separator } from "@/shared/ui/separator";
 import type {
   DeliveryPolicy,
   DeliveryRadiusTier,

@@ -1,6 +1,6 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/shared/api/prisma";
 import type { OrderStatus } from "@/generated/prisma/client";
 
 // ── 타입 정의 ────────────────────────────────────────────

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { MyPage } from "@/views/my-page";
+import { MyPage } from "@/pages/my-page";
 
 export default async function MypagePage() {
   const session = await auth();

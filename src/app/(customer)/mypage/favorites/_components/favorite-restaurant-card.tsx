@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Star } from "lucide-react";
-import { FavoriteButton } from "@/components/favorite-button";
+import { FavoriteButton } from "@/shared/ui/favorite-button";
 import type { FavoriteRestaurantItem } from "@/types/restaurant";
 
 interface FavoriteRestaurantCardProps {

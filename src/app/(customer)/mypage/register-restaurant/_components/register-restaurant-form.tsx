@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ArrowLeft, Loader2, Search } from "lucide-react";
 
-import { ImageUpload } from "@/components/ImageUpload";
-import { AddressSearch } from "@/components/address-search";
-import type { PostcodeResult } from "@/lib/kakao";
-import { CATEGORY_LABELS } from "@/lib/constants";
+import { ImageUpload } from "@/shared/ui/ImageUpload";
+import { AddressSearch } from "@/shared/ui/address-search";
+import type { PostcodeResult } from "@/shared/lib/kakao";
+import { CATEGORY_LABELS } from "@/shared/config/constants";
 import { registerRestaurant } from "../actions";
 
 export function RegisterRestaurantForm() {

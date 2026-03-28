@@ -5,7 +5,7 @@ import { MenuSection, type MenuData } from "./menu-section";
 import {
   MenuBottomSheet,
   type MenuSheetData,
-} from "@/components/menu-bottom-sheet";
+} from "@/shared/ui/menu-bottom-sheet";
 import { CartFloatingBar } from "@/app/(customer)/cart/_components/cart-floating-bar";
 
 interface MenuListClientProps {

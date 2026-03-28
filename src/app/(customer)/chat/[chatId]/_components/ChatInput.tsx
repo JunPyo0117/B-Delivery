@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback, type KeyboardEvent, type ChangeEvent } from "react";
 import { ImagePlus, ArrowUp } from "lucide-react";
-import { useImageUpload } from "@/hooks/useImageUpload";
+import { useImageUpload } from "@/shared/lib/useImageUpload";
 
 interface ChatInputProps {
   onSendText: (content: string) => void;

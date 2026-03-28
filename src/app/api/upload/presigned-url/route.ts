@@ -5,7 +5,7 @@ import {
   MINIO_BUCKET,
   getPublicUrl,
   toPublicPresignedUrl,
-} from "@/lib/minio";
+} from "@/shared/api/minio";
 import type { ImageCategory, PresignedUrlResponse } from "@/types/upload";
 
 const ALLOWED_CATEGORIES: ImageCategory[] = [

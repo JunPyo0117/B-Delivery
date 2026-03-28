@@ -1,6 +1,6 @@
 "use server"
 
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/shared/api/prisma"
 import type { OrderCardData, OrderItemData, SelectedOption } from "../model/types"
 import { DELIVERING_STATUSES, COMPLETED_STATUSES } from "../model/types"
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { cn } from "@/lib/utils"
+import { cn } from "@/shared/lib/utils"
 
 interface StarRatingProps {
   /** 현재 별점 (1~5) */

@@ -1,7 +1,7 @@
 "use server"
 
-import { prisma } from "@/lib/prisma"
-import { publishOrderUpdate } from "@/lib/redis"
+import { prisma } from "@/shared/api/prisma"
+import { publishOrderUpdate } from "@/shared/api/redis"
 import type { Prisma } from "@/generated/prisma/client"
 import type { CreateOrderInput } from "../model/types"
 

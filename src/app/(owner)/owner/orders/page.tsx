@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/shared/api/prisma";
 import { OrderList } from "./_components/order-list";
 import type { OwnerOrder } from "./_actions/get-orders";
 

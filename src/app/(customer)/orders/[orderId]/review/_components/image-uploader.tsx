@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Camera, X, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/lib/utils";
 import type { PresignedUrlResponse } from "@/types/upload";
 
 interface ImageUploaderProps {

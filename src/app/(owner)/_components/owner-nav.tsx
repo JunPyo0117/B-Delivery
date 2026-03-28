@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/lib/utils";
 import { LayoutDashboard, ClipboardList, UtensilsCrossed, MessageCircle, Store } from "lucide-react";
 
 const NAV_ITEMS = [

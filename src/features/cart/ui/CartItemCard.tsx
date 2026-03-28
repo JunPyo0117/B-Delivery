@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { Minus, Plus, Trash2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/shared/ui/button"
 import { formatPrice } from "@/shared/lib"
 import type { CartItem } from "../model/cartStore"
 

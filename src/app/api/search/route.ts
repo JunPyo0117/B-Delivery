@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/shared/api/prisma";
 import type { SearchResultItem } from "@/types/search";
 
 const MAX_RESULTS = 20;

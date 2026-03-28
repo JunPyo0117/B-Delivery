@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/shared/api/prisma";
 import { AddressForm } from "../../_components/address-form";
 
 interface EditAddressPageProps {

@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ArrowLeft, Loader2, Search } from "lucide-react";
 
-import { AddressSearch } from "@/components/address-search";
-import type { PostcodeResult } from "@/lib/kakao";
+import { AddressSearch } from "@/shared/ui/address-search";
+import type { PostcodeResult } from "@/shared/lib/kakao";
 import { registerRider } from "../actions";
 
 const TRANSPORT_LABELS: Record<string, string> = {

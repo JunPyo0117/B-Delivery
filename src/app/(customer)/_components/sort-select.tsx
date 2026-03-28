@@ -2,8 +2,8 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
-import { SORT_OPTIONS, type SortOption } from "@/lib/constants";
-import { cn } from "@/lib/utils";
+import { SORT_OPTIONS, type SortOption } from "@/shared/config/constants";
+import { cn } from "@/shared/lib/utils";
 
 const sortEntries = Object.entries(SORT_OPTIONS) as [SortOption, string][];
 

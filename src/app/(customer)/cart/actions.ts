@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/shared/api/prisma";
 
 /** 음식점의 배달비, 최소주문금액 조회 */
 export async function getRestaurantDeliveryInfo(restaurantId: string) {

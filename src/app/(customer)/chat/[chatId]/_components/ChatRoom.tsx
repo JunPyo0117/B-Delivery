@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { useSocket } from "@/hooks/useSocket";
-import { useChatStore } from "@/stores/chat";
+import { useCentrifugoChat } from "@/features/chat/model/useCentrifugoChat";
+import { useChatStore } from "@/features/chat/model/chatStore";
 import { ChatRoomHeader } from "./ChatRoomHeader";
 import { MessageList } from "./MessageList";
 import { ChatInput } from "./ChatInput";
@@ -38,7 +38,7 @@ export function ChatRoom({
   }, [chatId, initialMessages, initialHasMore, setMessages, setHasMore, clearChat]);
 
   const { isConnected, isConnecting, error, sendMessage, sendTyping } =
-    useSocket(chatId);
+    useCentrifugoChat(chatId);
 
   return (
     <div className="flex flex-col h-dvh bg-[#F8F8F8]">

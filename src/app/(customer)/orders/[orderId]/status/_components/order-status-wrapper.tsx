@@ -1,6 +1,6 @@
 "use client"
 
-import { OrderStatusPage } from "@/views/order-status"
+import { OrderStatusPage } from "@/pages/order-status"
 
 interface OrderStatusPageWrapperProps {
   orderId: string

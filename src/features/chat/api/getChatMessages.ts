@@ -1,6 +1,6 @@
 "use server"
 
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/shared/api/prisma"
 import { auth } from "@/auth"
 import type { ChatMessageResponse } from "@/types/chat"
 

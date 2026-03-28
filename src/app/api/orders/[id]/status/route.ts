@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
-import { publishOrderUpdate } from "@/lib/redis";
+import { prisma } from "@/shared/api/prisma";
+import { publishOrderUpdate } from "@/shared/api/redis";
 import { OrderStatus } from "@/generated/prisma/client";
 
 /** 허용되는 상태 전이 맵 (PRD 준수) */

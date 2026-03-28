@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ArrowLeft, Camera, ChevronRight, Loader2 } from "lucide-react";
 
-import { ImageUpload } from "@/components/ImageUpload";
-import { AddressSearch } from "@/components/address-search";
-import type { PostcodeResult } from "@/lib/kakao";
+import { ImageUpload } from "@/shared/ui/ImageUpload";
+import { AddressSearch } from "@/shared/ui/address-search";
+import type { PostcodeResult } from "@/shared/lib/kakao";
 import { updateProfile } from "../actions";
 
 interface ProfileEditFormProps {

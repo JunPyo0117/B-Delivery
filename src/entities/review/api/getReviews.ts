@@ -1,6 +1,6 @@
 "use server"
 
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/shared/api/prisma"
 import type { ReviewCardData, ReviewListResult, ReviewStats } from "../model/types"
 
 const PAGE_SIZE = 50

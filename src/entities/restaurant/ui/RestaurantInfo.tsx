@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { Badge } from "@/components/ui/badge";
-import { CATEGORY_LABELS } from "@/lib/constants";
+import { Badge } from "@/shared/ui/badge";
+import { CATEGORY_LABELS } from "@/shared/config/constants";
 import type { RestaurantDetailData } from "../model/types";
 
 interface RestaurantInfoProps {

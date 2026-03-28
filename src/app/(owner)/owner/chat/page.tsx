@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/shared/api/prisma";
 import { redirect } from "next/navigation";
 import { OwnerChatPage } from "./_components/owner-chat-page";
 import type { OwnerChatItem } from "./_actions/chat-actions";

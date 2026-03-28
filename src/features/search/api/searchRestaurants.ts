@@ -1,7 +1,7 @@
 "use server";
 
 import { Prisma } from "@/generated/prisma/client";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/shared/api/prisma";
 import type { RestaurantCardData } from "@/entities/restaurant";
 
 export interface SearchRestaurantsParams {

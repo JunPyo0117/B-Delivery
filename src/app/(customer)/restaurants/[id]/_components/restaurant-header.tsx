@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Search, ShoppingCart } from "lucide-react";
-import { useCartStore } from "@/stores/cart";
+import { useCartStore } from "@/features/cart/model/cartStore";
 
 interface RestaurantHeaderProps {
   imageUrl: string | null;

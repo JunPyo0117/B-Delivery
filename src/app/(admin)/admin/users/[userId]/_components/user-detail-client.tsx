@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from "@/shared/ui/dialog";
 import { updateUserStatus, updateUserRole } from "../../actions";
 import type { Role, UserStatus, OrderStatus } from "@/generated/prisma/client";
 import { ArrowLeft, ShieldAlert, ShieldCheck, UserX } from "lucide-react";

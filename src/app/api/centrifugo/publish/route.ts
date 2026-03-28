@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { publish } from "@/lib/centrifugo";
+import { prisma } from "@/shared/api/prisma";
+import { publish } from "@/shared/api/centrifugo";
 import { randomUUID } from "crypto";
 
 /**

@@ -1,6 +1,6 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/shared/api/prisma";
 
 export interface ReviewItem {
   id: string;

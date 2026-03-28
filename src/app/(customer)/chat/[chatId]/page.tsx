@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
-import { ChatRoomPage } from "@/views/chat";
+import { prisma } from "@/shared/api/prisma";
+import { ChatRoomPage } from "@/pages/chat";
 
 const INITIAL_MSG_LIMIT = 50;
 

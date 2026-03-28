@@ -1,7 +1,7 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
-import { redis } from "@/lib/redis";
+import { prisma } from "@/shared/api/prisma";
+import { redis } from "@/shared/api/redis";
 import type {
   GetRestaurantsParams,
   GetRestaurantsResult,

@@ -4,15 +4,15 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Search, CheckCircle2, XCircle } from "lucide-react";
 
-import { ImageUpload } from "@/components/ImageUpload";
-import { AddressSearch } from "@/components/address-search";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
+import { ImageUpload } from "@/shared/ui/ImageUpload";
+import { AddressSearch } from "@/shared/ui/address-search";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
+import { Textarea } from "@/shared/ui/textarea";
+import { Card, CardContent } from "@/shared/ui/card";
 
-import { CATEGORY_LABELS } from "@/lib/constants";
-import type { PostcodeResult } from "@/lib/kakao";
+import { CATEGORY_LABELS } from "@/shared/config/constants";
+import type { PostcodeResult } from "@/shared/lib/kakao";
 import type { SettingsData } from "../_actions/settings-actions";
 import { updateSettings } from "../_actions/settings-actions";
 

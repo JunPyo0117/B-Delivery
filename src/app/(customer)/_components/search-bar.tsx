@@ -3,7 +3,7 @@
 import { useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X, Loader2, Star, Store, UtensilsCrossed } from "lucide-react";
-import { useSearch } from "@/hooks/use-search";
+import { useSearch } from "@/shared/lib/use-search";
 import type { SearchResultItem } from "@/types/search";
 
 export function SearchBar() {

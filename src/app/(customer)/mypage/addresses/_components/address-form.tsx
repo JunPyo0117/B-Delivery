@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
-import { AddressSearch } from "@/components/address-search";
-import type { PostcodeResult } from "@/lib/kakao";
+import { AddressSearch } from "@/shared/ui/address-search";
+import type { PostcodeResult } from "@/shared/lib/kakao";
 import { createAddress, updateAddress } from "../actions";
 
 interface AddressFormProps {

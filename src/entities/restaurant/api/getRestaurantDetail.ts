@@ -1,6 +1,6 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/shared/api/prisma";
 import type { RestaurantDetailData } from "../model/types";
 
 /** 메뉴 옵션 (restaurant 슬라이스 내부에서만 사용) */

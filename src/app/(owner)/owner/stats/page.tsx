@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/shared/api/prisma";
 import { BarChart3 } from "lucide-react";
 import { StatsDashboard } from "./_components/stats-dashboard";
 

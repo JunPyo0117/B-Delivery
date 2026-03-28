@@ -1,7 +1,7 @@
 "use client"
 
 import type { OrderStatus } from "@/generated/prisma/client"
-import { cn } from "@/lib/utils"
+import { cn } from "@/shared/lib/utils"
 import { ORDER_STATUS_LABELS } from "../model/types"
 
 const STATUS_STYLES: Record<OrderStatus, string> = {

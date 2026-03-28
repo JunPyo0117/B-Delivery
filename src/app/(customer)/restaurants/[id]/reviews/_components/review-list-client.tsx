@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useCallback } from "react";
 import { Camera, ChevronDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import { ReviewCard } from "./review-card";
 import { getReviews, type ReviewItem } from "../actions";
 

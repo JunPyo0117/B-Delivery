@@ -1,4 +1,4 @@
-import type { RestaurantCategory } from "@/generated/prisma/client"
+import type { RestaurantCategory } from "@/generated/prisma/client";
 
 export const CATEGORY_LABELS: Record<RestaurantCategory, string> = {
   KOREAN: "한식",
@@ -13,7 +13,18 @@ export const CATEGORY_LABELS: Record<RestaurantCategory, string> = {
   JJAMBBONG: "짬·탕",
   RICE_BOWL: "한그릇",
   ETC: "기타",
-}
+};
+
+// 정렬 옵션
+export const SORT_OPTIONS = {
+  distance: "배달 빠른 순",
+  rating: "평점 순",
+  minOrder: "최소 주문금액 순",
+} as const;
+
+export type SortOption = keyof typeof SORT_OPTIONS;
+
+export const VALID_SORT_OPTIONS = Object.keys(SORT_OPTIONS) as SortOption[];
 
 export const CATEGORY_ICONS: Record<RestaurantCategory, string> = {
   KOREAN: "🍚",
@@ -21,27 +32,11 @@ export const CATEGORY_ICONS: Record<RestaurantCategory, string> = {
   JAPANESE: "🍣",
   CHICKEN: "🍗",
   PIZZA: "🍕",
-  BUNSIK: "🍢",
-  JOKBAL: "🦶",
+  BUNSIK: "🍜",
+  JOKBAL: "🥩",
   CAFE: "☕",
   FASTFOOD: "🍔",
   JJAMBBONG: "🍜",
   RICE_BOWL: "🍛",
   ETC: "🍽️",
-}
-
-export const SORT_OPTIONS = [
-  { value: "deliveryTime", label: "배달 빠른 순" },
-  { value: "rating", label: "평점 순" },
-  { value: "minOrderAmount", label: "최소 주문금액 순" },
-] as const
-
-export type SortOption = (typeof SORT_OPTIONS)[number]["value"]
-
-// 이동수단별 평균속도 (km/h)
-export const TRANSPORT_SPEED = {
-  WALK: 4,
-  BICYCLE: 15,
-  MOTORCYCLE: 30,
-  CAR: 25,
-} as const
+};

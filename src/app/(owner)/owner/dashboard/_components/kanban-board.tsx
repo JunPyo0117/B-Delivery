@@ -12,9 +12,9 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+} from "@/shared/ui/dialog";
+import { Textarea } from "@/shared/ui/textarea";
+import { cn } from "@/shared/lib/utils";
 import { Clock, User, Truck, RefreshCw } from "lucide-react";
 
 // ── 칸반 컬럼 정의 ─────────────────────────────────────────

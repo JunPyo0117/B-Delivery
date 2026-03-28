@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
-import { FavoritesPage } from "@/views/favorites";
+import { prisma } from "@/shared/api/prisma";
+import { FavoritesPage } from "@/pages/favorites";
 import type { FavoriteRestaurantItem } from "@/types/restaurant";
 
 export default async function FavoritesRoute() {

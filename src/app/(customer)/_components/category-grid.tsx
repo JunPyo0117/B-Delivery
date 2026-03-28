@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { CATEGORY_LABELS, CATEGORY_ICONS } from "@/lib/constants";
-import { cn } from "@/lib/utils";
+import { CATEGORY_LABELS, CATEGORY_ICONS } from "@/shared/config/constants";
+import { cn } from "@/shared/lib/utils";
 
 const categories = Object.entries(CATEGORY_LABELS) as [string, string][];
 

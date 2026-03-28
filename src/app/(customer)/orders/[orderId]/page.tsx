@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/shared/api/prisma";
 import { redirect, notFound } from "next/navigation";
 import {
   ArrowLeft,
@@ -12,7 +12,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
-import { KakaoMap } from "@/components/kakao-map";
+import { KakaoMap } from "@/shared/ui/kakao-map";
 
 const ORDER_STEPS = [
   { status: "PENDING", label: "주문 접수", icon: Clock },

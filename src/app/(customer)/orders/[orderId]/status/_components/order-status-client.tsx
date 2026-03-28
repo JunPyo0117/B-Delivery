@@ -5,11 +5,11 @@ import { ArrowLeft, MapPin, MessageCircle, XCircle, Loader2 } from "lucide-react
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { useOrderSocket } from "@/hooks/useOrderSocket";
-import { useOrderStore } from "@/stores/order";
+import { useCentrifugoOrder } from "@/features/order/model/useCentrifugoOrder";
+import { useOrderStore } from "@/features/order/model/orderStore";
 import type { OrderStatus } from "@/types/order";
 import { RestaurantMap } from "./restaurant-map";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from "@/shared/ui/dialog";
 
 interface OrderStatusData {
   orderId: string;
@@ -109,7 +109,7 @@ export function OrderStatusClient({ initialData }: OrderStatusClientProps) {
   }, [orderId, initialData.status, setOrderStatus]);
 
   // WebSocket 연결 - 실시간 상태 업데이트
-  const { isConnected } = useOrderSocket({
+  const { isConnected } = useCentrifugoOrder({
     enabled: true,
     onStatusChange: (event) => {
       if (event.orderId === orderId) {

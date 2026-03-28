@@ -1,7 +1,7 @@
 "use server"
 
-import { prisma } from "@/lib/prisma"
-import { publishOrderUpdate } from "@/lib/redis"
+import { prisma } from "@/shared/api/prisma"
+import { publishOrderUpdate } from "@/shared/api/redis"
 import { CUSTOMER_CANCELLABLE } from "../model/types"
 
 interface CancelOrderResult {

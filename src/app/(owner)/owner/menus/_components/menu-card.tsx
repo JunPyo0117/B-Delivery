@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react";
 import Image from "next/image";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
+import { Switch } from "@/shared/ui/switch";
+import { Button } from "@/shared/ui/button";
 import { Loader2 } from "lucide-react";
 import { toggleSoldOut, deleteMenu } from "../actions";
 import {
@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from "@/shared/ui/dialog";
 
 interface MenuCardProps {
   menu: {

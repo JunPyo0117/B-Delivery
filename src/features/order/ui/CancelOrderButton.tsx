@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/shared/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -9,8 +9,8 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
+} from "@/shared/ui/dialog"
+import { Textarea } from "@/shared/ui/textarea"
 import { cancelOrder } from "@/entities/order/api/cancelOrder"
 import { CUSTOMER_CANCELLABLE } from "@/entities/order"
 import type { OrderStatus } from "@/generated/prisma/client"

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/shared/api/prisma";
 import { ProfileEditForm } from "../_components/profile-edit-form";
 
 export default async function ProfileEditPage() {

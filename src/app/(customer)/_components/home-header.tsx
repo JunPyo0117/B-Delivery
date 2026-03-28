@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Bell, ChevronDown, ShoppingCart } from "lucide-react";
-import { useCartStore } from "@/stores/cart";
+import { useCartStore } from "@/features/cart/model/cartStore";
 
 interface HomeHeaderProps {
   address: string | null;

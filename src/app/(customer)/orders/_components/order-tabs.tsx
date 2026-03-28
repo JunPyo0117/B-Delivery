@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ShoppingCart, Search, Heart, ChevronDown } from "lucide-react";
-import { useCartStore } from "@/stores/cart";
+import { useCartStore } from "@/features/cart/model/cartStore";
 import { getReorderItems } from "../actions";
 
 /** 주문 내역 탭 타입 */

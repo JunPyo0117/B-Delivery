@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
-import { redis } from "@/lib/redis";
-import { VALID_SORT_OPTIONS, type SortOption } from "@/lib/constants";
+import { prisma } from "@/shared/api/prisma";
+import { redis } from "@/shared/api/redis";
+import { VALID_SORT_OPTIONS, type SortOption } from "@/shared/config/constants";
 import type { RestaurantListItem } from "@/types/restaurant";
 
 const MAX_DISTANCE_KM = 3;

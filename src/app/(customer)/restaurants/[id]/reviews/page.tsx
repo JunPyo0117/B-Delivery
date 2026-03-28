@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
-import { ReviewListPage } from "@/views/review";
+import { prisma } from "@/shared/api/prisma";
+import { ReviewListPage } from "@/pages/review";
 import { getReviewStats, getReviews } from "./actions";
 
 export default async function ReviewListRoute({

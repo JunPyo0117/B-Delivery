@@ -1,7 +1,7 @@
 "use server"
 
 import { auth } from "@/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/shared/api/prisma"
 import type { UserAddress } from "../model/types"
 
 interface UpdateAddressInput {
