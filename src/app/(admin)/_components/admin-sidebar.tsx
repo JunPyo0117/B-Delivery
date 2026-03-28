@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { cn } from "@/shared/lib/utils";
 
 const navItems = [
@@ -82,7 +83,7 @@ export function AdminSidebar() {
       </nav>
 
       {/* 하단 */}
-      <div className="border-t p-3">
+      <div className="border-t p-3 space-y-1">
         <Link
           href="/"
           className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -90,6 +91,13 @@ export function AdminSidebar() {
           <span className="text-base">🏠</span>
           서비스 홈으로
         </Link>
+        <button
+          onClick={() => signOut({ callbackUrl: "/admin/login" })}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-red-500 hover:bg-red-50"
+        >
+          <span className="text-base">🚪</span>
+          로그아웃
+        </button>
       </div>
     </aside>
   );

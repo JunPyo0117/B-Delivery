@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import {
@@ -137,6 +138,17 @@ export function OwnerSidebar({
           })}
         </ul>
       </nav>
+
+      {/* 로그아웃 */}
+      <div className="border-t border-gray-200 px-2 py-2">
+        <button
+          onClick={() => signOut({ callbackUrl: "/owner/login" })}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-red-500 hover:bg-red-50"
+        >
+          <span>🚪</span>
+          로그아웃
+        </button>
+      </div>
 
       {/* 영업 상태 토글 */}
       <div className="border-t border-gray-200 px-4 py-4">

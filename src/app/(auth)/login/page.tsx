@@ -8,8 +8,11 @@ export const metadata = {
 export default async function LoginPage() {
   const session = await auth();
   if (session) {
-    // OWNER는 사장 대시보드로, 그 외는 홈으로
-    redirect(session.user.role === "OWNER" ? "/owner/dashboard" : "/");
+    const role = session.user.role;
+    if (role === "OWNER") redirect("/owner/dashboard");
+    if (role === "RIDER") redirect("/rider");
+    if (role === "ADMIN") redirect("/admin/dashboard");
+    redirect("/");
   }
 
   return (

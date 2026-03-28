@@ -15,6 +15,7 @@ import {
   Settings,
 } from "lucide-react";
 import { formatPrice } from "@/shared/lib";
+import { RiderLogoutButton } from "./_components/rider-logout-button";
 
 const TRANSPORT_LABELS: Record<string, string> = {
   WALK: "도보",
@@ -153,13 +154,8 @@ export default async function RiderMyPage() {
           />
         </div>
 
-        {/* 고객 화면으로 이동 */}
-        <Link
-          href="/"
-          className="flex items-center justify-center rounded-xl border border-gray-200 py-3 text-[13px] text-gray-500 hover:bg-gray-50 transition-colors"
-        >
-          고객 화면으로 이동
-        </Link>
+        {/* 로그아웃 */}
+        <RiderLogoutButton />
       </div>
     </div>
   );
