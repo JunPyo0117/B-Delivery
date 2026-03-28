@@ -30,6 +30,21 @@ const navItems = [
     href: "/admin/reports",
     icon: "🚨",
   },
+  {
+    label: "배달기사 관리",
+    href: "/admin/riders",
+    icon: "🏍",
+  },
+  {
+    label: "배달 현황",
+    href: "/admin/monitoring",
+    icon: "📍",
+  },
+  {
+    label: "고객센터",
+    href: "/admin/cs",
+    icon: "💬",
+  },
 ];
 
 export function AdminSidebar() {
