@@ -2,6 +2,14 @@
 
 import { MenuItemCard } from "./menu-item-card";
 
+export interface OptionGroupData {
+  id: string;
+  name: string;
+  isRequired: boolean;
+  maxSelect: number;
+  options: { id: string; name: string; extraPrice: number }[];
+}
+
 export interface MenuData {
   id: string;
   name: string;
@@ -9,6 +17,7 @@ export interface MenuData {
   description: string | null;
   imageUrl: string | null;
   isSoldOut: boolean;
+  optionGroups?: OptionGroupData[];
 }
 
 interface MenuSectionProps {

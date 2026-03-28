@@ -23,6 +23,13 @@ export async function getRestaurantDeliveryInfo(restaurantId: string) {
   };
 }
 
+/** 주문 아이템 옵션 정보 */
+export interface OrderItemOption {
+  groupName: string;
+  optionName: string;
+  extraPrice: number;
+}
+
 /** 주문 생성 Server Action */
 export interface CreateOrderInput {
   restaurantId: string;
@@ -31,6 +38,7 @@ export interface CreateOrderInput {
     menuId: string;
     quantity: number;
     price: number;
+    options?: OrderItemOption[];
   }[];
 }
 
@@ -65,17 +73,20 @@ export async function createOrder(
   }
 
   // 메뉴 유효성 검증 — DB 가격으로 계산
-  const menuIds = items.map((item) => item.menuId);
+  const menuIds = [...new Set(items.map((item) => item.menuId))];
   const menus = await prisma.menu.findMany({
     where: { id: { in: menuIds }, restaurantId },
     select: { id: true, price: true, isSoldOut: true, name: true },
   });
 
-  if (menus.length !== items.length) {
+  if (menus.length !== menuIds.length) {
     return { error: "유효하지 않은 메뉴가 포함되어 있습니다." };
   }
 
-  const menuMap = new Map(menus.map((m) => [m.id, m]));
+  type MenuInfo = { id: string; price: number; isSoldOut: boolean; name: string };
+  const menuMap = new Map<string, MenuInfo>(
+    menus.map((m: MenuInfo) => [m.id, m] as const)
+  );
 
   // 품절 확인
   for (const item of items) {
@@ -88,10 +99,14 @@ export async function createOrder(
     }
   }
 
-  // 서버 측 총 금액 계산 (DB 가격 사용)
+  // 서버 측 총 금액 계산 (DB 가격 + 옵션 가격)
   const subtotal = items.reduce((sum, item) => {
     const menu = menuMap.get(item.menuId)!;
-    return sum + menu.price * item.quantity;
+    const optionPrice = (item.options ?? []).reduce(
+      (acc, o) => acc + o.extraPrice,
+      0
+    );
+    return sum + (menu.price + optionPrice) * item.quantity;
   }, 0);
 
   // 최소 주문 금액 확인
@@ -112,11 +127,25 @@ export async function createOrder(
       totalPrice,
       deliveryAddress,
       items: {
-        create: items.map((item) => ({
-          menuId: item.menuId,
-          quantity: item.quantity,
-          price: menuMap.get(item.menuId)!.price,
-        })),
+        create: items.map((item) => {
+          const optionPrice = (item.options ?? []).reduce(
+            (acc, o) => acc + o.extraPrice,
+            0
+          );
+          return {
+            menuId: item.menuId,
+            quantity: item.quantity,
+            price: menuMap.get(item.menuId)!.price,
+            optionPrice,
+            selectedOptions: item.options?.length
+              ? item.options.map((o) => ({
+                  groupName: o.groupName,
+                  optionName: o.optionName,
+                  extraPrice: o.extraPrice,
+                }))
+              : undefined,
+          };
+        }),
       },
     },
     select: { id: true },

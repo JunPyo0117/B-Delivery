@@ -6,8 +6,8 @@ import type { CartItem } from "@/stores/cart";
 
 interface CartItemCardProps {
   item: CartItem;
-  onUpdateQuantity: (menuId: string, quantity: number) => void;
-  onRemove: (menuId: string) => void;
+  onUpdateQuantity: (cartItemKey: string, quantity: number) => void;
+  onRemove: (cartItemKey: string) => void;
 }
 
 export function CartItemCard({
@@ -15,7 +15,8 @@ export function CartItemCard({
   onUpdateQuantity,
   onRemove,
 }: CartItemCardProps) {
-  const totalPrice = item.price * item.quantity;
+  const optionPrice = item.options.reduce((acc, o) => acc + o.extraPrice, 0);
+  const totalPrice = (item.price + optionPrice) * item.quantity;
 
   return (
     <div className="flex gap-3 py-4">
@@ -39,10 +40,18 @@ export function CartItemCard({
       {/* 메뉴 정보 */}
       <div className="flex flex-1 flex-col justify-between">
         <div className="flex items-start justify-between">
-          <h3 className="text-sm font-medium leading-tight">{item.name}</h3>
+          <div>
+            <h3 className="text-sm font-medium leading-tight">{item.name}</h3>
+            {/* 선택된 옵션 표시 */}
+            {item.options.length > 0 && (
+              <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
+                {item.options.map((o) => o.optionName).join(", ")}
+              </p>
+            )}
+          </div>
           <button
             type="button"
-            onClick={() => onRemove(item.menuId)}
+            onClick={() => onRemove(item.cartItemKey)}
             className="ml-2 shrink-0 p-0.5 text-muted-foreground hover:text-foreground transition-colors"
             aria-label={`${item.name} 삭제`}
           >
@@ -55,7 +64,7 @@ export function CartItemCard({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => onUpdateQuantity(item.menuId, item.quantity - 1)}
+              onClick={() => onUpdateQuantity(item.cartItemKey, item.quantity - 1)}
               className="flex size-7 items-center justify-center rounded-full border text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30"
               aria-label="수량 감소"
             >
@@ -66,7 +75,7 @@ export function CartItemCard({
             </span>
             <button
               type="button"
-              onClick={() => onUpdateQuantity(item.menuId, item.quantity + 1)}
+              onClick={() => onUpdateQuantity(item.cartItemKey, item.quantity + 1)}
               disabled={item.quantity >= 99}
               className="flex size-7 items-center justify-center rounded-full border text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30"
               aria-label="수량 증가"

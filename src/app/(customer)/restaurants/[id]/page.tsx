@@ -19,7 +19,15 @@ export default async function RestaurantDetailPage({
   const restaurant = await prisma.restaurant.findUnique({
     where: { id },
     include: {
-      menus: { orderBy: { createdAt: "asc" } },
+      menus: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          optionGroups: {
+            include: { options: { orderBy: { sortOrder: "asc" } } },
+            orderBy: { sortOrder: "asc" },
+          },
+        },
+      },
       reviews: {
         take: 2,
         orderBy: { createdAt: "desc" },
@@ -51,10 +59,23 @@ export default async function RestaurantDetailPage({
   const reviewCount = restaurant._count.reviews;
 
   // 메뉴 카테고리별 그룹핑 (클라이언트 직렬화를 위해 필요한 필드만 추출)
-  const menusByCategory: Record<
-    string,
-    { id: string; name: string; price: number; description: string | null; imageUrl: string | null; isSoldOut: boolean }[]
-  > = {};
+  type MenuOptionGroupData = {
+    id: string;
+    name: string;
+    isRequired: boolean;
+    maxSelect: number;
+    options: { id: string; name: string; extraPrice: number }[];
+  };
+  type MenuWithOptions = {
+    id: string;
+    name: string;
+    price: number;
+    description: string | null;
+    imageUrl: string | null;
+    isSoldOut: boolean;
+    optionGroups: MenuOptionGroupData[];
+  };
+  const menusByCategory: Record<string, MenuWithOptions[]> = {};
   for (const menu of restaurant.menus) {
     if (!menusByCategory[menu.category]) {
       menusByCategory[menu.category] = [];
@@ -66,6 +87,21 @@ export default async function RestaurantDetailPage({
       description: menu.description,
       imageUrl: menu.imageUrl,
       isSoldOut: menu.isSoldOut,
+      optionGroups: menu.optionGroups.map(
+        (g: { id: string; name: string; isRequired: boolean; maxSelect: number; options: { id: string; name: string; extraPrice: number }[] }) => ({
+          id: g.id,
+          name: g.name,
+          isRequired: g.isRequired,
+          maxSelect: g.maxSelect,
+          options: g.options.map(
+            (o: { id: string; name: string; extraPrice: number }) => ({
+              id: o.id,
+              name: o.name,
+              extraPrice: o.extraPrice,
+            })
+          ),
+        })
+      ),
     });
   }
   const categories = Object.keys(menusByCategory);

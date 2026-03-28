@@ -83,6 +83,13 @@ export default function CartPage() {
           menuId: item.menuId,
           quantity: item.quantity,
           price: item.price,
+          options: item.options.length > 0
+            ? item.options.map((o) => ({
+                groupName: o.groupName,
+                optionName: o.optionName,
+                extraPrice: o.extraPrice,
+              }))
+            : undefined,
         })),
       });
 
@@ -178,7 +185,7 @@ export default function CartPage() {
         <div className="mt-2 bg-white">
           <div className="flex items-center gap-1.5 px-4 py-3">
             <span className="text-[15px] font-bold text-gray-900">놓치면 아까운 할인가게</span>
-            <span className="text-gray-400 text-xs">ⓘ</span>
+            <span className="text-gray-400 text-xs">i</span>
           </div>
           <p className="px-4 -mt-1 mb-3 text-[11px] text-gray-400">
             2천원 또는 10% 이상 즉시할인 중
@@ -236,10 +243,14 @@ export default function CartPage() {
         {/* 장바구니 아이템 목록 */}
         <div className="bg-white mt-0 border-t border-gray-100">
           {items.map((item, idx) => {
-            const totalPrice = item.price * item.quantity;
+            const optionPrice = item.options.reduce(
+              (acc, o) => acc + o.extraPrice,
+              0
+            );
+            const itemTotalPrice = (item.price + optionPrice) * item.quantity;
             return (
               <div
-                key={item.menuId}
+                key={item.cartItemKey}
                 className={`px-4 py-4 ${idx > 0 ? "border-t border-gray-100" : ""}`}
               >
                 <div className="flex gap-3">
@@ -248,11 +259,22 @@ export default function CartPage() {
                     <h3 className="text-[14px] font-semibold text-gray-900 leading-tight">
                       {item.name}
                     </h3>
+
+                    {/* 선택된 옵션 표시 */}
+                    {item.options.length > 0 && (
+                      <p className="mt-1 text-[12px] leading-relaxed text-gray-400">
+                        {item.options.map((o) => o.optionName).join(", ")}
+                      </p>
+                    )}
+
                     <p className="text-[12px] text-gray-400 mt-1 leading-relaxed">
                       가격 : {item.price.toLocaleString()}원
+                      {optionPrice > 0 && (
+                        <span> + 옵션 {optionPrice.toLocaleString()}원</span>
+                      )}
                     </p>
                     <p className="text-[15px] font-bold text-gray-900 mt-2">
-                      {totalPrice.toLocaleString()}원
+                      {itemTotalPrice.toLocaleString()}원
                     </p>
                   </div>
 
@@ -286,7 +308,7 @@ export default function CartPage() {
                   <div className="flex items-center gap-0">
                     <button
                       type="button"
-                      onClick={() => removeItem(item.menuId)}
+                      onClick={() => removeItem(item.cartItemKey)}
                       className="flex items-center justify-center size-8 text-gray-400 hover:text-gray-600 transition-colors"
                       aria-label="삭제"
                     >
@@ -294,7 +316,7 @@ export default function CartPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => updateQuantity(item.menuId, item.quantity - 1)}
+                      onClick={() => updateQuantity(item.cartItemKey, item.quantity - 1)}
                       className="flex items-center justify-center size-8 rounded-l-md border border-gray-300 text-gray-500 hover:bg-gray-50 disabled:opacity-30"
                       disabled={item.quantity <= 1}
                       aria-label="수량 감소"
@@ -306,7 +328,7 @@ export default function CartPage() {
                     </span>
                     <button
                       type="button"
-                      onClick={() => updateQuantity(item.menuId, item.quantity + 1)}
+                      onClick={() => updateQuantity(item.cartItemKey, item.quantity + 1)}
                       disabled={item.quantity >= 99}
                       className="flex items-center justify-center size-8 rounded-r-md border border-gray-300 text-gray-500 hover:bg-gray-50 disabled:opacity-30"
                       aria-label="수량 증가"
