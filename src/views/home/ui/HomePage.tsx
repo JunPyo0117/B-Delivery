@@ -186,7 +186,7 @@ export function HomePage({ address, latitude, longitude }: HomePageProps) {
 
   // URL 파라미터
   const activeCategory = searchParams.get("category")
-  const activeSort = (searchParams.get("sort") as SortOption) ?? SORT_OPTIONS[0].value
+  const activeSort = (searchParams.get("sort") as SortOption) ?? "distance"
 
   // 음식점 목록 상태
   const [restaurants, setRestaurants] = useState<RestaurantCardData[]>([])
