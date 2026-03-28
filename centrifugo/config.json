@@ -7,7 +7,7 @@
     "proxy": {
       "connect": {
         "enabled": true,
-        "endpoint": "http://web-app:3000/api/centrifugo/connect",
+        "endpoint": "http://host.docker.internal:3000/api/centrifugo/connect",
         "timeout": "3s"
       }
     }
@@ -15,11 +15,11 @@
   "channel": {
     "proxy": {
       "subscribe": {
-        "endpoint": "http://web-app:3000/api/centrifugo/subscribe",
+        "endpoint": "http://host.docker.internal:3000/api/centrifugo/subscribe",
         "timeout": "3s"
       },
       "publish": {
-        "endpoint": "http://web-app:3000/api/centrifugo/publish",
+        "endpoint": "http://host.docker.internal:3000/api/centrifugo/publish",
         "timeout": "5s"
       }
     },
@@ -38,7 +38,7 @@
   },
   "rpc": {
     "proxy": {
-      "endpoint": "http://web-app:3000/api/centrifugo/rpc",
+      "endpoint": "http://host.docker.internal:3000/api/centrifugo/rpc",
       "timeout": "3s"
     }
   },
