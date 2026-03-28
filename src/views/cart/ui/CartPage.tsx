@@ -23,7 +23,6 @@ import { formatPrice } from "@/shared/lib"
 
 export function CartPage() {
   const router = useRouter()
-  const store = useCartStore()
   const {
     items,
     restaurantId,
@@ -33,11 +32,9 @@ export function CartPage() {
     updateQuantity,
     removeItem,
     clearCart,
-    totalItemPrice,
-    totalPrice,
-    itemCount,
-    meetsMinOrder,
-  } = store
+    getTotal,
+    getTotalQuantity,
+  } = useCartStore()
 
   const [mounted, setMounted] = useState(false)
   const [deliveryNote, setDeliveryNote] = useState("")
@@ -53,10 +50,11 @@ export function CartPage() {
     setMounted(true)
   }, [])
 
-  const subtotal = mounted ? totalItemPrice() : 0
-  const total = mounted ? totalPrice() : 0
-  const count = mounted ? itemCount() : 0
-  const meetsMin = mounted ? meetsMinOrder() : true
+  const itemTotal = mounted ? getTotal() : 0
+  const subtotal = itemTotal
+  const total = itemTotal + deliveryFee
+  const count = mounted ? getTotalQuantity() : 0
+  const meetsMin = mounted ? itemTotal >= minOrderAmount : true
   const isEmpty = !mounted || items.length === 0
 
   /** 주문하기 핸들러 */
@@ -90,8 +88,8 @@ export function CartPage() {
           menuId: item.menuId,
           quantity: item.quantity,
           price: item.price,
-          optionPrice: item.optionPrice,
-          selectedOptions: item.selectedOptions.map((opt) => ({
+          optionPrice: item.options.reduce((acc, o) => acc + o.extraPrice, 0),
+          selectedOptions: item.options.map((opt) => ({
             groupName: opt.groupName,
             optionName: opt.optionName,
             extraPrice: opt.extraPrice,
@@ -186,11 +184,10 @@ export function CartPage() {
         {/* 장바구니 아이템 목록 */}
         <div className="border-t border-gray-100 bg-white">
           <div className="divide-y divide-gray-100 px-4">
-            {items.map((item, idx) => (
+            {items.map((item) => (
               <CartItemCard
-                key={`${item.menuId}-${idx}`}
+                key={item.cartItemKey}
                 item={item}
-                index={idx}
                 onUpdateQuantity={updateQuantity}
                 onRemove={removeItem}
               />

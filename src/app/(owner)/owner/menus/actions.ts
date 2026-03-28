@@ -102,6 +102,18 @@ export async function getMenus(): Promise<MenuWithOptions[]> {
   return menus;
 }
 
+// ─── 메뉴 생성 (옵션 없이) ─────────────────────────
+
+export async function createMenu(data: MenuFormData) {
+  return createMenuWithOptions(data, []);
+}
+
+// ─── 메뉴 수정 (옵션 없이) ─────────────────────────
+
+export async function updateMenu(menuId: string, data: MenuFormData) {
+  return updateMenuWithOptions(menuId, data, []);
+}
+
 // ─── 메뉴 + 옵션 그룹 생성 (트랜잭션) ──────────────
 
 export async function createMenuWithOptions(

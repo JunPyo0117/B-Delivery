@@ -5,18 +5,12 @@ import { OwnerChatList } from "./owner-chat-list";
 import { ChatRoom, ChatRoomEmpty } from "./chat-room";
 import {
   getChatMessages,
+  type OwnerChatItem,
   type OwnerChatMessage,
 } from "../_actions/chat-actions";
-interface ChatListItem { id: string; chatType: string; lastMessage: string; updatedAt: string; };
-
-/** ChatListItem에 owner-support 전용 필드를 추가한 확장 타입 */
-type OwnerChatListItem = ChatListItem & {
-  category: string | null;
-  status: "WAITING" | "IN_PROGRESS" | "CLOSED";
-};
 
 interface OwnerChatPageProps {
-  initialChats: OwnerChatListItem[];
+  initialChats: OwnerChatItem[];
   currentUserId: string;
 }
 

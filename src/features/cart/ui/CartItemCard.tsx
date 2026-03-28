@@ -8,27 +8,26 @@ import type { CartItem } from "../model/cartStore"
 
 interface CartItemCardProps {
   item: CartItem
-  index: number
-  onUpdateQuantity: (index: number, quantity: number) => void
-  onRemove: (index: number) => void
+  onUpdateQuantity: (cartItemKey: string, quantity: number) => void
+  onRemove: (cartItemKey: string) => void
 }
 
 export function CartItemCard({
   item,
-  index,
   onUpdateQuantity,
   onRemove,
 }: CartItemCardProps) {
-  const itemTotal = (item.price + item.optionPrice) * item.quantity
+  const optionPrice = item.options.reduce((acc, o) => acc + o.extraPrice, 0)
+  const itemTotal = (item.price + optionPrice) * item.quantity
 
   return (
     <div className="flex gap-3 py-3">
       {/* 메뉴 이미지 */}
-      {item.menuImageUrl && (
+      {item.imageUrl && (
         <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg">
           <Image
-            src={item.menuImageUrl}
-            alt={item.menuName}
+            src={item.imageUrl}
+            alt={item.name}
             fill
             className="object-cover"
           />
@@ -38,11 +37,11 @@ export function CartItemCard({
       {/* 메뉴 정보 */}
       <div className="flex flex-1 flex-col">
         <div className="flex items-start justify-between">
-          <h4 className="font-medium leading-tight">{item.menuName}</h4>
+          <h4 className="font-medium leading-tight">{item.name}</h4>
           <Button
             variant="ghost"
             size="icon-xs"
-            onClick={() => onRemove(index)}
+            onClick={() => onRemove(item.cartItemKey)}
             className="text-muted-foreground"
           >
             <Trash2 className="size-3.5" />
@@ -50,9 +49,9 @@ export function CartItemCard({
         </div>
 
         {/* 선택 옵션 */}
-        {item.selectedOptions.length > 0 && (
+        {item.options.length > 0 && (
           <div className="mt-1 space-y-0.5">
-            {item.selectedOptions.map((opt, i) => (
+            {item.options.map((opt, i) => (
               <p key={i} className="text-xs text-muted-foreground">
                 {opt.optionName}
                 {opt.extraPrice > 0 && ` (+${formatPrice(opt.extraPrice)})`}
@@ -68,7 +67,7 @@ export function CartItemCard({
             <Button
               variant="outline"
               size="icon-xs"
-              onClick={() => onUpdateQuantity(index, item.quantity - 1)}
+              onClick={() => onUpdateQuantity(item.cartItemKey, item.quantity - 1)}
               disabled={item.quantity <= 1}
             >
               <Minus className="size-3" />
@@ -79,7 +78,7 @@ export function CartItemCard({
             <Button
               variant="outline"
               size="icon-xs"
-              onClick={() => onUpdateQuantity(index, item.quantity + 1)}
+              onClick={() => onUpdateQuantity(item.cartItemKey, item.quantity + 1)}
             >
               <Plus className="size-3" />
             </Button>
