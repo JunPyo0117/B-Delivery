@@ -60,7 +60,8 @@ export function RegisterRestaurantForm() {
       }
 
       await updateSession();
-      router.push("/mypage");
+      // 메뉴 빠른 시작: 등록 완료 후 메뉴 관리 페이지로 이동 (쿼리 파라미터로 빠른시작 다이얼로그 트리거)
+      router.push("/owner/menus?quickstart=true");
       router.refresh();
     });
   }

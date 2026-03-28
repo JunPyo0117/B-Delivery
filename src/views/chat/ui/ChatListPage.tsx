@@ -20,6 +20,8 @@ export function ChatListPage({ orderItems }: ChatListPageProps) {
   const router = useRouter()
   const [loadingOrderId, setLoadingOrderId] = useState<string | null>(null)
   const [creatingGeneral, setCreatingGeneral] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const categories = ["주문 문의", "배달 문의", "결제 문의", "기타"]
 
   const handleOrderClick = async (order: ChatOrderItem) => {
     if (loadingOrderId) return
@@ -70,14 +72,21 @@ export function ChatListPage({ orderItems }: ChatListPageProps) {
         <h1 className="text-[17px] font-bold text-gray-900">실시간 채팅 상담</h1>
       </header>
 
-      {/* 카테고리 칩 */}
-      <div className="flex gap-2 px-4 mt-4">
-        <span className="px-4 py-1.5 text-[13px] font-bold rounded-full bg-[#2DB400] text-white">
-          배민
-        </span>
-        <span className="px-4 py-1.5 text-[13px] font-medium rounded-full border border-gray-300 text-gray-500">
-          기타문의
-        </span>
+      {/* 문의 카테고리 선택 */}
+      <div className="flex gap-2 px-4 mt-4 overflow-x-auto scrollbar-hide">
+        {categories.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
+            className={`shrink-0 px-4 py-1.5 text-[13px] font-medium rounded-full transition-colors ${
+              selectedCategory === cat
+                ? "bg-[#2DB400] text-white font-bold"
+                : "border border-gray-300 text-gray-500 hover:border-gray-400"
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
       </div>
 
       {/* 비즈니스 시간 안내 */}

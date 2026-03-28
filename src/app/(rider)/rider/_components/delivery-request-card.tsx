@@ -39,6 +39,17 @@ export function DeliveryRequestCard({
   const [secondsLeft, setSecondsLeft] = useState(AUTO_REJECT_SECONDS);
   const [error, setError] = useState<string | null>(null);
 
+  // 알림음 + 진동
+  useEffect(() => {
+    try {
+      const audio = new Audio("/sounds/delivery-alert.mp3");
+      audio.play().catch(() => {});
+    } catch {}
+    try {
+      navigator.vibrate?.([200, 100, 200]);
+    } catch {}
+  }, []);
+
   // 자동 거절 타이머
   useEffect(() => {
     if (secondsLeft <= 0) {

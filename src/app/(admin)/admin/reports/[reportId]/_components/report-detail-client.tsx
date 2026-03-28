@@ -125,6 +125,14 @@ export function ReportDetailClient({ report }: Props) {
       }
 
       if (result.success) {
+        // 신고자에게 처리 결과 시스템 메시지 전송
+        try {
+          await fetch("/api/chat/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId: null, reportNotification: true }),
+          });
+        } catch {}
         setActionType(null);
         setAdminMemo("");
         router.refresh();

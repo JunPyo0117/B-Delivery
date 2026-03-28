@@ -34,14 +34,47 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ chatId: order.chats[0].id });
   }
 
-  // 새 채팅방 생성 (userId는 주문한 고객)
+  // 역할별 chatType 결정
+  const role = session.user.role;
+  const chatType = role === "OWNER" ? "OWNER_SUPPORT" : role === "RIDER" ? "RIDER_SUPPORT" : "CUSTOMER_SUPPORT";
+
+  // 대기 중인 ADMIN 자동 배정 (가장 최근 활동한 ADMIN)
+  const availableAdmin = await prisma.user.findFirst({
+    where: { role: "ADMIN", status: "ACTIVE" },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+
   const chat = await prisma.chat.create({
     data: {
       orderId,
-      userId: order.userId,
-      chatType: "CUSTOMER_SUPPORT",
+      userId: session.user.id,
+      chatType,
+      adminId: availableAdmin?.id || null,
+      status: availableAdmin ? "IN_PROGRESS" : "WAITING",
     },
   });
+
+  // ADMIN 부재 시 시스템 메시지 생성
+  if (!availableAdmin) {
+    await prisma.message.create({
+      data: {
+        chatId: chat.id,
+        senderId: session.user.id,
+        type: "SYSTEM",
+        content: "현재 상담 대기 중입니다. 순서대로 연결해 드릴게요.",
+      },
+    });
+  } else {
+    await prisma.message.create({
+      data: {
+        chatId: chat.id,
+        senderId: availableAdmin.id,
+        type: "SYSTEM",
+        content: "상담원이 배정되었습니다. 무엇을 도와드릴까요?",
+      },
+    });
+  }
 
   return NextResponse.json({ chatId: chat.id }, { status: 201 });
 }

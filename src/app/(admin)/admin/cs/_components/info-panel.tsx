@@ -255,19 +255,59 @@ export function InfoPanel({ chatDetail }: InfoPanelProps) {
         </div>
 
         <div className="grid grid-cols-1 gap-2">
-          <button className="flex items-center justify-center rounded-lg border border-[#2DB400] px-3 py-2 text-[12px] font-medium text-[#2DB400] transition-colors hover:bg-[#2DB400]/5">
-            사장에게 문의 열기
-          </button>
-          <button className="flex items-center justify-center rounded-lg border border-[#2DB400] px-3 py-2 text-[12px] font-medium text-[#2DB400] transition-colors hover:bg-[#2DB400]/5">
-            기사에게 문의 열기
-          </button>
+          {order?.restaurant?.ownerId && (
+            <button
+              onClick={async () => {
+                const res = await fetch("/api/chat/create", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ orderId: order.id, chatType: "OWNER_SUPPORT" }),
+                });
+                const data = await res.json();
+                if (data.chatId) onSelectChat?.(data.chatId);
+              }}
+              className="flex items-center justify-center rounded-lg border border-[#2DB400] px-3 py-2 text-[12px] font-medium text-[#2DB400] transition-colors hover:bg-[#2DB400]/5"
+            >
+              사장에게 문의 열기
+            </button>
+          )}
+          {order?.delivery?.riderId && (
+            <button
+              onClick={async () => {
+                const res = await fetch("/api/chat/create", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ orderId: order.id, chatType: "RIDER_SUPPORT" }),
+                });
+                const data = await res.json();
+                if (data.chatId) onSelectChat?.(data.chatId);
+              }}
+              className="flex items-center justify-center rounded-lg border border-[#2DB400] px-3 py-2 text-[12px] font-medium text-[#2DB400] transition-colors hover:bg-[#2DB400]/5"
+            >
+              기사에게 문의 열기
+            </button>
+          )}
           {order && order.status !== "CANCELLED" && order.status !== "DONE" && (
-            <button className="flex items-center justify-center rounded-lg border border-red-400 px-3 py-2 text-[12px] font-medium text-red-500 transition-colors hover:bg-red-50">
+            <button
+              onClick={async () => {
+                if (!confirm("주문을 강제 취소하시겠습니까?")) return;
+                await fetch(`/api/orders/${order.id}/status`, {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ status: "CANCELLED" }),
+                });
+                alert("주문이 취소되었습니다.");
+              }}
+              className="flex items-center justify-center rounded-lg border border-red-400 px-3 py-2 text-[12px] font-medium text-red-500 transition-colors hover:bg-red-50"
+            >
               주문 강제 취소
             </button>
           )}
           {order && order.status === "DONE" && (
-            <button className="flex items-center justify-center rounded-lg border border-orange-400 px-3 py-2 text-[12px] font-medium text-orange-500 transition-colors hover:bg-orange-50">
+            <button
+              onClick={() => alert("환불이 요청되었습니다. (MVP: 상태만 기록)")}
+              className="flex items-center justify-center rounded-lg border border-orange-400 px-3 py-2 text-[12px] font-medium text-orange-500 transition-colors hover:bg-orange-50"
+            >
               환불 처리
             </button>
           )}

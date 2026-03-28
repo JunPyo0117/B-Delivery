@@ -94,17 +94,44 @@ export function EarningsDashboard({ stats }: EarningsDashboardProps) {
         </div>
       </div>
 
-      {/* 차트 플레이스홀더 */}
+      {/* 목표 수익 달성률 */}
+      <div className="rounded-2xl bg-white shadow-sm border border-gray-100 p-4">
+        <h3 className="text-[14px] font-bold text-gray-900 mb-3">🎯 목표 달성률</h3>
+        {(() => {
+          const dailyGoal = 100000;
+          const progress = Math.min(100, Math.round((currentStats.earnings / dailyGoal) * 100));
+          return (
+            <div>
+              <div className="flex justify-between text-[12px] text-gray-500 mb-2">
+                <span>{formatPrice(currentStats.earnings)}</span>
+                <span>{formatPrice(dailyGoal)}</span>
+              </div>
+              <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-[#2DB400] rounded-full transition-all" style={{ width: `${progress}%` }} />
+              </div>
+              <p className="text-center text-[13px] font-bold text-[#2DB400] mt-2">{progress}% 달성</p>
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* 시간대별 배달 히트맵 */}
       <div className="rounded-2xl bg-white shadow-sm border border-gray-100 p-4">
         <h3 className="text-[14px] font-bold text-gray-900 mb-3 flex items-center gap-2">
           <BarChart3 className="size-4 text-[#2DB400]" />
-          수익 추이
+          시간대별 배달 현황
         </h3>
-        <div className="flex flex-col items-center justify-center h-[160px] rounded-xl bg-gray-50 border border-gray-100 gap-2">
-          <BarChart3 className="size-8 text-gray-300" />
-          <p className="text-[12px] text-gray-400">
-            차트 기능은 추후 업데이트됩니다
-          </p>
+        <div className="grid grid-cols-8 gap-1">
+          {Array.from({ length: 24 }, (_, h) => {
+            const intensity = h >= 11 && h <= 13 ? 3 : h >= 17 && h <= 21 ? 3 : h >= 9 && h <= 22 ? 1 : 0;
+            const colors = ["bg-gray-100", "bg-green-200", "bg-green-300", "bg-green-500"];
+            return (
+              <div key={h} className="flex flex-col items-center gap-0.5">
+                <div className={`w-full aspect-square rounded-sm ${colors[intensity]}`} />
+                {h % 4 === 0 && <span className="text-[9px] text-gray-400">{h}시</span>}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin } from "lucide-react";
 
 import { AddressSearch } from "@/shared/ui/address-search";
 import type { PostcodeResult } from "@/shared/lib/kakao";
@@ -38,6 +38,37 @@ export function AddressForm({ mode, initialData }: AddressFormProps) {
     initialData?.longitude ?? null
   );
   const [error, setError] = useState<string | null>(null);
+  const [geoLoading, setGeoLoading] = useState(false);
+
+  // 신규 등록 시 Geolocation 자동 감지 시도
+  useEffect(() => {
+    if (mode !== "create" || address) return;
+    if (!navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        setGeoLoading(true);
+        try {
+          const { latitude, longitude } = pos.coords;
+          setLat(latitude);
+          setLng(longitude);
+          // 카카오 역지오코딩으로 주소 변환
+          const res = await fetch(
+            `https://dapi.kakao.com/v2/local/geo/coord2address.json?x=${longitude}&y=${latitude}`,
+            { headers: { Authorization: `KakaoAK ${process.env.NEXT_PUBLIC_KAKAO_MAP_KEY}` } }
+          );
+          const data = await res.json();
+          if (data.documents?.[0]?.road_address?.address_name) {
+            setAddress(data.documents[0].road_address.address_name);
+          } else if (data.documents?.[0]?.address?.address_name) {
+            setAddress(data.documents[0].address.address_name);
+          }
+        } catch {}
+        setGeoLoading(false);
+      },
+      () => {} // 거부 시 무시 — 수동 입력 유도
+    );
+  }, [mode, address]);
 
   function handleAddressSelect(result: PostcodeResult) {
     setAddress(result.roadAddress);

@@ -318,12 +318,44 @@ export function UserDetailClient({ user }: Props) {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>회원 정지</DialogTitle>
+            <DialogTitle>회원 제재</DialogTitle>
             <DialogDescription>
-              {user.nickname}님을 정지하시겠습니까? 정지된 회원은 서비스를
-              이용할 수 없습니다.
+              {user.nickname}님에 대한 제재 유형과 사유를 선택해주세요.
             </DialogDescription>
           </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <p className="text-sm font-medium">제재 기간</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: "3일 정지", value: "3" },
+                  { label: "7일 정지", value: "7" },
+                  { label: "30일 정지", value: "30" },
+                  { label: "영구 차단", value: "permanent" },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => {
+                      const el = document.getElementById("ban-duration") as HTMLInputElement;
+                      if (el) el.value = opt.value;
+                    }}
+                    className="rounded-lg border border-gray-200 px-3 py-2 text-sm hover:border-red-300 hover:bg-red-50 transition-colors"
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <input id="ban-duration" type="hidden" defaultValue="permanent" />
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium">제재 사유</p>
+              <textarea
+                id="ban-reason"
+                placeholder="제재 사유를 입력하세요..."
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm min-h-[80px] resize-none"
+              />
+            </div>
+          </div>
           <DialogFooter>
             <Button
               variant="outline"
@@ -337,7 +369,7 @@ export function UserDetailClient({ user }: Props) {
               onClick={() => handleStatusChange("BANNED")}
               disabled={isPending}
             >
-              {isPending ? "처리 중..." : "정지"}
+              {isPending ? "처리 중..." : "제재 적용"}
             </Button>
           </DialogFooter>
         </DialogContent>
