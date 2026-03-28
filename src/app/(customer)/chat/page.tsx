@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/shared/api/prisma";
-import { ChatListPage } from "@/pages/chat";
+import { ChatListPage } from "@/views/chat";
 import type { ChatOrderItem } from "@/types/chat";
 
 export default async function ChatRoute() {

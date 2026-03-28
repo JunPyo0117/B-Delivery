@@ -1,8 +1,8 @@
 import { auth } from "@/auth";
 import { prisma } from "@/shared/api/prisma";
 import { redirect } from "next/navigation";
-import { OrderListPage } from "@/pages/orders";
-import type { OrderData } from "@/pages/orders";
+import { OrderListPage } from "@/views/orders";
+import type { OrderData } from "@/views/orders";
 
 export default async function OrdersPage() {
   const session = await auth();

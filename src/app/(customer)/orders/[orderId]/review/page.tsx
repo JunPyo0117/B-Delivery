@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/shared/api/prisma";
-import { ReviewWritePage } from "@/pages/review";
+import { ReviewWritePage } from "@/views/review";
 import { createReview } from "./actions";
 
 export default async function ReviewRoute({
