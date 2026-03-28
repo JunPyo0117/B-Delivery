@@ -34,3 +34,7 @@ setup("authenticate as admin", async ({ page }) => {
 setup("authenticate as owner", async ({ page }) => {
   await authenticate(page, "owner@bdelivery.com", "e2e/.auth/owner.json");
 });
+
+setup("authenticate as rider", async ({ page }) => {
+  await authenticate(page, "rider@bdelivery.com", "e2e/.auth/rider.json");
+});

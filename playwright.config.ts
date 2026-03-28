@@ -33,6 +33,25 @@ export default defineConfig({
       testMatch: /.*\.admin\.spec\.ts/,
     },
     {
+      name: "chromium-owner",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "e2e/.auth/owner.json",
+        viewport: { width: 1440, height: 900 },
+      },
+      dependencies: ["setup"],
+      testMatch: /.*\.owner\.spec\.ts/,
+    },
+    {
+      name: "chromium-rider",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "e2e/.auth/rider.json",
+      },
+      dependencies: ["setup"],
+      testMatch: /.*\.rider\.spec\.ts/,
+    },
+    {
       name: "unauthenticated",
       use: { ...devices["Desktop Chrome"] },
       testMatch: /.*\.unauth\.spec\.ts/,

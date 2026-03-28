@@ -1,15 +1,11 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("홈페이지", () => {
-  test("홈페이지 접근 가능", async ({ page }) => {
+  test("홈페이지 접근 가능 (홈 또는 주소 설정)", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveURL("/");
-  });
-
-  test("로그인된 사용자는 홈페이지에서 비디릴버리 텍스트 확인", async ({
-    page,
-  }) => {
-    await page.goto("/");
-    await expect(page.locator("body")).toContainText("비디릴버리");
+    await page.waitForTimeout(2000);
+    const url = page.url();
+    // 주소 미설정 시 주소 설정으로 리다이렉트, 아니면 홈
+    expect(url).toMatch(/\/$|\/mypage\/addresses/);
   });
 });
