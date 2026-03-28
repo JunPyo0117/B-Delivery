@@ -39,6 +39,7 @@ export function MenuListClient({
       restaurantName,
       deliveryFee,
       minOrderAmount,
+      optionGroups: menu.optionGroups ?? [],
     });
     setSheetOpen(true);
   };
