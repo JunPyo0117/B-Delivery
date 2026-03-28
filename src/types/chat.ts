@@ -1,9 +1,13 @@
-// ─── Socket.IO 이벤트 페이로드 ────────────────────────
+export type ChatType = "CUSTOMER_SUPPORT" | "OWNER_SUPPORT" | "RIDER_SUPPORT";
+export type ChatStatus = "WAITING" | "IN_PROGRESS" | "CLOSED";
+
+// ─── Centrifugo 이벤트 페이로드 ────────────────────────
 
 export interface ChatMessagePayload {
   chatId: string;
   type: "TEXT" | "IMAGE";
   content: string;
+  _tempId?: string;
 }
 
 // ─── 서버 → 클라이언트 ────────────────────────────────
@@ -13,7 +17,7 @@ export interface ChatMessageResponse {
   chatId: string;
   senderId: string;
   nickname: string;
-  type: "TEXT" | "IMAGE";
+  type: "TEXT" | "IMAGE" | "SYSTEM";
   content: string;
   isRead: boolean;
   createdAt: string;

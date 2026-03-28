@@ -66,19 +66,35 @@ services:
       exit 0;
       "
 
-  chat-server:
-    build:
-      context: ./chat-server
-      dockerfile: Dockerfile
+  centrifugo:
+    image: centrifugo/centrifugo:v6
     ports:
-      - "8080:8080"
+      - "8080:8000"
+    volumes:
+      - ./centrifugo/config.json:/centrifugo/config.json
+    command: centrifugo -c config.json
+    environment:
+      CENTRIFUGO_CLIENT_TOKEN_HMAC_SECRET_KEY: ${NEXTAUTH_SECRET:-super-secret-key}
+      CENTRIFUGO_HTTP_API_KEY: ${CENTRIFUGO_API_KEY:-centrifugo-api-key}
+      CENTRIFUGO_ADMIN_PASSWORD: ${CENTRIFUGO_ADMIN_PASSWORD:-admin}
+      CENTRIFUGO_ADMIN_SECRET: ${CENTRIFUGO_ADMIN_SECRET:-admin-secret}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - bdelivery_net
+
+  order-worker:
+    build:
+      context: ./scripts
+      dockerfile: Dockerfile.worker
     environment:
       REDIS_URL: redis://redis:6379
-      DATABASE_URL: postgresql://user:password@postgres:5432/bdelivery
-      JWT_SECRET: ${NEXTAUTH_SECRET}
+      CENTRIFUGO_API_URL: http://centrifugo:8000/api
+      CENTRIFUGO_API_KEY: ${CENTRIFUGO_API_KEY:-centrifugo-api-key}
     depends_on:
-      postgres:
-        condition: service_healthy
+      centrifugo:
+        condition: service_started
       redis:
         condition: service_healthy
     networks:
@@ -99,14 +115,16 @@ services:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET_NAME: bdelivery
-      CHAT_SERVER_URL: http://chat-server:8080
+      CENTRIFUGO_API_URL: http://centrifugo:8000/api
+      CENTRIFUGO_API_KEY: ${CENTRIFUGO_API_KEY:-centrifugo-api-key}
       NEXTAUTH_URL: http://localhost:3000
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-super-secret-key}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       NEXT_PUBLIC_KAKAO_MAP_KEY: ${NEXT_PUBLIC_KAKAO_MAP_KEY}
       NEXT_PUBLIC_MINIO_ENDPOINT: "localhost"
       NEXT_PUBLIC_MINIO_PORT: "9000"
+      NEXT_PUBLIC_CENTRIFUGO_URL: "ws://localhost:8080/connection/websocket"
     depends_on:
       postgres:
         condition: service_healthy
@@ -114,6 +132,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      centrifugo:
+        condition: service_started
     networks:
       - bdelivery_net
 

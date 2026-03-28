@@ -1,0 +1,53 @@
+{
+  "client": {
+    "token": {
+      "hmac_secret_key": "${CENTRIFUGO_CLIENT_TOKEN_HMAC_SECRET_KEY}"
+    },
+    "allowed_origins": ["*"],
+    "proxy": {
+      "connect": {
+        "enabled": true,
+        "endpoint": "http://web-app:3000/api/centrifugo/connect",
+        "timeout": "3s"
+      }
+    }
+  },
+  "channel": {
+    "proxy": {
+      "subscribe": {
+        "endpoint": "http://web-app:3000/api/centrifugo/subscribe",
+        "timeout": "3s"
+      },
+      "publish": {
+        "endpoint": "http://web-app:3000/api/centrifugo/publish",
+        "timeout": "5s"
+      }
+    },
+    "namespaces": [
+      {
+        "name": "chat",
+        "subscribe_proxy_enabled": true,
+        "publish_proxy_enabled": true,
+        "allow_publish_for_client": true
+      },
+      {
+        "name": "rider_location",
+        "subscribe_proxy_enabled": true
+      }
+    ]
+  },
+  "rpc": {
+    "proxy": {
+      "endpoint": "http://web-app:3000/api/centrifugo/rpc",
+      "timeout": "3s"
+    }
+  },
+  "http_api": {
+    "key": "${CENTRIFUGO_HTTP_API_KEY}"
+  },
+  "admin": {
+    "enabled": true,
+    "password": "${CENTRIFUGO_ADMIN_PASSWORD}",
+    "secret": "${CENTRIFUGO_ADMIN_SECRET}"
+  }
+}

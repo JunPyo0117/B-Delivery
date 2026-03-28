@@ -35,6 +35,10 @@ export default async function proxy(req: NextRequest) {
     ) {
       return NextResponse.redirect(new URL("/", req.url));
     }
+
+    if (pathname.startsWith("/rider") && role !== "RIDER") {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
   }
 
   const response = NextResponse.next();

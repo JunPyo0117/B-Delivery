@@ -1,7 +1,42 @@
-// 주문 상태 (Prisma OrderStatus enum과 매핑)
-export type OrderStatus = "PENDING" | "COOKING" | "PICKED_UP" | "DONE" | "CANCELLED";
+export type OrderStatus =
+  | "PENDING"
+  | "COOKING"
+  | "WAITING_RIDER"
+  | "RIDER_ASSIGNED"
+  | "PICKED_UP"
+  | "DONE"
+  | "CANCELLED";
 
-// Go chat-server의 OrderUpdateEvent와 매핑
+export type DeliveryStatus =
+  | "REQUESTED"
+  | "ACCEPTED"
+  | "AT_STORE"
+  | "PICKED_UP"
+  | "DELIVERING"
+  | "DONE"
+  | "CANCELLED";
+
+export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
+  PENDING: "주문 접수",
+  COOKING: "조리중",
+  WAITING_RIDER: "기사 매칭 대기",
+  RIDER_ASSIGNED: "기사 배정됨",
+  PICKED_UP: "배달중",
+  DONE: "배달 완료",
+  CANCELLED: "취소됨",
+};
+
+/** 주문 상태 전이 규칙 (State Machine) */
+export const VALID_ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  PENDING: ["COOKING", "CANCELLED"],
+  COOKING: ["WAITING_RIDER", "CANCELLED"],
+  WAITING_RIDER: ["RIDER_ASSIGNED", "COOKING"],
+  RIDER_ASSIGNED: ["WAITING_RIDER", "PICKED_UP"],
+  PICKED_UP: ["DONE"],
+  DONE: [],
+  CANCELLED: [],
+};
+
 export interface OrderUpdateEvent {
   orderId: string;
   newStatus: OrderStatus;
@@ -9,20 +44,8 @@ export interface OrderUpdateEvent {
   timestamp: string;
 }
 
-// 주문 상태 한글 라벨
-export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
-  PENDING: "주문 접수",
-  COOKING: "조리중",
-  PICKED_UP: "배달중",
-  DONE: "배달 완료",
-  CANCELLED: "취소됨",
-};
-
-// 주문 상태 흐름 (다음 가능 상태)
-export const ORDER_STATUS_FLOW: Record<OrderStatus, OrderStatus[]> = {
-  PENDING: ["COOKING", "CANCELLED"],
-  COOKING: ["PICKED_UP", "CANCELLED"],
-  PICKED_UP: ["DONE"],
-  DONE: [],
-  CANCELLED: [],
-};
+export interface OrderStatusEntry {
+  orderId: string;
+  status: OrderStatus;
+  updatedAt: string;
+}

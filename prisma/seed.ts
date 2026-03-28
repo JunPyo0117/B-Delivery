@@ -545,6 +545,45 @@ async function main() {
   });
   console.log("✓ customer:", customer.email);
 
+  // ─── RIDER 계정 ───
+  const rider = await prisma.user.upsert({
+    where: { email: "rider@bdelivery.com" },
+    update: {},
+    create: {
+      email: "rider@bdelivery.com",
+      nickname: "테스트기사",
+      role: "RIDER",
+      defaultAddress: "서울특별시 강남구 역삼로 100",
+      latitude: 37.5013,
+      longitude: 127.0396,
+    },
+  });
+
+  await prisma.riderProfile.upsert({
+    where: { userId: rider.id },
+    update: {},
+    create: {
+      userId: rider.id,
+      transportType: "MOTORCYCLE",
+      activityArea: "서울 강남구",
+      activityLat: 37.5053,
+      activityLng: 127.0492,
+      activityRadius: 5,
+    },
+  });
+
+  await prisma.riderLocation.upsert({
+    where: { userId: rider.id },
+    update: {},
+    create: {
+      userId: rider.id,
+      latitude: 37.5013,
+      longitude: 127.0396,
+      isOnline: false,
+    },
+  });
+  console.log("✓ rider:", rider.email);
+
   // 기존 테스트 음식점 유지
   const existingRestaurant = await prisma.restaurant.upsert({
     where: { ownerId: owner.id },

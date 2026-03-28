@@ -5,7 +5,7 @@ declare module "next-auth" {
   interface Session {
     user: {
       id: string;
-      role: "USER" | "OWNER" | "ADMIN";
+      role: "USER" | "OWNER" | "RIDER" | "ADMIN";
       nickname: string;
       defaultAddress: string | null;
       latitude: number | null;
@@ -20,7 +20,7 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     id: string;
-    role: "USER" | "OWNER" | "ADMIN";
+    role: "USER" | "OWNER" | "RIDER" | "ADMIN";
     nickname: string;
     defaultAddress: string | null;
     latitude: number | null;

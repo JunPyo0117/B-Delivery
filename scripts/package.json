@@ -1,0 +1,10 @@
+{
+  "name": "order-worker",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "ioredis": "^5.10.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.8.0"
+  }
+}

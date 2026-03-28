@@ -1,6 +1,7 @@
 import Redis from "ioredis";
 
-const STREAM_KEY = "order_updates_stream";
+const ORDER_STREAM = "order_updates_stream";
+const DELIVERY_STREAM = "delivery_requests_stream";
 
 const globalForRedis = globalThis as unknown as {
   redis: Redis | undefined;
@@ -18,7 +19,7 @@ if (process.env.NODE_ENV !== "production") {
 
 /**
  * Redis Stream에 주문 상태 변경 이벤트를 발행합니다.
- * Go 채팅 서버가 XREADGROUP으로 소비하여 WebSocket 푸시합니다.
+ * Order Worker가 XREADGROUP으로 소비하여 Centrifugo에 발행합니다.
  */
 export async function publishOrderUpdate(
   orderId: string,
@@ -26,15 +27,38 @@ export async function publishOrderUpdate(
   userId: string
 ) {
   await redis.xadd(
-    STREAM_KEY,
+    ORDER_STREAM,
     "*",
-    "orderId",
-    orderId,
-    "newStatus",
-    newStatus,
-    "userId",
-    userId,
-    "timestamp",
-    new Date().toISOString()
+    "orderId", orderId,
+    "newStatus", newStatus,
+    "userId", userId,
+    "timestamp", new Date().toISOString()
+  );
+}
+
+/**
+ * Redis Stream에 배달 요청 이벤트를 발행합니다.
+ * Order Worker가 소비하여 근처 기사에게 브로드캐스트합니다.
+ */
+export async function publishDeliveryRequest(
+  orderId: string,
+  pickupLat: number,
+  pickupLng: number,
+  dropoffLat: number,
+  dropoffLng: number,
+  restaurantName: string,
+  riderFee: number
+) {
+  await redis.xadd(
+    DELIVERY_STREAM,
+    "*",
+    "orderId", orderId,
+    "pickupLat", String(pickupLat),
+    "pickupLng", String(pickupLng),
+    "dropoffLat", String(dropoffLat),
+    "dropoffLng", String(dropoffLng),
+    "restaurantName", restaurantName,
+    "riderFee", String(riderFee),
+    "timestamp", new Date().toISOString()
   );
 }

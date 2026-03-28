@@ -11,9 +11,12 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Centrifugo 호환 JWT: info 클레임에 role/nickname 포함
   const token = await new SignJWT({
-    role: session.user.role,
-    nickname: session.user.nickname,
+    info: {
+      role: session.user.role,
+      nickname: session.user.nickname,
+    },
   })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(session.user.id)
