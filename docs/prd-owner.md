@@ -10,6 +10,58 @@
 **레이아웃:** PC 전용 (min-width: 1024px), 좌측 사이드바 네비게이션 (하단 탭 없음)
 - 1024px 미만 접속 시 "PC에서 이용해주세요" 안내 표시
 
+## FSD 슬라이스 가이드
+
+```
+src/
+├── app/(owner)/                 # 라우팅만
+├── pages/
+│   ├── owner-dashboard/         # 대시보드 (칸반 + KPI + 차트)
+│   ├── owner-orders/            # 주문 관리
+│   ├── owner-menus/             # 메뉴 관리 (테이블 + 슬라이드 패널)
+│   ├── owner-reviews/           # 리뷰 관리 + 답글
+│   ├── owner-stats/             # 매출 통계
+│   ├── owner-chat/              # 채팅 (고객센터 문의)
+│   └── owner-settings/          # 가게 설정
+├── widgets/
+│   ├── order-kanban-board/      # 칸반 보드 (4컬럼)
+│   ├── order-detail-panel/      # 주문 상세 슬라이드 패널
+│   ├── sales-summary/           # 오늘 매출 요약 KPI
+│   ├── hourly-chart/            # 시간대별 주문 추이 차트
+│   ├── popular-menu-rank/       # 인기 메뉴 TOP 5
+│   ├── review-feed/             # 최근 리뷰 피드
+│   └── owner-sidebar/           # 좌측 사이드바 네비
+├── features/
+│   ├── order-management/        # 주문 접수/거절/배달요청
+│   ├── menu-management/         # 메뉴 CRUD + 템플릿/복사
+│   ├── menu-option/             # 옵션 그룹/항목 관리
+│   ├── review-reply/            # 사장 답글
+│   └── business-status/         # 영업 상태 토글
+├── entities/
+│   ├── order/                   # 주문 타입, API
+│   ├── menu/                    # 메뉴 타입, API
+│   ├── restaurant/              # 음식점 타입, API
+│   └── review/                  # 리뷰 타입, API
+```
+
+## 성능 목표
+
+| 지표 | 목표 |
+|------|------|
+| 신규 주문 알림 → 칸반 보드 갱신 | < 1초 |
+| 매출 통계 페이지 로딩 | < 500ms |
+
+## 캐싱 전략
+
+| 대상 | TTL | 무효화 |
+|------|-----|--------|
+| 메뉴 데이터 | Redis 10분 | 사장이 수정/품절 시 즉시 무효화 |
+
+## 테스트 전략
+
+- **E2E (Playwright):** 주문 접수 → 배달 요청 → 기사 배정 확인 플로우
+- **단위 (Vitest):** 메뉴 템플릿 적용 로직, 메뉴 복사 로직, 매출 집계 계산
+
 ## 의존하는 공통 기반 (1단계에서 완료)
 - Prisma 스키마 전체
 - NextAuth 인증 + OWNER 역할 체크

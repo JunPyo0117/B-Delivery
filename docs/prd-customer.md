@@ -10,6 +10,84 @@
 
 **레이아웃:** 모바일 반응형, 하단 4탭 (홈 / 찜 / 주문내역 / 마이페이지)
 
+## UI 참조 파일
+
+| 파일명 | 해당 화면 |
+|--------|----------|
+| `ui/1.메인페이지.png` | 홈 화면 (Feed) |
+| `ui/2.찜목록페이지.png` | 관심 음식점 (찜) |
+| `ui/3.가게상세페이지.png` | 음식점 상세 상단 |
+| `ui/6.가게 페이지.png` | 음식점 메뉴 탭 |
+| `ui/7. 가게페이지2.png` | 음식점 상세 배달 정보 |
+| `ui/8. 음식점 리뷰페이지.png` | 리뷰 목록 |
+| `ui/9. 장바구니페이지.png` | 장바구니 (빈 상태) |
+| `ui/10. 장바구니페이지 2.png` | 장바구니 (담긴 상태) |
+| `ui/11. 장바구니에...팝업.png` | 장바구니 초기화 경고 |
+| `ui/12. 상담 채팅 페이지.png` | 고객센터 채팅 |
+| `ui/4.마이페이지.png` | 마이페이지 |
+| `ui/5.주문내역.png` | 주문 내역 |
+
+## FSD 슬라이스 가이드
+
+```
+src/
+├── app/(customer)/              # 라우팅만 (page.tsx → pages/ import)
+├── pages/
+│   ├── home/                    # 홈 화면 조합
+│   ├── restaurant-detail/       # 음식점 상세 조합
+│   ├── cart/                    # 장바구니 조합
+│   ├── order-status/            # 주문 상태 조합
+│   ├── chat/                    # 채팅 조합
+│   └── my-page/                 # 마이페이지 조합
+├── widgets/
+│   ├── restaurant-card/         # 음식점 카드 (홈 리스트)
+│   ├── order-status-tracker/    # 주문 상태 프로그레스 바 + 지도
+│   ├── menu-option-sheet/       # 메뉴 옵션 바텀시트
+│   └── bottom-navigation/       # 하단 4탭 네비
+├── features/
+│   ├── cart/                    # 장바구니 (addItem, store, placeOrder)
+│   ├── order/                   # 주문 상태 관리 (Centrifugo 구독)
+│   ├── review/                  # 리뷰 작성
+│   ├── favorite/                # 찜 토글
+│   ├── search/                  # 통합 검색
+│   └── menu-option/             # 옵션 선택 로직
+├── entities/
+│   ├── restaurant/              # 음식점 타입, API, 카드 UI
+│   ├── menu/                    # 메뉴 타입, API
+│   ├── order/                   # 주문 타입, API
+│   └── review/                  # 리뷰 타입, API
+```
+
+각 슬라이스 내부: `ui/` | `model/` | `api/` | `lib/` → `index.ts` re-export
+
+## 성능 목표
+
+| 지표 | 목표 |
+|------|------|
+| 반경 검색 (음식점 목록) | < 200ms |
+| 이미지 로딩 | < 1초 |
+| 배달기사 위치 지연 | < 1초 |
+| 주문 상태 변경 → 화면 갱신 | < 1초 |
+
+## 캐싱 전략
+
+| 대상 | TTL | 무효화 |
+|------|-----|--------|
+| 음식점 목록 | Redis 5분 | 등록/수정/삭제 시 |
+| 메뉴 데이터 | Redis 10분 | 수정/품절 시 |
+
+## Rate Limiting
+
+| 대상 | 제한 |
+|------|------|
+| 주문 생성 | 분당 5회 |
+| 검색 | 분당 30회 |
+
+## 테스트 전략
+
+- **E2E (Playwright):** 음식점 탐색 → 메뉴+옵션 선택 → 장바구니 → 주문 확정 → 주문 상태 확인
+- **단위 (Vitest):** 장바구니 로직 (옵션 가격 계산, 품절 검증, 최소 주문금액), 주문 확정 검증 4단계
+
 ## 의존하는 공통 기반 (1단계에서 완료)
 - Prisma 스키마 전체 (User, Restaurant, Menu, MenuOptionGroup, MenuOption, Order, OrderItem, Review, FavoriteRestaurant, Chat, Message, UserAddress)
 - NextAuth 인증 (Google OAuth)

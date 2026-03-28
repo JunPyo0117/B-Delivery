@@ -10,6 +10,69 @@
 
 **레이아웃:** PC 전용, 좌측 사이드바 네비게이션
 
+## FSD 슬라이스 가이드
+
+```
+src/
+├── app/(admin)/                 # 라우팅만
+├── pages/
+│   ├── admin-dashboard/         # KPI 대시보드
+│   ├── admin-users/             # 사용자 관리
+│   ├── admin-reports/           # 신고 관리
+│   ├── admin-riders/            # 배달기사 관리
+│   └── admin-cs/                # 고객센터 상담 화면 (3패널)
+├── widgets/
+│   ├── kpi-cards/               # KPI 카드 (DAU, 주문, 배달 등)
+│   ├── cs-chat-list/            # 상담 채팅 리스트 (좌측)
+│   ├── cs-info-panel/           # 상담 정보 패널 (우측)
+│   ├── user-table/              # 유저 리스트 테이블
+│   ├── report-table/            # 신고 리스트 테이블
+│   └── admin-sidebar/           # 관리자 사이드바 네비
+├── features/
+│   ├── chat/                    # 채팅 핵심 (소켓, 스토어, 송수신) ← 공통 컴포넌트 전담
+│   ├── moderation/              # 신고 처리 (기각/숨김/차단)
+│   └── penalty/                 # 제재 처리
+├── entities/
+│   ├── chat/                    # Chat, Message 타입, API
+│   ├── user/                    # User 타입, API
+│   ├── report/                  # Report 타입, API
+│   └── delivery/                # Delivery 타입 (모니터링용)
+```
+
+**채팅 공통 컴포넌트 (이 에이전트가 전담, 다른 역할이 import):**
+```
+src/features/chat/
+├── ui/
+│   ├── ChatRoom.tsx             # 채팅방 메인 UI
+│   ├── ChatList.tsx             # 채팅 목록
+│   ├── ChatInput.tsx            # 메시지 입력 (텍스트+이미지)
+│   ├── MessageBubble.tsx        # 메시지 버블
+│   ├── TypingIndicator.tsx      # 타이핑 표시
+│   ├── DateSeparator.tsx        # 날짜 구분선
+│   └── ImagePreviewModal.tsx    # 이미지 전체보기
+├── model/
+│   ├── chatStore.ts             # Zustand (messages, typing, hasMore)
+│   └── useCentrifugoChat.ts     # Centrifugo 채팅 훅
+├── api/
+│   ├── createChat.ts            # 채팅방 생성
+│   ├── getMessages.ts           # 메시지 히스토리 (커서 페이지네이션)
+│   └── getChatToken.ts          # Centrifugo JWT 발급
+└── index.ts                     # Public API re-export
+```
+
+## 성능 목표
+
+| 지표 | 목표 |
+|------|------|
+| 채팅 메시지 전송 → 수신 | < 500ms |
+| WebSocket 동시접속 | 1만명+ |
+| 상담 대기 건수 실시간 갱신 | < 1초 |
+
+## 테스트 전략
+
+- **E2E (Playwright):** 고객 채팅 생성 → ADMIN 수신 → 메시지 송수신 → 읽음 확인
+- **단위 (Vitest):** 채팅 스토어 (addMessage, confirmMessage, markAsRead), 상담 배정 로직
+
 ## 의존하는 공통 기반 (1단계에서 완료)
 - Prisma 스키마 전체
 - NextAuth 인증 + ADMIN 역할 체크

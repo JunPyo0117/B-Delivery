@@ -9,6 +9,57 @@
 
 **레이아웃:** 모바일 반응형, 하단 3탭 (배달대기 / 배달내역 / 마이페이지)
 
+## FSD 슬라이스 가이드
+
+```
+src/
+├── app/(rider)/                 # 라우팅만
+├── pages/
+│   ├── rider-standby/           # 배달 대기 (콜 대시보드)
+│   ├── rider-delivery/          # 배달 진행
+│   ├── rider-history/           # 배달 내역 + 수익 대시보드
+│   └── rider-mypage/            # 마이페이지
+├── widgets/
+│   ├── delivery-request-card/   # 배달 요청 카드 (30초 카운트다운)
+│   ├── delivery-status-panel/   # 배달 진행 상태 + 버튼
+│   ├── rider-stats-card/        # 오늘 통계 카드
+│   ├── earnings-dashboard/      # 수익 대시보드 (일/주/월)
+│   ├── rider-map/               # 현재 위치 지도
+│   └── bottom-navigation/       # 하단 3탭 네비
+├── features/
+│   ├── delivery/                # 배달 수락/거절/상태변경 (RPC)
+│   ├── rider-location/          # 위치 전송 (5초 간격 RPC)
+│   └── rider-registration/      # 기사 등록
+├── entities/
+│   ├── delivery/                # 배달 타입, API
+│   └── rider/                   # 기사 프로필 타입, API
+```
+
+## 성능 목표
+
+| 지표 | 목표 |
+|------|------|
+| 위치 전송 → 고객 수신 | < 1초 |
+| 배달 요청 수신 | < 2초 |
+| 배달 매칭 | < 30초 |
+
+## 캐싱 전략
+
+| 대상 | 저장소 | TTL |
+|------|--------|-----|
+| 기사 위치 | Redis GEO | 실시간 (5초 갱신) |
+
+## Rate Limiting
+
+| 대상 | 제한 |
+|------|------|
+| 위치 업데이트 | 5초 간격 |
+
+## 테스트 전략
+
+- **E2E (Playwright):** 온라인 전환 → 배달 요청 수신 → 수락 → 픽업 → 완료 플로우
+- **단위 (Vitest):** 배달 거리/시간 계산, 이동수단별 속도 기반 예상 시간
+
 ## 의존하는 공통 기반 (1단계에서 완료)
 - Prisma 스키마 전체 (특히 Delivery, RiderProfile, RiderLocation)
 - NextAuth 인증 + RIDER 역할 체크
