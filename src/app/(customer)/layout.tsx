@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
-import { BottomNav } from "./_components/bottom-nav";
+import { BottomNavigation } from "@/widgets/bottom-navigation";
 
 /** 주소 미설정 시 리다이렉션을 건너뛸 경로 */
 const ADDRESS_EXEMPT_PATHS = [
@@ -32,7 +32,7 @@ export default async function CustomerLayout({
   return (
     <div className="flex flex-col min-h-dvh">
       <main className="flex-1 pb-20">{children}</main>
-      <BottomNav />
+      <BottomNavigation />
     </div>
   );
 }

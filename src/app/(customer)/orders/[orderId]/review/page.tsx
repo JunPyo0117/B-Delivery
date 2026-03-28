@@ -1,9 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { ReviewForm } from "./_components/review-form";
+import { ReviewWritePage } from "@/views/review";
+import { createReview } from "./actions";
 
-export default async function ReviewPage({
+export default async function ReviewRoute({
   params,
 }: {
   params: Promise<{ orderId: string }>;
@@ -53,13 +54,14 @@ export default async function ReviewPage({
       : `${menuNames[0]} 외 ${menuNames.length - 1}개`;
 
   return (
-    <ReviewForm
+    <ReviewWritePage
       order={{
         orderId: order.id,
         restaurantName: order.restaurant.name,
         restaurantId: order.restaurant.id,
         menuSummary,
       }}
+      createReview={createReview}
     />
   );
 }

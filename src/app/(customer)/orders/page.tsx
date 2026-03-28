@@ -1,9 +1,8 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import OrderTabs, {
-  type OrderData,
-} from "./_components/order-tabs";
+import { OrderListPage } from "@/views/orders";
+import type { OrderData } from "@/views/orders";
 
 export default async function OrdersPage() {
   const session = await auth();
@@ -42,5 +41,5 @@ export default async function OrdersPage() {
     hasReview: !!order.review,
   }));
 
-  return <OrderTabs orders={orderData} />;
+  return <OrderListPage orders={orderData} />;
 }

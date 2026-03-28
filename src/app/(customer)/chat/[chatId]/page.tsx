@@ -1,11 +1,11 @@
 import { redirect, notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { ChatRoom } from "./_components/ChatRoom";
+import { ChatRoomPage } from "@/views/chat";
 
 const INITIAL_MSG_LIMIT = 50;
 
-export default async function ChatRoomPage({
+export default async function ChatRoomRoute({
   params,
 }: {
   params: Promise<{ chatId: string }>;
@@ -52,7 +52,7 @@ export default async function ChatRoomPage({
   const hasMore = rawMessages.length > INITIAL_MSG_LIMIT;
   const messages = (hasMore ? rawMessages.slice(0, INITIAL_MSG_LIMIT) : rawMessages)
     .reverse()
-    .map((m: typeof rawMessages[number]) => ({
+    .map((m: (typeof rawMessages)[number]) => ({
       id: m.id,
       chatId: m.chatId,
       senderId: m.sender.id,
@@ -64,11 +64,11 @@ export default async function ChatRoomPage({
     }));
 
   return (
-    <ChatRoom
+    <ChatRoomPage
       chatId={chatId}
       currentUserId={session.user.id}
-      restaurantName={chat.order.restaurant.name}
-      orderId={chat.order.id}
+      restaurantName={chat.order?.restaurant.name ?? "일반 문의"}
+      orderId={chat.order?.id}
       initialMessages={messages}
       hasMore={hasMore}
     />

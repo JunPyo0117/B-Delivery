@@ -1,11 +1,9 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { ReviewHeader } from "./_components/review-header";
-import { RatingDistribution } from "./_components/rating-distribution";
-import { ReviewListClient } from "./_components/review-list-client";
+import { ReviewListPage } from "@/views/review";
 import { getReviewStats, getReviews } from "./actions";
 
-export default async function ReviewListPage({
+export default async function ReviewListRoute({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -27,25 +25,12 @@ export default async function ReviewListPage({
   ]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
-      <ReviewHeader />
-
-      {/* 별점 분포 */}
-      <RatingDistribution
-        averageRating={stats.averageRating}
-        totalCount={stats.totalCount}
-        distribution={stats.distribution}
-      />
-
-      <div className="h-2 bg-gray-100" />
-
-      {/* 리뷰 목록 (필터 포함) */}
-      <ReviewListClient
-        restaurantId={id}
-        initialReviews={reviews}
-        initialNextCursor={nextCursor}
-        totalCount={stats.totalCount}
-      />
-    </div>
+    <ReviewListPage
+      restaurantId={id}
+      stats={stats}
+      initialReviews={reviews}
+      initialNextCursor={nextCursor}
+      getReviews={getReviews}
+    />
   );
 }
