@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Centrifuge } from "centrifuge"
 import type { OrderStatus } from "@/generated/prisma/client"
 import { useOrderStore } from "./orderStore"
@@ -15,6 +15,7 @@ import { useOrderStore } from "./orderStore"
 export function useCentrifugoOrder(userId: string | undefined) {
   const centrifugeRef = useRef<Centrifuge | null>(null)
   const setOrderStatus = useOrderStore((s) => s.setOrderStatus)
+  const [isConnected, setIsConnected] = useState(false)
 
   useEffect(() => {
     if (!userId) return
@@ -36,6 +37,15 @@ export function useCentrifugoOrder(userId: string | undefined) {
 
     centrifugeRef.current = centrifuge
 
+    // 연결 상태 이벤트 핸들링
+    centrifuge.on("connected", () => {
+      setIsConnected(true)
+    })
+
+    centrifuge.on("disconnected", () => {
+      setIsConnected(false)
+    })
+
     // 서버 사이드 구독 채널(order#<userId>)의 publication 이벤트 수신
     centrifuge.on("publication", (ctx: { data: unknown }) => {
       const data = ctx.data as {
@@ -54,8 +64,9 @@ export function useCentrifugoOrder(userId: string | undefined) {
     return () => {
       centrifuge.disconnect()
       centrifugeRef.current = null
+      setIsConnected(false)
     }
   }, [userId, setOrderStatus])
 
-  return centrifugeRef
+  return { centrifugeRef, isConnected }
 }

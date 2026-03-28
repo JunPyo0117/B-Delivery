@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { ArrowLeft, MapPin, MessageCircle, XCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 import { useCentrifugoOrder } from "@/features/order/model/useCentrifugoOrder";
 import { useOrderStore } from "@/features/order/model/orderStore";
@@ -97,6 +98,8 @@ export function OrderStatusClient({ initialData }: OrderStatusClientProps) {
   } = initialData;
 
   const router = useRouter();
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
   const setOrderStatus = useOrderStore((s) => s.setOrderStatus);
 
   // 취소 관련 상태
@@ -109,14 +112,7 @@ export function OrderStatusClient({ initialData }: OrderStatusClientProps) {
   }, [orderId, initialData.status, setOrderStatus]);
 
   // WebSocket 연결 - 실시간 상태 업데이트
-  const { isConnected } = useCentrifugoOrder({
-    enabled: true,
-    onStatusChange: (event) => {
-      if (event.orderId === orderId) {
-        // 스토어가 이미 업데이트되므로 추가 작업 없음
-      }
-    },
-  });
+  const { isConnected } = useCentrifugoOrder(userId);
 
   // Zustand에서 현재 상태 구독
   const currentStatus = useOrderStore(

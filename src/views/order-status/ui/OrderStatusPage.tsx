@@ -62,7 +62,7 @@ export function OrderStatusPage({ orderId }: OrderStatusPageProps) {
   }, [orderId, userId])
 
   // Centrifugo 실시간 주문 상태 구독
-  const centrifugeRef = useCentrifugoOrder(userId)
+  const { centrifugeRef } = useCentrifugoOrder(userId)
 
   // orderStore에서 실시간 상태 구독
   const realtimeEntry = useOrderStore((s) => s.orders[orderId])
