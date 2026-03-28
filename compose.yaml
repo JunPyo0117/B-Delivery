@@ -78,6 +78,8 @@ services:
       CENTRIFUGO_HTTP_API_KEY: ${CENTRIFUGO_API_KEY:-centrifugo-api-key}
       CENTRIFUGO_ADMIN_PASSWORD: ${CENTRIFUGO_ADMIN_PASSWORD:-admin}
       CENTRIFUGO_ADMIN_SECRET: ${CENTRIFUGO_ADMIN_SECRET:-admin-secret}
+      CENTRIFUGO_RPC_PROXY_ENDPOINT: http://web-app:3000/api/centrifugo/rpc
+      CENTRIFUGO_RPC_PROXY_TIMEOUT: 3s
     depends_on:
       redis:
         condition: service_healthy
