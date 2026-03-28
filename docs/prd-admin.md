@@ -10,6 +10,26 @@
 
 **레이아웃:** PC 전용, 좌측 사이드바 네비게이션
 
+## 와이어프레임 (.pen 파일 — Pencil MCP 도구로 읽기)
+
+> **파일:** `.pencil/pencil-new.pen`
+
+| 노드 이름 | 화면 | PRD 섹션 |
+|-----------|------|---------|
+| `ADMIN-01 대시보드` | KPI 대시보드 | 6.18 |
+| `ADMIN-02 사용자리스트` | 사용자 관리 테이블 | 6.19 |
+| `ADMIN-03 사용자상세` | 회원 상세 + 제재 | 6.19 |
+| `ADMIN-04 신고리스트` | 신고 접수 리스트 | 6.20 |
+| `ADMIN-05 신고상세` | 신고 처리 상세 | 6.20 |
+| `ADMIN-06 배달기사관리` | 기사 리스트 | 6.21 |
+| `ADMIN-07 배달현황` | 배달 현황 모니터링 | 6.21 |
+| `ADMIN-08 고객센터상담` | 3패널 상담 화면 | 6.22 |
+
+**공통 컴포넌트:** `AdminSidebar`, `KPICard`, `ChatBubbleLeft`, `ChatBubbleRight`, `Avatar`, `Badge`, `ButtonPrimary`, `ButtonDestructive`, `InputField`, `SearchBar`
+
+**채팅 공통 컴포넌트 (이 에이전트가 만들어서 다른 역할이 가져다 쓸 것):**
+`ChatBubbleLeft`, `ChatBubbleRight`, `TypingIndicator(점3개)`, `DateSeparator`, `ImagePreviewModal` — .pen 파일에 디자인 정의됨
+
 ## FSD 슬라이스 가이드
 
 ```

@@ -9,6 +9,21 @@
 
 **레이아웃:** 모바일 반응형, 하단 3탭 (배달대기 / 배달내역 / 마이페이지)
 
+## 와이어프레임 (.pen 파일 — Pencil MCP 도구로 읽기)
+
+> **파일:** `.pencil/pencil-new.pen`
+
+| 노드 이름 | 화면 | PRD 섹션 |
+|-----------|------|---------|
+| `RIDER-01 등록` | 배달기사 등록 폼 | 6.14 |
+| `RIDER-02 배달대기` | 콜 대시보드 (지도 + 요청 카드) | 6.15 |
+| `RIDER-03 배달진행` | 배달 진행 (지도 + 상태 버튼) | 6.16 |
+| `RIDER-04 배달내역` | 배달 내역 리스트 | 6.17 |
+| `RIDER-05 수익요약` | 수익 대시보드 (일/주/월) | 6.17 |
+| `RIDER-06 마이페이지` | 마이페이지 | 6.10 |
+
+**공통 컴포넌트:** `BottomNav-RIDER`, `StatusBar`, `HeaderNav`, `DeliveryRequestCard`, `ProgressBar`, `KPICard`, `ButtonPrimary`, `ButtonOutline`, `ButtonDestructive`, `Avatar`, `Badge`
+
 ## FSD 슬라이스 가이드
 
 ```
