@@ -394,12 +394,12 @@ export function HomePage({ address, latitude, longitude }: HomePageProps) {
 
           {/* ── 정렬 칩 ── */}
           <div className="flex items-center gap-2 overflow-x-auto px-4 py-2.5 bg-white scrollbar-hide">
-            {SORT_OPTIONS.map((opt) => {
-              const isActive = activeSort === opt.value
+            {Object.entries(SORT_OPTIONS).map(([value, label]) => {
+              const isActive = activeSort === value
               return (
                 <button
-                  key={opt.value}
-                  onClick={() => handleSortChange(opt.value)}
+                  key={value}
+                  onClick={() => handleSortChange(value as SortOption)}
                   className={cn(
                     "flex shrink-0 items-center gap-0.5 rounded-full border px-3 py-1.5 text-[13px] transition-colors",
                     isActive
@@ -407,7 +407,7 @@ export function HomePage({ address, latitude, longitude }: HomePageProps) {
                       : "border-[#EEEEEE] bg-white text-gray-500 hover:bg-gray-50",
                   )}
                 >
-                  {opt.label}
+                  {label}
                   <ChevronDown
                     className={cn(
                       "size-3.5",
