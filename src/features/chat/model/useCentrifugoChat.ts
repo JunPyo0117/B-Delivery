@@ -94,19 +94,30 @@ export function useCentrifugoChat({
     const sub = centrifuge.newSubscription(channel)
 
     sub.on("publication", (ctx: { data: unknown }) => {
-      const data = ctx.data as {
-        type?: string
-        message?: ChatMessageResponse
-        typing?: TypingEvent
-        read?: ReadReceiptEvent
-      }
+      const data = ctx.data as Record<string, unknown>
+      const type = data.type as string | undefined
 
-      if (data.type === "message" && data.message) {
-        onMessageRef.current?.(data.message)
-      } else if (data.type === "typing" && data.typing) {
-        onTypingRef.current?.(data.typing)
-      } else if (data.type === "read" && data.read) {
-        onReadRef.current?.(data.read)
+      if (type === "message:new") {
+        // RPC route가 publish하는 형식: { type: "message:new", id, chatId, senderId, ... }
+        const msg: ChatMessageResponse = {
+          id: data.id as string,
+          chatId: data.chatId as string,
+          senderId: data.senderId as string,
+          nickname: data.nickname as string,
+          type: (data.type as string) || "TEXT",
+          content: data.content as string,
+          isRead: (data.isRead as boolean) ?? false,
+          createdAt: data.createdAt as string,
+        }
+        // type 필드를 메시지 타입으로 복원 (TEXT/IMAGE)
+        msg.type = ((data as Record<string, unknown>)["type"] as string) === "message:new"
+          ? "TEXT"
+          : (data as Record<string, unknown>)["type"] as string || "TEXT"
+        onMessageRef.current?.(msg)
+      } else if (type === "typing:update") {
+        onTypingRef.current?.(data as unknown as TypingEvent)
+      } else if (type === "message:read_receipt") {
+        onReadRef.current?.(data as unknown as ReadReceiptEvent)
       }
     })
 
@@ -173,7 +184,21 @@ export function useCentrifugoChat({
       const c = centrifugeRef.current
       if (!c || !chatId) return
       try {
-        await c.rpc("message:send", { chatId, type, content })
+        const result = await c.rpc("message:send", { chatId, type, content })
+        // RPC 응답으로 저장된 메시지 데이터가 옴 → 로컬 상태에 즉시 추가
+        const msgData = result.data as Record<string, unknown> | undefined
+        if (msgData?.id) {
+          onMessageRef.current?.({
+            id: msgData.id as string,
+            chatId: msgData.chatId as string,
+            senderId: msgData.senderId as string,
+            nickname: msgData.nickname as string,
+            type: type,
+            content: msgData.content as string,
+            isRead: false,
+            createdAt: msgData.createdAt as string,
+          })
+        }
       } catch (err) {
         console.error("[useCentrifugoChat] sendMessage 실패:", err)
       }

@@ -45,8 +45,13 @@ export function ChatRoomPage({
     return () => clearChat(chatId)
   }, [chatId, initialMessages, initialHasMore, setMessages, setHasMore, clearChat])
 
+  const addMessage = useChatStore((s) => s.addMessage)
+
   const { isConnected, isConnecting, error, sendMessage, sendTyping } =
-    useCentrifugoChat({ chatId })
+    useCentrifugoChat({
+      chatId,
+      onMessage: (msg) => addMessage(chatId, msg),
+    })
 
   return (
     <div className="flex flex-col h-dvh bg-[#F8F8F8]">
