@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { AdminSidebar } from "./_components/admin-sidebar";
 
 export default async function AdminLayout({
   children,
@@ -8,12 +9,15 @@ export default async function AdminLayout({
 }) {
   const session = await auth();
   if (!session || session.user.role !== "ADMIN") {
-    redirect("/");
+    redirect("/admin/login");
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {children}
+    <div className="flex min-h-screen">
+      <AdminSidebar />
+      <main className="ml-60 flex-1 min-h-screen">
+        {children}
+      </main>
     </div>
   );
 }

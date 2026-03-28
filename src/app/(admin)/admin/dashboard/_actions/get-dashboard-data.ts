@@ -8,6 +8,7 @@ export interface KpiData {
   newOrders: number;
   completedDeliveries: number;
   pendingReports: number;
+  activeRiders: number;
 }
 
 export interface RegionStat {
@@ -54,6 +55,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     newOrders,
     completedDeliveries,
     pendingReports,
+    activeRiders,
     recentOrdersRaw,
     recentReportsRaw,
     regionStatsRaw,
@@ -88,6 +90,11 @@ export async function getDashboardData(): Promise<DashboardData> {
     // 대기중 신고
     prisma.report.count({
       where: { status: "PENDING" },
+    }),
+
+    // 활성 기사 (온라인)
+    prisma.riderLocation.count({
+      where: { isOnline: true },
     }),
 
     // 최근 주문 10건
@@ -165,6 +172,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       newOrders,
       completedDeliveries,
       pendingReports,
+      activeRiders,
     },
     regionStats,
     recentOrders,
