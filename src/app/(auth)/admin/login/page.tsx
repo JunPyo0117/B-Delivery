@@ -1,11 +1,15 @@
 import { redirect } from "next/navigation";
-import { auth, signIn } from "@/auth";
+import { auth, signIn, signOut } from "@/auth";
 
 export const metadata = { title: "관리자 로그인 - B-Delivery" };
 
 export default async function AdminLoginPage() {
   const session = await auth();
-  if (session) redirect("/admin/dashboard");
+  if (session) {
+    if (session.user.role === "ADMIN") redirect("/admin/dashboard");
+    await signOut({ redirect: false });
+    redirect("/admin/login");
+  }
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-[#f5f5fa] px-6">
