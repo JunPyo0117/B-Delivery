@@ -1,15 +1,8 @@
-import { redirect } from "next/navigation";
-import { auth, signIn, signOut } from "@/auth";
+import { signIn } from "@/auth";
 
 export const metadata = { title: "배달기사 로그인 - B-Delivery" };
 
 export default async function RiderLoginPage() {
-  const session = await auth();
-  if (session) {
-    if (session.user.role === "RIDER") redirect("/rider");
-    await signOut({ redirect: false });
-    redirect("/rider/login");
-  }
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-white px-6">

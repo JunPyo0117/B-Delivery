@@ -15,12 +15,7 @@ export default async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // 인증 + 로그인 페이지 → 홈 리다이렉트
-  if (isLoggedIn && pathname === "/login") {
-    return NextResponse.redirect(new URL("/", req.url));
-  }
-
-  // 역할 기반 접근 제어
+  // 역할 기반 접근 제어 (로그인 페이지는 항상 접근 가능)
   if (isLoggedIn && session.user) {
     const role = session.user.role;
 

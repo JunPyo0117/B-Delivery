@@ -1,18 +1,8 @@
-import { redirect } from "next/navigation";
-import { auth, signIn, signOut } from "@/auth";
+import { signIn } from "@/auth";
 
 export const metadata = { title: "사장님 로그인 - B-Delivery" };
 
 export default async function OwnerLoginPage() {
-  const session = await auth();
-  if (session) {
-    if (session.user.role === "OWNER" || session.user.role === "ADMIN") {
-      redirect("/owner/dashboard");
-    }
-    // 다른 역할로 로그인되어 있으면 로그아웃 후 이 페이지로 복귀
-    await signOut({ redirect: false });
-    redirect("/owner/login");
-  }
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-white px-6">

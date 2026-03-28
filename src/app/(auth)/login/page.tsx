@@ -1,19 +1,10 @@
-import { redirect } from "next/navigation";
-import { auth, signIn } from "@/auth";
+import { signIn } from "@/auth";
 
 export const metadata = {
-  title: "로그인",
+  title: "로그인 - B-Delivery",
 };
 
 export default async function LoginPage() {
-  const session = await auth();
-  if (session) {
-    const role = session.user.role;
-    if (role === "OWNER") redirect("/owner/dashboard");
-    if (role === "RIDER") redirect("/rider");
-    if (role === "ADMIN") redirect("/admin/dashboard");
-    redirect("/");
-  }
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-white px-6">
