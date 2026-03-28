@@ -145,11 +145,12 @@ export function ChatRoomPanel({
     async function pollMessages() {
       const result = await getChatMessages(chatId);
       if (result.success && result.messages.length > 0) {
+        let hasNew = false;
         setMessages((prev) => {
           const existingIds = new Set(prev.map((m) => m.id));
           const newMsgs = result.messages.filter((m) => !existingIds.has(m.id));
           if (newMsgs.length > 0) {
-            markAsRead(chatId);
+            hasNew = true;
             return [...prev, ...newMsgs];
           }
           // 읽음 상태 업데이트
@@ -165,6 +166,9 @@ export function ChatRoomPanel({
           }
           return prev;
         });
+        if (hasNew) {
+          markAsRead(chatId);
+        }
       }
     }
 
