@@ -2,188 +2,201 @@
   "master": {
     "tasks": [
       {
-        "id": 55,
+        "id": "55",
         "title": "Initialize Owner Module and PC-Exclusive Layout",
         "description": "Create the `src/app/(owner)/` route group, implement the PC-only layout with a `min-width: 1024px` check, and integrate common UI components like `StatusBar` and `ButtonPrimary`.",
         "details": "Create `src/app/(owner)/layout.tsx` to enforce PC-only view. Display a 'PC에서 이용해주세요' message for screens below 1024px. Set up the basic layout structure to accommodate the `OwnerSidebar` on the left. Ensure `NextAuth` OWNER role check is integrated for all routes within this group. Implement `StatusBar` component for top-level information (e.g., business status, notifications).",
         "testStrategy": "Verify that `src/app/(owner)/` routes are only accessible to authenticated users with the `OWNER` role. Test layout responsiveness: Access pages on screens < 1024px and verify the 'PC에서 이용해주세요' message is displayed. Access pages on screens >= 1024px and verify the correct PC layout is rendered. Check for proper rendering of common components like `StatusBar`.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-28T04:49:13.189Z"
       },
       {
-        "id": 56,
+        "id": "56",
         "title": "Develop Owner Sidebar Navigation and Business Status Toggle",
         "description": "Create the `OwnerSidebar` widget with fixed 240px width, including navigation links for Dashboard, Order Management, Menu Management, Review Management, Sales Statistics, Chat, and Store Settings. Implement the business status toggle at the bottom.",
         "details": "Develop `widgets/owner-sidebar/OwnerSidebar.tsx` component. Use `Link` components for navigation, ensuring active state highlighting. Integrate the '영업 상태 토글' (Business Status Toggle) with a confirmation modal for state changes (e.g., 영업 중 / 종료 / 일시 중지). This toggle should update the `Restaurant` entity's `isOpen` status via API. Pseudo-code for toggle: `function OwnerSidebar({ currentStatus, onToggleStatus }) { const [showModal, setShowModal] = useState(false); const [selectedStatus, setSelectedStatus] = useState(''); const handleToggle = (status) => { setSelectedStatus(status); setShowModal(true); }; const confirmToggle = async () => { await updateRestaurantStatus(selectedStatus); onToggleStatus(selectedStatus); setShowModal(false); }; return (<aside className='w-[240px] fixed h-full bg-white shadow-md'>{/* Navigation Links */}<nav><ul><li><Link href='/owner/dashboard'>대시보드</Link></li></ul></nav>{/* Business Status Toggle */}<div className='absolute bottom-4 left-4 right-4'><Button onClick={() => handleToggle('OPEN')}>영업 중</Button><Button onClick={() => handleToggle('CLOSED')}>영업 종료</Button></div>{showModal && <ConfirmationModal onConfirm={confirmToggle} onCancel={() => setShowModal(false)} />} </aside>); }`",
         "testStrategy": "Verify all navigation links correctly route to their respective pages. Test the business status toggle: Clicking a status button opens the confirmation modal. Confirming the modal sends an API request to update the restaurant status. Canceling the modal does not change the status. Verify the UI reflects the updated status after a successful API call.",
         "priority": "high",
         "dependencies": [
-          55
+          "55"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-28T04:49:13.290Z"
       },
       {
-        "id": 57,
+        "id": "57",
         "title": "Implement Restaurant Registration and Settings Form",
         "description": "Create the form for new restaurant registration and for existing owners to modify store settings (OWNER-09). This includes fields for restaurant name, category, representative photo upload, minimum order amount, delivery fee, estimated delivery time, operating hours, and address with Kakao Postcode API integration for geo-location.",
         "details": "Develop `pages/owner-settings/RestaurantForm.tsx` component. Use `InputField` for text inputs, file input for image upload. Integrate Kakao Postcode API for address search and conversion to latitude/longitude. Store `Restaurant` entity data (name, category, imageUrl, minOrderAmount, deliveryFee, estimatedDeliveryTime, operatingHours, address, lat, lng). Upon successful registration, update the user's role from `USER` to `OWNER` (if not already `OWNER`). Pseudo-code for address lookup: `import DaumPostcode from 'react-daum-postcode'; import axios from 'axios'; const handleAddressSearch = (data) => { axios.get(`https://dapi.kakao.com/v2/local/search/address.json?query=${data.address}`, { headers: { Authorization: `KakaoAK ${KAKAO_REST_API_KEY}` } }).then(response => { const { x, y } = response.data.documents[0]; setFormData({ ...formData, address: data.address, lat: y, lng: x }); }); }; <DaumPostcode onComplete={handleAddressSearch} />`",
         "testStrategy": "Verify all form fields accept valid input and show validation errors for invalid input. Test image upload functionality. Verify Kakao Postcode API integration: search for an address, confirm latitude/longitude are correctly retrieved and displayed (e.g., on a map pin). Submit a new restaurant registration and verify the `Restaurant` entity is created in the DB and the user's role is updated to `OWNER`. Test updating an existing restaurant's information.",
         "priority": "high",
         "dependencies": [
-          55
+          "55"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-28T05:04:40.572Z"
       },
       {
-        "id": 58,
+        "id": "58",
         "title": "Implement Menu Quick Start and Menu Import Functionality",
         "description": "Implement the 'Menu Quick Start' feature as the final step of restaurant registration (OWNER-10) and the 'Menu Import' feature (OWNER-11) within Menu Management. This includes applying category templates, copying menu structures from other stores (franchise/popular), and handling initial menu setup.",
         "details": "Develop `features/menu-management/applyMenuTemplate.ts` and related components. Menu Quick Start (after registration): Option 1: '카테고리 템플릿 적용' - Fetch predefined menu templates based on selected restaurant category. Create `Menu` and `MenuOptionGroup`/`MenuOption` entities with default values (price 0, requiring owner input). Option 2: '다른 가게 메뉴 복사' - Allow searching for existing restaurants and copying their menu structure (name, description, options, but not prices/images). Option 3: '처음부터 직접 등록' - Proceed to empty menu management. Menu Import (within Menu Management): Re-use or adapt the logic from Quick Start. Pseudo-code for template application: `async function applyMenuTemplate(ownerId, categoryTemplateId) { const templateData = await fetchTemplateData(categoryTemplateId); const newMenus = templateData.menus.map(menu => ({ ...menu, restaurantId: ownerId, price: 0 })); await createMenusInDB(newMenus); }`",
         "testStrategy": "Test '카테고리 템플릿 적용': Select a category, verify correct menus and options (with price 0) are created for the restaurant. Test '다른 가게 메뉴 복사': Search for a store, select it, verify its menu structure (without prices/images) is copied to the current restaurant. Verify that these features correctly create `Menu`, `MenuOptionGroup`, and `MenuOption` entries in the database. Ensure the 'Menu Import' functionality within Menu Management works identically to the quick start options.",
         "priority": "high",
         "dependencies": [
-          57
+          "57"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 59,
+        "id": "59",
         "title": "Integrate Centrifugo for Real-time Order and Chat Notifications",
         "description": "Set up Centrifugo integration to receive real-time updates for new orders (`owner_orders#<ownerId>`) and chat notifications (`user#<userId>`). Implement browser notifications and sound alerts for new orders.",
         "details": "Utilize the existing Centrifugo setup and Proxy API (from Stage 1). Subscribe to `owner_orders#<ownerId>` channel using `Connect Proxy` (server-side). When a new order message is received: Trigger a browser notification using `Notification` API. Play an audible alert sound. Update the UI (e.g., Kanban board) to reflect the new order. Subscribe to `user#<userId>` channel for chat notifications. Pseudo-code for Centrifugo client setup: `import { Centrifuge } from 'centrifuge'; const client = new Centrifuge('ws://localhost:8000/connection/websocket'); export function subscribeToOwnerOrders(ownerId, onNewOrder) { const sub = client.subscribe(`owner_orders#${ownerId}`); sub.on('publication', (ctx) => { onNewOrder(ctx.data); new Notification('새로운 주문!', { body: `주문 번호: ${ctx.data.orderId}` }); new Audio('/path/to/notification.mp3').play(); }); client.connect(); }`",
         "testStrategy": "Simulate a new order via backend API and verify: The Centrifugo client receives the message. A browser notification appears. An alert sound plays. The UI (e.g., order count on Kanban) updates in real-time (< 1 second). Simulate a new chat message and verify the `user#<userId>` channel receives it.",
         "priority": "high",
         "dependencies": [
-          55
+          "55"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 60,
+        "id": "60",
         "title": "Implement Menu Management CRUD with Options and Table Layout",
         "description": "Implement the menu management interface (OWNER-04, OWNER-05) allowing owners to perform CRUD operations on menus (name, category, price, description, image) and manage menu options (groups and items). Display menus in a PC table layout with a 품절 (sold out) toggle and a right-side slide panel for registration/editing.",
         "details": "Develop `pages/owner-menus/MenuManagementPage.tsx` and `widgets/menu-detail-panel/MenuDetailPanel.tsx`. Menu Table: Display menus with `썸네일 | 메뉴명 | 카테고리 | 가격 | 품절 토글 | 뱃지 | 수정/삭제` columns. Implement category tabs for filtering. Allow drag-and-drop for menu order changes (update `order` field in DB). Menu Detail Panel (Slide Panel): Form for creating/editing menu details. Image upload functionality. Menu Option Management: UI for adding/editing/deleting `MenuOptionGroup` (e.g., '사이즈', '부위') with properties like `required`, `maxSelections`. UI for adding/editing/deleting `MenuOption` items (e.g., '한마리', '순살') with `name` and `priceAdjustment`. Ensure options are correctly linked to their groups and menus. Use `Menu`, `MenuOptionGroup`, `MenuOption` DB models.",
         "testStrategy": "Verify menu table displays correctly with all specified columns. Perform CRUD operations for menus: Create a new menu with image and details. Edit an existing menu. Delete a menu. Toggle '품절' status and verify it updates in the DB and UI. Test menu option management: Create option groups with required/optional settings. Add/edit/delete options within groups with price adjustments. Verify option data integrity in the database. Test category filtering and drag-and-drop reordering.",
         "priority": "high",
         "dependencies": [
-          55
+          "55"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-28T05:04:40.577Z"
       },
       {
-        "id": 61,
+        "id": "61",
         "title": "Implement Redis Caching for Menu Data",
         "description": "Integrate Redis caching for menu data to improve performance. Menu data should have a TTL of 10 minutes and be immediately invalidated when the owner modifies a menu or changes its 'sold out' status.",
         "details": "Set up a Redis client in the backend (Node.js/Next.js API routes). When fetching menu data, first check Redis cache. If found and not expired, return cached data. If not in cache or expired, fetch from DB, store in Redis with a 10-minute TTL, then return. Implement cache invalidation logic: After any successful `Menu` CRUD operation (create, update, delete) or `isSoldOut` status change, delete the relevant cache key(s) from Redis. Pseudo-code for caching: `import { redisClient } from '~/lib/redis'; async function getMenus(restaurantId) { const cacheKey = `menus:${restaurantId}`; const cachedMenus = await redisClient.get(cacheKey); if (cachedMenus) { return JSON.parse(cachedMenus); } const menus = await prisma.menu.findMany({ where: { restaurantId } }); await redisClient.setex(cacheKey, 60 * 10, JSON.stringify(menus)); return menus; } async function updateMenu(menuId, data) { const updatedMenu = await prisma.menu.update({ where: { id: menuId }, data }); await redisClient.del(`menus:${updatedMenu.restaurantId}`); return updatedMenu; }`",
         "testStrategy": "Fetch menu data multiple times and verify that after the first fetch, subsequent fetches within 10 minutes retrieve data from Redis (e.g., by logging cache hits/misses or monitoring Redis). Modify a menu (e.g., change name, toggle sold out) and immediately fetch menu data again. Verify that the *new* data is returned, indicating cache invalidation and a fresh DB fetch. Verify that after invalidation, the next fetch re-caches the updated data.",
         "priority": "medium",
         "dependencies": [
-          60
+          "60"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 62,
+        "id": "62",
         "title": "Develop Order Management Kanban Board and Order Detail Panel",
         "description": "Implement the 4-column Kanban board (대기, 조리중, 배달대기, 배달중) for order management (OWNER-02). Each column should display order cards with summary information, time emphasis, and action buttons. Develop the `Order Detail Slide Panel` (OWNER-03) that appears on card click.",
         "details": "Develop `widgets/order-kanban-board/OrderKanbanBoard.tsx` and `widgets/order-detail-panel/OrderDetailPanel.tsx`. Kanban Board: Fetch and display orders categorized by status. Each `OrderCard` should show order number, menu summary, total amount, and elapsed time. Implement visual emphasis (e.g., red background) for orders exceeding 3 minutes in PENDING state. Action buttons: '접수' (PENDING → COOKING), '거절' (PENDING → CANCELLED with reason), '배달 요청' (COOKING → WAITING_RIDER), '취소' (COOKING → CANCELLED with reason). These actions should trigger API calls to update `Order` status. Integrate with Centrifugo updates (Task 59) to refresh the board. Order Detail Panel: Display comprehensive order details: `OrderItem` list (menu, quantity, options), customer address, total price. Show delivery matching status (기사 찾는 중 / 배정됨 + 기사 정보). Provide input for cancellation reasons. Pseudo-code for status update: `async function updateOrderStatus(orderId, newStatus, reason = null) { const response = await fetch(`/api/owner/orders/${orderId}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: newStatus, reason }) }); if (!response.ok) throw new Error('Failed to update order status'); return response.json(); }`",
         "testStrategy": "Verify orders are correctly categorized and displayed in their respective Kanban columns. Test order card rendering, including time emphasis for overdue orders. Perform all status transitions (Accept, Reject, Request Delivery, Cancel) and verify: API calls are made with correct payload. Order moves to the correct column on the board. Cancellation reasons are mandatory for 'Reject' and 'Cancel'. Open the order detail panel and verify all order information is accurately displayed. Simulate real-time updates from Centrifugo (e.g., new order, delivery rider assigned) and verify the Kanban board updates instantly.",
         "priority": "high",
         "dependencies": [
-          59,
-          60
+          "59",
+          "60"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-28T09:05:32.185Z"
       },
       {
-        "id": 63,
+        "id": "63",
         "title": "Build Owner Dashboard KPI and Chart Widgets",
         "description": "Implement the core widgets for the Owner Dashboard (OWNER-02): 'Today's Sales Summary' (real-time sales, order count, avg amount, avg delivery time), 'Hourly Order Trend Chart' (bar graph 00-23h), 'Popular Menu TOP 5', and 'Recent Reviews Feed' (24h new, unreplied emphasis).",
         "details": "Develop widgets in `widgets/` directory: `sales-summary/`, `hourly-chart/`, `popular-menu-rank/`, `review-feed/`. Today's Sales Summary: Fetch real-time sales data, order counts, average values. Calculate and display day-over-day changes. Hourly Order Trend Chart: Use a charting library (e.g., Recharts, Chart.js) to display a bar graph of orders per hour. Highlight the current hour. Popular Menu TOP 5: Query `OrderItem` data to aggregate menu popularity by order count and revenue contribution. Recent Reviews Feed: Fetch recent reviews, prioritize and visually emphasize unreplied reviews. Provide a quick link/button to reply. Integrate with Centrifugo (Task 59) for real-time updates on sales/orders if applicable.",
         "testStrategy": "Verify each widget displays accurate data based on mock or real backend data. Test 'Today's Sales Summary' calculations (total sales, order count, averages, day-over-day comparison). Verify 'Hourly Order Trend Chart' renders correctly, highlighting the current hour. Test 'Popular Menu TOP 5' accurately ranks menus by order count and sales contribution. Verify 'Recent Reviews Feed' displays recent reviews, correctly identifies and emphasizes unreplied ones, and links to reply functionality. Check performance goals: Dashboard loading < 500ms.",
         "priority": "high",
         "dependencies": [
-          59,
-          60,
-          62
+          "59",
+          "60",
+          "62"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-28T09:05:32.187Z"
       },
       {
-        "id": 64,
+        "id": "64",
         "title": "Implement Review Management Interface with Owner Reply Functionality",
         "description": "Create the review management page (OWNER-06) where owners can view reviews for their restaurant. Implement the functionality to write, modify, or delete a single reply for each review.",
         "details": "Develop `pages/owner-reviews/ReviewManagementPage.tsx`. Display `ReviewCard` components for each review, showing star rating, customer comment, and date. For each review, provide an input area for the owner's reply. Implement API calls for `createReviewReply`, `updateReviewReply`, and `deleteReviewReply`. Ensure only one reply per review is allowed. Pseudo-code for reply: `async function handleReplySubmit(reviewId, replyContent) { if (existingReplyId) { await updateReviewReply(existingReplyId, replyContent); } else { await createReviewReply(reviewId, replyContent); } }`",
         "testStrategy": "Verify all reviews for the owner's restaurant are displayed correctly. Test creating a new reply: Submit a reply and verify it appears under the review and is stored in the DB. Test modifying a reply: Edit an existing reply and verify the update. Test deleting a reply: Delete a reply and verify it's removed from the UI and DB. Ensure an owner cannot submit more than one reply per review.",
         "priority": "medium",
         "dependencies": [
-          55
+          "55"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-28T05:04:40.579Z"
       },
       {
-        "id": 65,
+        "id": "65",
         "title": "Develop Sales Statistics Page with Charts and Data Export",
         "description": "Create the 'Sales Statistics' page (OWNER-07) providing detailed insights into restaurant sales. This includes period selection, a daily sales graph, a comprehensive sales table, menu-specific ranking, and CSV download functionality.",
         "details": "Develop `pages/owner-stats/SalesStatisticsPage.tsx`. Period Selection: Implement UI for selecting date ranges (e.g., daily, weekly, monthly, custom). Daily Graph: Use a charting library to display daily sales trends over the selected period. Sales Table: A detailed table showing sales data (e.g., date, total sales, order count, average order value). Menu-specific Ranking: Display a table or list of menus ranked by sales contribution or order count within the selected period. CSV Download: Implement a button to export the sales table data as a CSV file. Ensure backend API endpoints are available to fetch aggregated sales data based on date ranges and menu performance. Pseudo-code for CSV export: `function exportToCsv(filename, rows) { const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(e => e.join(',')).join('\\n'); const encodedUri = encodeURI(csvContent); const link = document.createElement('a'); link.setAttribute('href', encodedUri); link.setAttribute('download', filename); document.body.appendChild(link); link.click(); document.body.removeChild(link); }`",
         "testStrategy": "Verify period selection filters data correctly for the graph and table. Test the daily sales graph renders accurately for different periods. Verify the sales table displays correct aggregated data. Test menu-specific ranking is accurate. Click the CSV download button and verify a valid CSV file is downloaded with the correct data. Check performance goals: Sales statistics page loading < 500ms.",
         "priority": "medium",
         "dependencies": [
-          55,
-          60,
-          62
+          "55",
+          "60",
+          "62"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-28T09:05:32.190Z"
       },
       {
-        "id": 66,
+        "id": "66",
         "title": "Develop Owner-to-Admin Chat Functionality",
         "description": "Implement the owner chat feature (OWNER-08) allowing restaurant owners to communicate with the admin support team. This will use a common chat UI and support `OWNER_SUPPORT` chatType for inquiries related to orders, store operations, menu, and settlements.",
         "details": "Develop `pages/owner-chat/OwnerChatPage.tsx`. Utilize the common chat UI components (6.8.6 mentioned in PRD, implying existing components). When initiating a chat, set `chatType` to `OWNER_SUPPORT`. Allow owners to select a specific order when making an order-related inquiry. Integrate with Centrifugo `chat:<chatId>` channel for real-time message exchange within a chat room. Ensure `user#<userId>` channel (Task 59) is used for chat notifications. Use `Chat` (OWNER_SUPPORT type) and `Message` DB models.",
         "testStrategy": "Verify the chat interface loads correctly. Initiate a new chat as an owner and verify `chatType` is `OWNER_SUPPORT`. Send messages as an owner and verify they are received by the admin (simulated or actual admin interface). Receive messages from admin and verify they appear in the owner's chat. Test selecting an order for an inquiry and verify the order ID is associated with the chat. Verify real-time message updates via Centrifugo `chat:<chatId>` channel.",
         "priority": "medium",
         "dependencies": [
-          55,
-          59
+          "55",
+          "59"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-03-28T09:05:32.191Z"
       },
       {
-        "id": 67,
+        "id": "67",
         "title": "Implement Comprehensive E2E and Unit Tests",
         "description": "Develop End-to-End (E2E) tests using Playwright for critical user flows and Unit tests using Vitest for specific business logic, as outlined in the PRD.",
         "details": "E2E Tests (Playwright): Order Flow: Simulate an owner logging in, receiving a new order, accepting it, requesting delivery, and verifying rider assignment status. Test navigation through key owner pages (Dashboard, Menu Management, Order Management). Test restaurant registration and menu quick start. Unit Tests (Vitest): Menu Template Application Logic: Test `applyMenuTemplate` function (from Task 58) to ensure it correctly generates menu and option structures. Menu Copy Logic: Test `copyMenuStructure` function (from Task 58) to ensure it accurately duplicates menu details without prices/images. Sales Aggregation Calculation: Test functions responsible for calculating 'Today's Sales Summary' (Task 63) and 'Sales Statistics' (Task 65) to ensure accuracy. Test business status toggle logic (Task 56). Set up Playwright and Vitest configurations in the project.",
         "testStrategy": "Run all E2E tests in a headless browser and verify all assertions pass for the specified flows. Run all unit tests and verify all assertions pass for the tested logic. Ensure test coverage meets project standards for critical features. Document test cases and results.",
         "priority": "low",
         "dependencies": [
-          56,
-          58,
-          60,
-          62,
-          63,
-          65
+          "56",
+          "58",
+          "60",
+          "62",
+          "63",
+          "65"
         ],
         "status": "pending",
         "subtasks": []
       }
     ],
     "metadata": {
-      "created": "2026-03-28T04:14:12.921Z",
-      "updated": "2026-03-28T04:27:02.843Z",
-      "description": "Tasks for master context"
+      "version": "1.0.0",
+      "lastModified": "2026-03-28T09:05:32.191Z",
+      "taskCount": 13,
+      "completedCount": 9,
+      "tags": [
+        "master"
+      ]
     }
   }
 }

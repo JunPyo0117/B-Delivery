@@ -68,8 +68,8 @@ export async function updateOrderStatus(
     data: {
       status: newStatus,
       ...(newStatus === OrderStatus.CANCELLED && {
-        cancelReason: cancelReason ?? null,
-        cancelledBy: session.user.id,
+        cancelReason,
+        cancelledBy: session.user.role,
       }),
     },
   });

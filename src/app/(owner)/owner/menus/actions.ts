@@ -3,7 +3,6 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import type { Prisma } from "@/generated/prisma/client";
 
 // ─── 타입 ───────────────────────────────────────────
 
@@ -17,36 +16,48 @@ export interface MenuFormData {
   isNew?: boolean;
 }
 
-export interface MenuWithId extends MenuFormData {
-  id: string;
-  isSoldOut: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+export interface OptionData {
+  id?: string;
+  name: string;
+  extraPrice: number;
+  sortOrder: number;
 }
 
-/** 옵션 그룹 입력 데이터 (생성/수정 공용) */
 export interface OptionGroupData {
-  id?: string; // 수정 시 기존 그룹 ID
+  id?: string;
   name: string;
   isRequired: boolean;
   maxSelect: number;
   sortOrder: number;
-  options: {
-    id?: string; // 수정 시 기존 옵션 ID
-    name: string;
-    extraPrice: number;
-    sortOrder: number;
-  }[];
+  options: OptionData[];
 }
 
-/** 메뉴 + 옵션그룹 + 옵션 포함 타입 */
-export type MenuWithOptions = Prisma.MenuGetPayload<{
-  include: {
-    optionGroups: {
-      include: { options: true };
-    };
-  };
-}>;
+export interface MenuWithOptions {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  description: string | null;
+  imageUrl: string | null;
+  isSoldOut: boolean;
+  isPopular: boolean;
+  isNew: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  optionGroups: {
+    id: string;
+    name: string;
+    isRequired: boolean;
+    maxSelect: number;
+    sortOrder: number;
+    options: {
+      id: string;
+      name: string;
+      extraPrice: number;
+      sortOrder: number;
+    }[];
+  }[];
+}
 
 // ─── 헬퍼: 사장님 음식점 ID 조회 ───────────────────
 
@@ -68,32 +79,35 @@ async function getOwnerRestaurantId(): Promise<string> {
   return restaurant.id;
 }
 
-// ─── 메뉴 목록 조회 ────────────────────────────────
+// ─── 메뉴 목록 조회 (옵션 그룹 포함) ────────────────
 
 export async function getMenus(): Promise<MenuWithOptions[]> {
   const restaurantId = await getOwnerRestaurantId();
 
   const menus = await prisma.menu.findMany({
     where: { restaurantId },
-    orderBy: [{ category: "asc" }, { createdAt: "desc" }],
     include: {
       optionGroups: {
-        orderBy: { sortOrder: "asc" },
         include: {
           options: {
             orderBy: { sortOrder: "asc" },
           },
         },
+        orderBy: { sortOrder: "asc" },
       },
     },
+    orderBy: [{ category: "asc" }, { createdAt: "desc" }],
   });
 
   return menus;
 }
 
-// ─── 메뉴 생성 ─────────────────────────────────────
+// ─── 메뉴 + 옵션 그룹 생성 (트랜잭션) ──────────────
 
-export async function createMenu(data: MenuFormData) {
+export async function createMenuWithOptions(
+  data: MenuFormData,
+  optionGroups: OptionGroupData[]
+) {
   const restaurantId = await getOwnerRestaurantId();
 
   if (!data.name.trim()) {
@@ -106,27 +120,55 @@ export async function createMenu(data: MenuFormData) {
     return { error: "가격은 0보다 커야 합니다." };
   }
 
-  const menu = await prisma.menu.create({
-    data: {
-      restaurantId,
-      name: data.name.trim(),
-      category: data.category.trim(),
-      price: data.price,
-      description: data.description?.trim() || null,
-      imageUrl: data.imageUrl || null,
-    },
+  const menu = await prisma.$transaction(async (tx) => {
+    const created = await tx.menu.create({
+      data: {
+        restaurantId,
+        name: data.name.trim(),
+        category: data.category.trim(),
+        price: data.price,
+        description: data.description?.trim() || null,
+        imageUrl: data.imageUrl || null,
+        isPopular: data.isPopular ?? false,
+        isNew: data.isNew ?? false,
+      },
+    });
+
+    for (const group of optionGroups) {
+      await tx.menuOptionGroup.create({
+        data: {
+          menuId: created.id,
+          name: group.name.trim(),
+          isRequired: group.isRequired,
+          maxSelect: group.maxSelect,
+          sortOrder: group.sortOrder,
+          options: {
+            create: group.options.map((opt) => ({
+              name: opt.name.trim(),
+              extraPrice: opt.extraPrice,
+              sortOrder: opt.sortOrder,
+            })),
+          },
+        },
+      });
+    }
+
+    return created;
   });
 
   revalidatePath("/owner/menus");
   return { success: true, menu };
 }
 
-// ─── 메뉴 수정 ─────────────────────────────────────
+// ─── 메뉴 + 옵션 그룹 수정 (트랜잭션) ──────────────
 
-export async function updateMenu(menuId: string, data: MenuFormData) {
+export async function updateMenuWithOptions(
+  menuId: string,
+  data: MenuFormData,
+  optionGroups: OptionGroupData[]
+) {
   const restaurantId = await getOwnerRestaurantId();
 
-  // 해당 메뉴가 사장님의 음식점 소유인지 확인
   const existing = await prisma.menu.findFirst({
     where: { id: menuId, restaurantId },
   });
@@ -144,15 +186,113 @@ export async function updateMenu(menuId: string, data: MenuFormData) {
     return { error: "가격은 0보다 커야 합니다." };
   }
 
-  const menu = await prisma.menu.update({
-    where: { id: menuId },
-    data: {
-      name: data.name.trim(),
-      category: data.category.trim(),
-      price: data.price,
-      description: data.description?.trim() || null,
-      imageUrl: data.imageUrl || null,
-    },
+  const menu = await prisma.$transaction(async (tx) => {
+    // 메뉴 기본 정보 업데이트
+    const updated = await tx.menu.update({
+      where: { id: menuId },
+      data: {
+        name: data.name.trim(),
+        category: data.category.trim(),
+        price: data.price,
+        description: data.description?.trim() || null,
+        imageUrl: data.imageUrl || null,
+        isPopular: data.isPopular ?? false,
+        isNew: data.isNew ?? false,
+      },
+    });
+
+    // 기존 옵션 그룹 ID 목록
+    const existingGroups = await tx.menuOptionGroup.findMany({
+      where: { menuId },
+      select: { id: true },
+    });
+    const existingGroupIds = new Set(existingGroups.map((g) => g.id));
+    const incomingGroupIds = new Set(
+      optionGroups.filter((g) => g.id).map((g) => g.id!)
+    );
+
+    // 삭제된 그룹 제거 (cascade로 옵션도 함께 삭제)
+    for (const gId of existingGroupIds) {
+      if (!incomingGroupIds.has(gId)) {
+        await tx.menuOptionGroup.delete({ where: { id: gId } });
+      }
+    }
+
+    // 그룹 upsert
+    for (const group of optionGroups) {
+      if (group.id && existingGroupIds.has(group.id)) {
+        // 기존 그룹 업데이트
+        await tx.menuOptionGroup.update({
+          where: { id: group.id },
+          data: {
+            name: group.name.trim(),
+            isRequired: group.isRequired,
+            maxSelect: group.maxSelect,
+            sortOrder: group.sortOrder,
+          },
+        });
+
+        // 기존 옵션 처리
+        const existingOptions = await tx.menuOption.findMany({
+          where: { groupId: group.id },
+          select: { id: true },
+        });
+        const existingOptionIds = new Set(existingOptions.map((o) => o.id));
+        const incomingOptionIds = new Set(
+          group.options.filter((o) => o.id).map((o) => o.id!)
+        );
+
+        // 삭제된 옵션 제거
+        for (const oId of existingOptionIds) {
+          if (!incomingOptionIds.has(oId)) {
+            await tx.menuOption.delete({ where: { id: oId } });
+          }
+        }
+
+        // 옵션 upsert
+        for (const opt of group.options) {
+          if (opt.id && existingOptionIds.has(opt.id)) {
+            await tx.menuOption.update({
+              where: { id: opt.id },
+              data: {
+                name: opt.name.trim(),
+                extraPrice: opt.extraPrice,
+                sortOrder: opt.sortOrder,
+              },
+            });
+          } else {
+            await tx.menuOption.create({
+              data: {
+                groupId: group.id,
+                name: opt.name.trim(),
+                extraPrice: opt.extraPrice,
+                sortOrder: opt.sortOrder,
+              },
+            });
+          }
+        }
+      } else {
+        // 새 그룹 생성
+        await tx.menuOptionGroup.create({
+          data: {
+            menuId,
+            name: group.name.trim(),
+            isRequired: group.isRequired,
+            maxSelect: group.maxSelect,
+            sortOrder: group.sortOrder,
+            options: {
+              create: group.options.map((opt) => ({
+                name: opt.name.trim(),
+                extraPrice: opt.extraPrice,
+                sortOrder: opt.sortOrder,
+              })),
+            },
+          },
+        });
+      }
+    }
+
+    return updated;
   });
 
   revalidatePath("/owner/menus");
@@ -176,7 +316,6 @@ export async function deleteMenu(menuId: string) {
     where: { menuId },
   });
   if (orderItemCount > 0) {
-    // 주문 이력이 있으면 삭제 대신 품절 처리 권장
     return {
       error:
         "주문 이력이 있는 메뉴는 삭제할 수 없습니다. 품절 처리를 이용해주세요.",
@@ -209,218 +348,4 @@ export async function toggleSoldOut(menuId: string) {
 
   revalidatePath("/owner/menus");
   return { success: true, isSoldOut: menu.isSoldOut };
-}
-
-// ─── 메뉴 + 옵션 그룹 생성 ──────────────────────────
-
-export async function createMenuWithOptions(
-  data: MenuFormData,
-  optionGroups: OptionGroupData[]
-) {
-  const restaurantId = await getOwnerRestaurantId();
-
-  if (!data.name.trim()) {
-    return { error: "메뉴 이름을 입력해주세요." };
-  }
-  if (!data.category.trim()) {
-    return { error: "카테고리를 입력해주세요." };
-  }
-  if (data.price <= 0) {
-    return { error: "가격은 0보다 커야 합니다." };
-  }
-
-  const menu = await prisma.menu.create({
-    data: {
-      restaurantId,
-      name: data.name.trim(),
-      category: data.category.trim(),
-      price: data.price,
-      description: data.description?.trim() || null,
-      imageUrl: data.imageUrl || null,
-      isPopular: data.isPopular ?? false,
-      isNew: data.isNew ?? false,
-      optionGroups: {
-        create: optionGroups.map((g) => ({
-          name: g.name.trim(),
-          isRequired: g.isRequired,
-          maxSelect: g.maxSelect,
-          sortOrder: g.sortOrder,
-          options: {
-            create: g.options.map((o) => ({
-              name: o.name.trim(),
-              extraPrice: o.extraPrice,
-              sortOrder: o.sortOrder,
-            })),
-          },
-        })),
-      },
-    },
-    include: {
-      optionGroups: {
-        include: { options: true },
-      },
-    },
-  });
-
-  revalidatePath("/owner/menus");
-  return { success: true, menu };
-}
-
-// ─── 메뉴 + 옵션 그룹 수정 ──────────────────────────
-
-export async function updateMenuWithOptions(
-  menuId: string,
-  data: MenuFormData,
-  optionGroups: OptionGroupData[]
-) {
-  const restaurantId = await getOwnerRestaurantId();
-
-  // 해당 메뉴가 사장님의 음식점 소유인지 확인
-  const existing = await prisma.menu.findFirst({
-    where: { id: menuId, restaurantId },
-    include: {
-      optionGroups: {
-        include: { options: true },
-      },
-    },
-  });
-  if (!existing) {
-    return { error: "메뉴를 찾을 수 없습니다." };
-  }
-
-  if (!data.name.trim()) {
-    return { error: "메뉴 이름을 입력해주세요." };
-  }
-  if (!data.category.trim()) {
-    return { error: "카테고리를 입력해주세요." };
-  }
-  if (data.price <= 0) {
-    return { error: "가격은 0보다 커야 합니다." };
-  }
-
-  // 트랜잭션: 메뉴 업데이트 + 옵션 그룹 upsert/delete
-  const menu = await prisma.$transaction(async (tx) => {
-    // 1. 메뉴 기본 정보 업데이트
-    await tx.menu.update({
-      where: { id: menuId },
-      data: {
-        name: data.name.trim(),
-        category: data.category.trim(),
-        price: data.price,
-        description: data.description?.trim() || null,
-        imageUrl: data.imageUrl || null,
-        isPopular: data.isPopular ?? false,
-        isNew: data.isNew ?? false,
-      },
-    });
-
-    // 2. 삭제된 옵션 그룹 제거 (클라이언트에서 보내지 않은 기존 그룹)
-    const incomingGroupIds = optionGroups
-      .map((g) => g.id)
-      .filter((id): id is string => !!id);
-    const existingGroupIds = existing.optionGroups.map((g) => g.id);
-    const deletedGroupIds = existingGroupIds.filter(
-      (id) => !incomingGroupIds.includes(id)
-    );
-
-    if (deletedGroupIds.length > 0) {
-      // MenuOption은 onDelete: Cascade로 자동 삭제
-      await tx.menuOptionGroup.deleteMany({
-        where: { id: { in: deletedGroupIds } },
-      });
-    }
-
-    // 3. 각 옵션 그룹 upsert
-    for (const group of optionGroups) {
-      if (group.id) {
-        // 기존 그룹 업데이트
-        await tx.menuOptionGroup.update({
-          where: { id: group.id },
-          data: {
-            name: group.name.trim(),
-            isRequired: group.isRequired,
-            maxSelect: group.maxSelect,
-            sortOrder: group.sortOrder,
-          },
-        });
-
-        // 삭제된 옵션 제거
-        const incomingOptionIds = group.options
-          .map((o) => o.id)
-          .filter((id): id is string => !!id);
-        const existingGroup = existing.optionGroups.find(
-          (eg) => eg.id === group.id
-        );
-        const existingOptionIds = existingGroup?.options.map((o) => o.id) ?? [];
-        const deletedOptionIds = existingOptionIds.filter(
-          (id) => !incomingOptionIds.includes(id)
-        );
-
-        if (deletedOptionIds.length > 0) {
-          await tx.menuOption.deleteMany({
-            where: { id: { in: deletedOptionIds } },
-          });
-        }
-
-        // 각 옵션 upsert
-        for (const option of group.options) {
-          if (option.id) {
-            await tx.menuOption.update({
-              where: { id: option.id },
-              data: {
-                name: option.name.trim(),
-                extraPrice: option.extraPrice,
-                sortOrder: option.sortOrder,
-              },
-            });
-          } else {
-            await tx.menuOption.create({
-              data: {
-                groupId: group.id,
-                name: option.name.trim(),
-                extraPrice: option.extraPrice,
-                sortOrder: option.sortOrder,
-              },
-            });
-          }
-        }
-      } else {
-        // 새 그룹 생성
-        await tx.menuOptionGroup.create({
-          data: {
-            menuId,
-            name: group.name.trim(),
-            isRequired: group.isRequired,
-            maxSelect: group.maxSelect,
-            sortOrder: group.sortOrder,
-            options: {
-              create: group.options.map((o) => ({
-                name: o.name.trim(),
-                extraPrice: o.extraPrice,
-                sortOrder: o.sortOrder,
-              })),
-            },
-          },
-        });
-      }
-    }
-
-    // 4. 최종 결과 반환
-    return tx.menu.findUniqueOrThrow({
-      where: { id: menuId },
-      include: {
-        optionGroups: {
-          orderBy: { sortOrder: "asc" },
-          include: {
-            options: {
-              orderBy: { sortOrder: "asc" },
-            },
-          },
-        },
-      },
-    });
-  });
-
-  revalidatePath("/owner/menus");
-  return { success: true, menu };
 }
