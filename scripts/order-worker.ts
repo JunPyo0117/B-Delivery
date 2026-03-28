@@ -58,7 +58,7 @@ async function processOrderUpdates() {
     "COUNT", "10",
     "BLOCK", "5000",
     "STREAMS", ORDER_STREAM, ">"
-  );
+  ) as [string, [string, string[]][]][] | null;
 
   if (!results) return;
 
@@ -89,7 +89,7 @@ async function processDeliveryRequests() {
     "COUNT", "10",
     "BLOCK", "5000",
     "STREAMS", DELIVERY_STREAM, ">"
-  );
+  ) as [string, [string, string[]][]][] | null;
 
   if (!results) return;
 
