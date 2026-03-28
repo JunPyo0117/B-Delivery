@@ -4,14 +4,22 @@ import { prisma } from "@/lib/prisma";
 import { publishOrderUpdate } from "@/lib/redis";
 import { OrderStatus } from "@/generated/prisma/client";
 
-/** 허용되는 상태 전이 맵 */
+/** 허용되는 상태 전이 맵 (PRD 준수) */
 const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   PENDING: [OrderStatus.COOKING, OrderStatus.CANCELLED],
-  COOKING: [OrderStatus.PICKED_UP],
+  COOKING: [OrderStatus.WAITING_RIDER, OrderStatus.CANCELLED],
+  WAITING_RIDER: [OrderStatus.RIDER_ASSIGNED, OrderStatus.COOKING],
+  RIDER_ASSIGNED: [OrderStatus.WAITING_RIDER, OrderStatus.PICKED_UP],
   PICKED_UP: [OrderStatus.DONE],
   DONE: [],
   CANCELLED: [],
 };
+
+/** USER(고객)가 취소할 수 있는 상태 */
+const USER_CANCELLABLE_STATUSES: OrderStatus[] = [
+  OrderStatus.PENDING,
+  OrderStatus.COOKING,
+];
 
 export async function PATCH(
   request: NextRequest,
@@ -20,10 +28,6 @@ export async function PATCH(
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
-  }
-
-  if (session.user.role !== "OWNER" && session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
   }
 
   const { id: orderId } = await params;
@@ -51,17 +55,45 @@ export async function PATCH(
     );
   }
 
-  // ADMIN은 소유권 검증 생략
-  if (session.user.role === "OWNER" && order.restaurant.ownerId !== session.user.id) {
-    return NextResponse.json(
-      { error: "해당 주문에 대한 권한이 없습니다." },
-      { status: 403 }
-    );
+  const userRole = session.user.role;
+  const userId = session.user.id;
+
+  // 역할별 권한 검증
+  if (userRole === "USER") {
+    // 고객은 본인 주문만, CANCELLED로만 전이 가능
+    if (order.userId !== userId) {
+      return NextResponse.json(
+        { error: "해당 주문에 대한 권한이 없습니다." },
+        { status: 403 }
+      );
+    }
+    if (newStatus !== OrderStatus.CANCELLED) {
+      return NextResponse.json(
+        { error: "고객은 주문 취소만 가능합니다." },
+        { status: 403 }
+      );
+    }
+    if (!USER_CANCELLABLE_STATUSES.includes(order.status)) {
+      return NextResponse.json(
+        { error: `현재 상태(${order.status})에서는 취소할 수 없습니다.` },
+        { status: 400 }
+      );
+    }
+  } else if (userRole === "OWNER") {
+    // 사장은 본인 음식점 주문만
+    if (order.restaurant.ownerId !== userId) {
+      return NextResponse.json(
+        { error: "해당 주문에 대한 권한이 없습니다." },
+        { status: 403 }
+      );
+    }
+  } else if (userRole !== "ADMIN" && userRole !== "RIDER") {
+    return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
   }
 
   // 상태 전이 유효성 검사
   const allowed = VALID_TRANSITIONS[order.status];
-  if (!allowed.includes(newStatus)) {
+  if (!allowed || !allowed.includes(newStatus)) {
     return NextResponse.json(
       {
         error: `${order.status} → ${newStatus} 상태 전이는 허용되지 않습니다.`,
