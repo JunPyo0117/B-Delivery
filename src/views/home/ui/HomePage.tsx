@@ -9,6 +9,7 @@ import {
   Star,
   Loader2,
   MapPin,
+  ShoppingCart,
 } from "lucide-react"
 
 import {
@@ -304,6 +305,12 @@ export function HomePage({ address, latitude, longitude }: HomePageProps) {
           >
             <span className="text-[15px] font-bold">{displayAddress}</span>
             <ChevronDown className="size-4 text-gray-600" />
+          </Link>
+          <Link
+            href="/cart"
+            className="relative p-2 -mr-2 text-gray-700 hover:text-black transition-colors"
+          >
+            <ShoppingCart className="size-5" />
           </Link>
         </div>
       </header>
