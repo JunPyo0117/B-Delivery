@@ -255,32 +255,32 @@ export function InfoPanel({ chatDetail }: InfoPanelProps) {
         </div>
 
         <div className="grid grid-cols-1 gap-2">
-          {order?.restaurant?.ownerId && (
+          {order?.restaurant && (
             <button
               onClick={async () => {
                 const res = await fetch("/api/chat/create", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ orderId: order.id, chatType: "OWNER_SUPPORT" }),
+                  body: JSON.stringify({ orderId: order.id }),
                 });
                 const data = await res.json();
-                if (data.chatId) onSelectChat?.(data.chatId);
+                if (data.chatId) window.location.reload();
               }}
               className="flex items-center justify-center rounded-lg border border-[#2DB400] px-3 py-2 text-[12px] font-medium text-[#2DB400] transition-colors hover:bg-[#2DB400]/5"
             >
               사장에게 문의 열기
             </button>
           )}
-          {order?.delivery?.riderId && (
+          {order?.delivery?.rider && (
             <button
               onClick={async () => {
                 const res = await fetch("/api/chat/create", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ orderId: order.id, chatType: "RIDER_SUPPORT" }),
+                  body: JSON.stringify({ orderId: order.id }),
                 });
                 const data = await res.json();
-                if (data.chatId) onSelectChat?.(data.chatId);
+                if (data.chatId) window.location.reload();
               }}
               className="flex items-center justify-center rounded-lg border border-[#2DB400] px-3 py-2 text-[12px] font-medium text-[#2DB400] transition-colors hover:bg-[#2DB400]/5"
             >

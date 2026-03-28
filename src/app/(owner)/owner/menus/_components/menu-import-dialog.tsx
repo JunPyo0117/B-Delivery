@@ -13,11 +13,11 @@ import { Input } from "@/shared/ui/input";
 import { Badge } from "@/shared/ui/badge";
 import { Download, Search, Loader2, Check } from "lucide-react";
 import {
-  getMenuTemplates,
   applyMenuTemplate,
   searchRestaurantsForCopy,
   copyMenusFromRestaurant,
 } from "../actions";
+import { MENU_TEMPLATES } from "../menu-templates";
 
 const CATEGORY_LABELS: Record<string, string> = {
   CHICKEN: "치킨",
@@ -36,7 +36,7 @@ export function MenuImportDialog() {
 
   // 템플릿 탭
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const templates = getMenuTemplates();
+  const templates = MENU_TEMPLATES;
 
   // 복사 탭
   const [searchQuery, setSearchQuery] = useState("");
