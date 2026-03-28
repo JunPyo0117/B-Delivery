@@ -6,6 +6,8 @@ import type { OrderStatus } from "@/types/order";
 const ORDER_STEPS = [
   { status: "PENDING" as const, label: "주문접수" },
   { status: "COOKING" as const, label: "조리중" },
+  { status: "WAITING_RIDER" as const, label: "기사매칭" },
+  { status: "RIDER_ASSIGNED" as const, label: "기사배정" },
   { status: "PICKED_UP" as const, label: "배달중" },
   { status: "DONE" as const, label: "배달완료" },
 ];
