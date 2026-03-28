@@ -8,6 +8,7 @@ ui/*
 # PRD
 prd.md
 prd-v2.md
+/docs
 
 # Dependencies
 node_modules/
