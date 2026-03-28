@@ -18,9 +18,7 @@ interface RegisterRestaurantInput {
   longitude: number;
 }
 
-const VALID_CATEGORIES: string[] = Object.values(RestaurantCategory).filter(
-  (c) => c !== "ALL"
-);
+const VALID_CATEGORIES: string[] = Object.values(RestaurantCategory);
 
 export async function registerRestaurant(
   input: RegisterRestaurantInput
@@ -76,7 +74,7 @@ export async function registerRestaurant(
           minOrderAmount: input.minOrderAmount,
           deliveryFee: input.deliveryFee,
           deliveryTime: input.deliveryTime,
-          address: input.address,
+          address: input.address ?? "",
           latitude: input.latitude,
           longitude: input.longitude,
         },

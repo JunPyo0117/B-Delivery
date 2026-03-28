@@ -1,9 +1,6 @@
 import type { RestaurantCategory } from "@/generated/prisma/client";
 
-export const CATEGORY_LABELS: Record<
-  Exclude<RestaurantCategory, "ALL">,
-  string
-> = {
+export const CATEGORY_LABELS: Record<RestaurantCategory, string> = {
   KOREAN: "한식",
   CHINESE: "중식",
   JAPANESE: "일식",
@@ -13,6 +10,8 @@ export const CATEGORY_LABELS: Record<
   JOKBAL: "족발·보쌈",
   CAFE: "카페·디저트",
   FASTFOOD: "패스트푸드",
+  JJAMBBONG: "짬·탕",
+  RICE_BOWL: "한그릇",
   ETC: "기타",
 };
 
@@ -27,10 +26,7 @@ export type SortOption = keyof typeof SORT_OPTIONS;
 
 export const VALID_SORT_OPTIONS = Object.keys(SORT_OPTIONS) as SortOption[];
 
-export const CATEGORY_ICONS: Record<
-  Exclude<RestaurantCategory, "ALL">,
-  string
-> = {
+export const CATEGORY_ICONS: Record<RestaurantCategory, string> = {
   KOREAN: "🍚",
   CHINESE: "🥟",
   JAPANESE: "🍣",
@@ -40,5 +36,7 @@ export const CATEGORY_ICONS: Record<
   JOKBAL: "🥩",
   CAFE: "☕",
   FASTFOOD: "🍔",
+  JJAMBBONG: "🍜",
+  RICE_BOWL: "🍛",
   ETC: "🍽️",
 };

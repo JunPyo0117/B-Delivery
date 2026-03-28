@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
         { restaurant: { ownerId: session.user.id } },
       ],
     },
-    include: { chat: { select: { id: true } } },
+    include: { chats: { select: { id: true }, take: 1 } },
   });
 
   if (!order) {
@@ -30,8 +30,8 @@ export async function POST(request: NextRequest) {
   }
 
   // 이미 채팅방이 있으면 반환
-  if (order.chat) {
-    return NextResponse.json({ chatId: order.chat.id });
+  if (order.chats.length > 0) {
+    return NextResponse.json({ chatId: order.chats[0].id });
   }
 
   // 새 채팅방 생성 (userId는 주문한 고객)
@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
     data: {
       orderId,
       userId: order.userId,
+      chatType: "CUSTOMER_SUPPORT",
     },
   });
 

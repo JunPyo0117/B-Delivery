@@ -39,6 +39,13 @@ export interface ReadReceiptEvent {
   userId: string;
 }
 
+// ─── WebSocket 메시지 타입 ────────────────────────────
+
+export interface WSMessage {
+  type: "chat_message" | "message_ack" | "typing" | "read" | "read_receipt";
+  payload: unknown;
+}
+
 // ─── UI 전용 타입 ────────────────────────────────────
 
 /** optimistic 메시지 (서버 확인 전) */

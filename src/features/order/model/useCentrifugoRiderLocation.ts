@@ -48,7 +48,7 @@ export function useCentrifugoRiderLocation(
 
     const sub = centrifuge.newSubscription(channel)
 
-    sub.on("publication", (ctx) => {
+    sub.on("publication", (ctx: { data: unknown }) => {
       const data = ctx.data as {
         lat: number
         lng: number

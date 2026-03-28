@@ -16,7 +16,7 @@ export async function GET() {
     include: {
       restaurant: { select: { name: true, imageUrl: true } },
       items: { include: { menu: { select: { name: true } } } },
-      chat: { select: { id: true } },
+      chats: { select: { id: true }, take: 1 },
     },
   });
 
@@ -33,7 +33,7 @@ export async function GET() {
       itemSummary,
       totalPrice: order.totalPrice,
       createdAt: order.createdAt.toISOString(),
-      chatId: order.chat?.id ?? null,
+      chatId: order.chats[0]?.id ?? null,
     };
   });
 

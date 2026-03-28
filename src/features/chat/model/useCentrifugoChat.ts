@@ -66,7 +66,7 @@ export function useCentrifugoChat({
     const channel = `chat:${chatId}`
     const sub = centrifuge.newSubscription(channel)
 
-    sub.on("publication", (ctx) => {
+    sub.on("publication", (ctx: { data: unknown }) => {
       const data = ctx.data as {
         type?: string
         message?: ChatMessageResponse

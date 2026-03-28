@@ -37,7 +37,7 @@ export function useCentrifugoOrder(userId: string | undefined) {
     centrifugeRef.current = centrifuge
 
     // 서버 사이드 구독 채널(order#<userId>)의 publication 이벤트 수신
-    centrifuge.on("publication", (ctx) => {
+    centrifuge.on("publication", (ctx: { data: unknown }) => {
       const data = ctx.data as {
         type?: string
         orderId?: string
