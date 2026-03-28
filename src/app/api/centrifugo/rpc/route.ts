@@ -104,20 +104,108 @@ export async function POST(request: Request) {
 
       case "delivery:accept": {
         const orderId = data.orderId as string;
-        // 2단계(기사 에이전트)에서 상세 구현
+
+        const activeDelivery = await prisma.delivery.findFirst({
+          where: { riderId: userId, status: { notIn: ["DONE", "CANCELLED"] } },
+        });
+        if (activeDelivery) {
+          return NextResponse.json({ error: { code: 400, message: "이미 진행 중인 배달이 있습니다." } });
+        }
+
+        const delivery = await prisma.delivery.findUnique({
+          where: { orderId },
+          include: { order: { select: { userId: true, restaurantId: true, restaurant: { select: { ownerId: true } } } } },
+        });
+        if (!delivery || delivery.status !== "REQUESTED") {
+          return NextResponse.json({ error: { code: 400, message: "수락할 수 없는 배달입니다." } });
+        }
+
+        await prisma.$transaction([
+          prisma.delivery.update({
+            where: { id: delivery.id },
+            data: { riderId: userId, status: "ACCEPTED", acceptedAt: new Date() },
+          }),
+          prisma.order.update({
+            where: { id: orderId },
+            data: { status: "RIDER_ASSIGNED" },
+          }),
+        ]);
+
+        const riderProfile = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { nickname: true, riderProfile: { select: { transportType: true } } },
+        });
+
+        const assignedData = {
+          orderId,
+          riderId: userId,
+          riderNickname: riderProfile?.nickname || "",
+          transportType: riderProfile?.riderProfile?.transportType || "MOTORCYCLE",
+        };
+
+        await publish(`order#${delivery.order.userId}`, { type: "rider_assigned", ...assignedData });
+        await publish(`owner_orders#${delivery.order.restaurant.ownerId}`, { type: "rider_assigned", ...assignedData });
+
         return NextResponse.json({ result: { data: { success: true, orderId } } });
       }
 
       case "delivery:reject": {
         const orderId = data.orderId as string;
+        // 거절은 로깅만 — Order Worker가 타임아웃 시 다른 기사에게 재브로드캐스트
+        console.log(`[RPC] delivery:reject by ${userId} for ${orderId}`);
         return NextResponse.json({ result: { data: { success: true, orderId } } });
       }
 
       case "delivery:status": {
         const orderId = data.orderId as string;
-        const status = data.status as string;
-        // 2단계(기사 에이전트)에서 상세 구현
-        return NextResponse.json({ result: { data: { success: true, orderId, status } } });
+        const newStatus = data.status as string;
+
+        const delivery = await prisma.delivery.findUnique({
+          where: { orderId },
+          include: { order: { select: { userId: true, restaurant: { select: { ownerId: true } } } } },
+        });
+        if (!delivery || delivery.riderId !== userId) {
+          return NextResponse.json({ error: { code: 403, message: "권한이 없습니다." } });
+        }
+
+        const extraData: Record<string, unknown> = {};
+        let orderStatus: string | null = null;
+
+        if (newStatus === "AT_STORE") {
+          // Order 상태는 변경하지 않음 (RIDER_ASSIGNED 유지)
+        } else if (newStatus === "PICKED_UP") {
+          extraData.pickedUpAt = new Date();
+          orderStatus = "PICKED_UP";
+        } else if (newStatus === "DONE") {
+          extraData.completedAt = new Date();
+          orderStatus = "DONE";
+          // 기사 통계 업데이트
+          await prisma.riderProfile.update({
+            where: { userId },
+            data: {
+              totalDeliveries: { increment: 1 },
+              totalEarnings: { increment: delivery.riderFee },
+            },
+          });
+        }
+
+        const txOps = [
+          prisma.delivery.update({
+            where: { id: delivery.id },
+            data: { status: newStatus as "AT_STORE" | "PICKED_UP" | "DONE", ...extraData },
+          }),
+        ];
+        if (orderStatus) {
+          txOps.push(
+            prisma.order.update({ where: { id: orderId }, data: { status: orderStatus as "PICKED_UP" | "DONE" } }) as never
+          );
+        }
+        await prisma.$transaction(txOps);
+
+        await publish(`order#${delivery.order.userId}`, { type: "status:changed", orderId, newStatus: orderStatus || newStatus });
+        await publish(`owner_orders#${delivery.order.restaurant.ownerId}`, { type: "delivery_status", orderId, newStatus });
+
+        return NextResponse.json({ result: { data: { success: true, orderId, status: newStatus } } });
       }
 
       default:

@@ -3,6 +3,7 @@
 import { useState, useTransition, useCallback } from "react";
 import Image from "next/image";
 import { Plus, UtensilsCrossed, MoreVertical, Pencil, Trash2, Loader2, ImageIcon } from "lucide-react";
+import { MenuImportDialog } from "./menu-import-dialog";
 import { Switch } from "@/shared/ui/switch";
 import { Button } from "@/shared/ui/button";
 import {
@@ -89,14 +90,17 @@ export function MenuTable({ initialMenus }: MenuTableProps) {
             총 {initialMenus.length}개 메뉴
           </p>
         </div>
-        <Button
-          onClick={handleAddMenu}
-          className="bg-[#2DB400] text-white hover:bg-[#249a00]"
-          size="lg"
-        >
-          <Plus className="h-4 w-4" />
-          메뉴 추가
-        </Button>
+        <div className="flex items-center gap-2">
+          <MenuImportDialog />
+          <Button
+            onClick={handleAddMenu}
+            className="bg-[#2DB400] text-white hover:bg-[#249a00]"
+            size="lg"
+          >
+            <Plus className="h-4 w-4" />
+            메뉴 추가
+          </Button>
+        </div>
       </div>
 
       {/* 카테고리 탭 */}
