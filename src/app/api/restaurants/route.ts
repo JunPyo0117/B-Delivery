@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { redis } from "@/lib/redis";
 import { VALID_SORT_OPTIONS, type SortOption } from "@/lib/constants";
 import type { RestaurantListItem } from "@/types/restaurant";
 
 const MAX_DISTANCE_KM = 3;
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
+const CACHE_TTL_SECONDS = 300; // 5분
 
 const VALID_CATEGORIES = [
   "KOREAN", "CHINESE", "JAPANESE", "CHICKEN", "PIZZA",
@@ -27,6 +29,24 @@ const ORDER_BY_MAP: Record<SortOption, string> = {
   rating: '"avgRating" DESC, distance ASC',
   minOrder: 'r."minOrderAmount" ASC, distance ASC',
 };
+
+/**
+ * 캐시 키 생성: 위경도를 소수점 2자리(~100m 격자)로 반올림하여
+ * 인접 요청이 동일 캐시를 공유하도록 합니다.
+ */
+function buildCacheKey(
+  lat: number,
+  lng: number,
+  category: string | null,
+  sort: string,
+  cursor: number,
+  limit: number,
+): string {
+  const latR = lat.toFixed(2);
+  const lngR = lng.toFixed(2);
+  const cat = category && category !== "ALL" ? category : "ALL";
+  return `restaurants:${latR}:${lngR}:${cat}:${sort}:${cursor}:${limit}`;
+}
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -62,6 +82,19 @@ export async function GET(request: NextRequest) {
   const sort: SortOption =
     sortParam && VALID_SORT_OPTIONS.includes(sortParam) ? sortParam : "distance";
 
+  // --- Redis 캐시 조회 ---
+  const cacheKey = buildCacheKey(latitude, longitude, category, sort, cursor, limit);
+
+  try {
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return NextResponse.json(JSON.parse(cached));
+    }
+  } catch {
+    // Redis 연결 실패 시 무시하고 DB 직접 조회
+  }
+
+  // --- DB 조회 ---
   const useCategory = category && category !== "ALL";
   const orderByClause = ORDER_BY_MAP[sort];
 
@@ -106,8 +139,17 @@ export async function GET(request: NextRequest) {
   const hasMore = restaurants.length > limit;
   const data = hasMore ? restaurants.slice(0, limit) : restaurants;
 
-  return NextResponse.json({
+  const responseBody = {
     restaurants: data,
     nextCursor: hasMore ? cursor + limit : null,
-  });
+  };
+
+  // --- Redis 캐시 저장 (TTL 5분) ---
+  try {
+    await redis.set(cacheKey, JSON.stringify(responseBody), "EX", CACHE_TTL_SECONDS);
+  } catch {
+    // Redis 저장 실패 시 무시 — 다음 요청에서 재시도
+  }
+
+  return NextResponse.json(responseBody);
 }

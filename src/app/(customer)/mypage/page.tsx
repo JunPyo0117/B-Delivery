@@ -8,6 +8,7 @@ import {
   Coins,
   MapPin,
   Store,
+  Bike,
   LogOut,
 } from "lucide-react";
 
@@ -97,6 +98,12 @@ export default async function MypagePage() {
               icon={<Store className="size-[18px]" />}
               label="음식점 등록하기"
               href="/mypage/register-restaurant"
+            />
+            <div className="h-px bg-gray-100 ml-10" />
+            <SettingsRow
+              icon={<Bike className="size-[18px]" />}
+              label="배달기사 등록하기"
+              href="/mypage/register-rider"
             />
           </>
         )}
