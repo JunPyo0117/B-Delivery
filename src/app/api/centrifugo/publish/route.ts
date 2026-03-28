@@ -72,8 +72,8 @@ export async function POST(request: Request) {
     const recipientId = chat.userId === userId ? chat.adminId : chat.userId;
     if (recipientId) {
       await publish(`user#${recipientId}`, {
-        type: "message:new",
         ...enrichedMessage,
+        type: "message:new",
       });
     }
 
