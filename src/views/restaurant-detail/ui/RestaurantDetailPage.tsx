@@ -225,8 +225,8 @@ export function RestaurantDetailPage({
   const filteredMenus = getFilteredContent()
 
   // 장바구니 수량
-  const cartItemCount = mounted ? cart.itemCount() : 0
-  const cartTotalPrice = mounted ? cart.totalItemPrice() : 0
+  const cartItemCount = mounted ? cart.getTotalQuantity() : 0
+  const cartTotalPrice = mounted ? cart.getTotal() : 0
 
   // 리뷰 미리보기 데이터 (상세 API에서 제공하지 않으므로 집계 데이터만)
   const avgRating = restaurant.rating
