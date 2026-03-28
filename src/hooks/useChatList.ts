@@ -13,7 +13,7 @@ function getSocketUrl() {
 export interface ChatListItem {
   id: string;
   user: { nickname: string; image: string | null };
-  order: { id: string; totalPrice: number; createdAt: string };
+  order: { id: string; totalPrice: number; createdAt: string } | null;
   lastMessage: {
     content: string;
     type: string;

@@ -11,7 +11,7 @@ const NEXT_STATUS: Partial<
   Record<OrderStatus, { status: OrderStatus; label: string }>
 > = {
   PENDING: { status: OrderStatus.COOKING, label: "주문 수락" },
-  COOKING: { status: OrderStatus.PICKED_UP, label: "픽업 완료" },
+  COOKING: { status: OrderStatus.WAITING_RIDER, label: "배달 요청" },
   PICKED_UP: { status: OrderStatus.DONE, label: "배달 완료" },
 };
 

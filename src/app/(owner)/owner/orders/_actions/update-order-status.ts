@@ -8,7 +8,9 @@ import { OrderStatus } from "@/generated/prisma/client";
 /** 허용되는 상태 전이 맵 */
 const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   PENDING: [OrderStatus.COOKING, OrderStatus.CANCELLED],
-  COOKING: [OrderStatus.PICKED_UP],
+  COOKING: [OrderStatus.WAITING_RIDER, OrderStatus.CANCELLED],
+  WAITING_RIDER: [OrderStatus.RIDER_ASSIGNED, OrderStatus.COOKING],
+  RIDER_ASSIGNED: [OrderStatus.PICKED_UP, OrderStatus.WAITING_RIDER],
   PICKED_UP: [OrderStatus.DONE],
   DONE: [],
   CANCELLED: [],
@@ -20,7 +22,8 @@ const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
  */
 export async function updateOrderStatus(
   orderId: string,
-  newStatus: OrderStatus
+  newStatus: OrderStatus,
+  cancelReason?: string
 ): Promise<{ success: boolean; error?: string }> {
   const session = await auth();
 
@@ -62,7 +65,13 @@ export async function updateOrderStatus(
   // DB 업데이트
   await prisma.order.update({
     where: { id: orderId },
-    data: { status: newStatus },
+    data: {
+      status: newStatus,
+      ...(newStatus === OrderStatus.CANCELLED && {
+        cancelReason: cancelReason ?? null,
+        cancelledBy: session.user.id,
+      }),
+    },
   });
 
   // Redis Stream 발행 — 고객에게 실시간 알림

@@ -27,7 +27,7 @@ export default function RootLayout({
     <html lang="ko" suppressHydrationWarning>
       <body className="font-sans antialiased" suppressHydrationWarning>
         <AuthSessionProvider>
-          <div className="mx-auto min-h-dvh max-w-[480px] bg-background">
+          <div className="min-h-dvh bg-background">
             {children}
           </div>
         </AuthSessionProvider>

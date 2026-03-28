@@ -6,8 +6,12 @@ import { useChatList, type ChatListItem } from "@/hooks/useChatList";
 
 export function OwnerChatList({
   initialChats,
+  selectedChatId,
+  onSelectChat,
 }: {
   initialChats: ChatListItem[];
+  selectedChatId?: string | null;
+  onSelectChat?: (chatId: string) => void;
 }) {
   const router = useRouter();
   const chats = useChatList(initialChats, () => router.refresh());
@@ -42,12 +46,9 @@ export function OwnerChatList({
               })
             : "";
 
-          return (
-            <Link
-              key={chat.id}
-              href={`/chat/${chat.id}`}
-              className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors"
-            >
+          const isSelected = selectedChatId === chat.id;
+          const content = (
+            <>
               {/* 아바타 */}
               <div className="size-11 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
                 <span className="text-sm font-semibold text-gray-500">
@@ -77,6 +78,30 @@ export function OwnerChatList({
                   )}
                 </div>
               </div>
+            </>
+          );
+
+          // onSelectChat이 있으면 버튼 모드 (3패널 레이아웃), 없으면 Link 모드
+          if (onSelectChat) {
+            return (
+              <button
+                key={chat.id}
+                type="button"
+                onClick={() => onSelectChat(chat.id)}
+                className={`flex w-full items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors text-left ${isSelected ? "bg-gray-100" : ""}`}
+              >
+                {content}
+              </button>
+            );
+          }
+
+          return (
+            <Link
+              key={chat.id}
+              href={`/chat/${chat.id}`}
+              className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors"
+            >
+              {content}
             </Link>
           );
         })}

@@ -63,11 +63,13 @@ export default async function OwnerChatListPage() {
   const initialChats: ChatListItem[] = chats.map((chat) => ({
     id: chat.id,
     user: chat.user,
-    order: {
-      id: chat.order.id,
-      totalPrice: chat.order.totalPrice,
-      createdAt: chat.order.createdAt.toISOString(),
-    },
+    order: chat.order
+      ? {
+          id: chat.order.id,
+          totalPrice: chat.order.totalPrice,
+          createdAt: chat.order.createdAt.toISOString(),
+        }
+      : null,
     lastMessage: chat.messages[0]
       ? {
           content: chat.messages[0].content,

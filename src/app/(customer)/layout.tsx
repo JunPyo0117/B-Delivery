@@ -30,7 +30,7 @@ export default async function CustomerLayout({
   }
 
   return (
-    <div className="flex flex-col min-h-dvh">
+    <div className="mx-auto flex max-w-[480px] flex-col min-h-dvh">
       <main className="flex-1 pb-20">{children}</main>
       <BottomNavigation />
     </div>

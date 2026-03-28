@@ -12,7 +12,7 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-[480px] bg-white">
+    <div className="min-h-screen bg-white">
       {children}
     </div>
   );

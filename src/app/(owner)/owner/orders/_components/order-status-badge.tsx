@@ -14,6 +14,16 @@ const STATUS_CONFIG: Record<
     bgColor: "#E3F2FD",
     textColor: "#1565C0",
   },
+  WAITING_RIDER: {
+    label: "배달대기",
+    bgColor: "#FFF8E1",
+    textColor: "#F57F17",
+  },
+  RIDER_ASSIGNED: {
+    label: "기사배정",
+    bgColor: "#E8EAF6",
+    textColor: "#283593",
+  },
   PICKED_UP: {
     label: "배달중",
     bgColor: "#E8F5E9",
