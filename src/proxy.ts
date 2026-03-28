@@ -10,8 +10,11 @@ export default async function proxy(req: NextRequest) {
   const session = await auth();
   const isLoggedIn = !!session;
 
-  // 미인증 + 보호된 경로 → 로그인 리다이렉트
+  // 미인증 + 보호된 경로 → 역할별 로그인 리다이렉트
   if (!isLoggedIn && !isPublic) {
+    if (pathname.startsWith("/owner")) return NextResponse.redirect(new URL("/owner/login", req.url));
+    if (pathname.startsWith("/rider")) return NextResponse.redirect(new URL("/rider/login", req.url));
+    if (pathname.startsWith("/admin")) return NextResponse.redirect(new URL("/admin/login", req.url));
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
