@@ -46,7 +46,7 @@ export function ChatRoomPage({
   }, [chatId, initialMessages, initialHasMore, setMessages, setHasMore, clearChat])
 
   const { isConnected, isConnecting, error, sendMessage, sendTyping } =
-    useSocket(chatId)
+    useCentrifugoChat({ chatId })
 
   return (
     <div className="flex flex-col h-dvh bg-[#F8F8F8]">

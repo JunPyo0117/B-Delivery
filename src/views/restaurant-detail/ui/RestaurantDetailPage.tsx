@@ -26,8 +26,8 @@ import { MenuOptionSheet } from "@/features/menu-option"
 import {
   useCartStore,
   DifferentRestaurantDialog,
-  type CartItem,
 } from "@/features/cart"
+import type { CartItemOption } from "@/features/cart/model/cartStore"
 import type { SelectedOption } from "@/entities/menu"
 import { formatPrice, cn } from "@/shared/lib"
 
@@ -64,11 +64,9 @@ export function RestaurantDetailPage({
 
   // 다른 가게 다이얼로그
   const [showDifferentDialog, setShowDifferentDialog] = useState(false)
-  const [pendingCartItem, setPendingCartItem] = useState<{
-    menu: MenuItemData
-    options: SelectedOption[]
+  const [pendingCartAdd, setPendingCartAdd] = useState<{
+    item: Omit<import("@/features/cart/model/cartStore").CartItem, "quantity" | "cartItemKey" | "options"> & { options?: CartItemOption[] }
     quantity: number
-    optionPrice: number
   } | null>(null)
 
   // 장바구니 스토어
@@ -103,68 +101,81 @@ export function RestaurantDetailPage({
     }
   }, [restaurantId])
 
+  /** SelectedOption → CartItemOption 변환 (menu.optionGroups에서 ID 매핑) */
+  const toCartItemOptions = useCallback(
+    (menu: MenuItemData, options: SelectedOption[]): CartItemOption[] => {
+      return options.map((opt) => {
+        const group = menu.optionGroups.find((g) => g.name === opt.groupName)
+        const option = group?.options.find((o) => o.name === opt.optionName)
+        return {
+          groupId: group?.id ?? opt.groupName,
+          groupName: opt.groupName,
+          optionId: option?.id ?? opt.optionName,
+          optionName: opt.optionName,
+          extraPrice: opt.extraPrice,
+        }
+      })
+    },
+    [],
+  )
+
   // ── 장바구니 담기 핸들러 ──
   const handleAddToCart = useCallback(
     (
       menu: MenuItemData,
       options: SelectedOption[],
       quantity: number,
-      optionPrice: number,
+      _optionPrice: number,
     ) => {
       if (!data) return
 
-      const cartItem: CartItem = {
-        menuId: menu.id,
-        menuName: menu.name,
-        menuImageUrl: menu.imageUrl,
-        price: menu.price,
-        optionPrice,
-        selectedOptions: options,
-        quantity,
-      }
+      const cartOptions = toCartItemOptions(menu, options)
 
-      const added = cart.addItem(
-        data.restaurant.id,
-        data.restaurant.name,
-        data.restaurant.deliveryFee,
-        data.restaurant.minOrderAmount,
-        cartItem,
-      )
-
-      if (!added) {
-        // 다른 가게 메뉴가 있음
-        setPendingCartItem({ menu, options, quantity, optionPrice })
+      // 다른 가게 메뉴가 담겨 있으면 교체 확인
+      if (cart.isDifferentRestaurant(data.restaurant.id)) {
+        setPendingCartAdd({
+          item: {
+            menuId: menu.id,
+            name: menu.name,
+            imageUrl: menu.imageUrl,
+            price: menu.price,
+            restaurantId: data.restaurant.id,
+            restaurantName: data.restaurant.name,
+            options: cartOptions,
+          },
+          quantity,
+        })
         setShowDifferentDialog(true)
+        return
       }
+
+      cart.addItem(
+        {
+          menuId: menu.id,
+          name: menu.name,
+          imageUrl: menu.imageUrl,
+          price: menu.price,
+          restaurantId: data.restaurant.id,
+          restaurantName: data.restaurant.name,
+          options: cartOptions,
+        },
+        quantity,
+      )
+      cart.setDeliveryInfo(data.restaurant.deliveryFee, data.restaurant.minOrderAmount)
     },
-    [data, cart],
+    [data, cart, toCartItemOptions],
   )
 
   // ── 다른 가게 장바구니 교체 ──
   const handleReplaceCart = useCallback(() => {
-    if (!data || !pendingCartItem) return
+    if (!data || !pendingCartAdd) return
 
-    const cartItem: CartItem = {
-      menuId: pendingCartItem.menu.id,
-      menuName: pendingCartItem.menu.name,
-      menuImageUrl: pendingCartItem.menu.imageUrl,
-      price: pendingCartItem.menu.price,
-      optionPrice: pendingCartItem.optionPrice,
-      selectedOptions: pendingCartItem.options,
-      quantity: pendingCartItem.quantity,
-    }
+    cart.replaceWithItem(pendingCartAdd.item, pendingCartAdd.quantity)
+    cart.setDeliveryInfo(data.restaurant.deliveryFee, data.restaurant.minOrderAmount)
 
-    cart.replaceWithItem(
-      data.restaurant.id,
-      data.restaurant.name,
-      data.restaurant.deliveryFee,
-      data.restaurant.minOrderAmount,
-      cartItem,
-    )
-
-    setPendingCartItem(null)
+    setPendingCartAdd(null)
     setShowDifferentDialog(false)
-  }, [data, pendingCartItem, cart])
+  }, [data, pendingCartAdd, cart])
 
   // ── 메뉴 클릭 핸들러 ──
   const handleMenuClick = useCallback((item: MenuItemData) => {

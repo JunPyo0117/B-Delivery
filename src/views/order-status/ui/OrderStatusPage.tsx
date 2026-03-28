@@ -49,7 +49,7 @@ export function OrderStatusPage({ orderId }: OrderStatusPageProps) {
         } else {
           setOrder(data)
           // orderStore 초기 상태 세팅
-          useOrderStore.getState().setStatus(orderId, data.status)
+          useOrderStore.getState().setOrderStatus(orderId, data.status)
         }
       } catch {
         setError("주문 정보를 불러오는 데 실패했습니다.")
@@ -65,7 +65,7 @@ export function OrderStatusPage({ orderId }: OrderStatusPageProps) {
   const centrifugeRef = useCentrifugoOrder(userId)
 
   // orderStore에서 실시간 상태 구독
-  const realtimeEntry = useOrderStore((s) => s.statuses[orderId])
+  const realtimeEntry = useOrderStore((s) => s.orders[orderId])
   const currentStatus: OrderStatus =
     realtimeEntry?.status ?? order?.status ?? "PENDING"
 
@@ -79,7 +79,7 @@ export function OrderStatusPage({ orderId }: OrderStatusPageProps) {
 
   // 주문 취소 콜백
   const handleCancelled = () => {
-    useOrderStore.getState().setStatus(orderId, "CANCELLED")
+    useOrderStore.getState().setOrderStatus(orderId, "CANCELLED")
   }
 
   if (loading) {

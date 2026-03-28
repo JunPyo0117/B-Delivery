@@ -37,11 +37,11 @@ function toApiSortBy(
   uiSort: SortOption,
 ): GetRestaurantsParams["sortBy"] {
   switch (uiSort) {
-    case "deliveryTime":
+    case "distance":
       return "distance"
     case "rating":
       return "rating"
-    case "minOrderAmount":
+    case "minOrder":
       return "minOrder"
     default:
       return "distance"
@@ -276,7 +276,7 @@ export function HomePage({ address, latitude, longitude }: HomePageProps) {
   // ── 정렬 변경 ──
   const handleSortChange = (sort: string) => {
     const params = new URLSearchParams(searchParams.toString())
-    if (sort === SORT_OPTIONS[0].value) {
+    if (sort === "distance") {
       params.delete("sort")
     } else {
       params.set("sort", sort)

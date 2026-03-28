@@ -14,7 +14,7 @@ import { useOrderStore } from "./orderStore"
  */
 export function useCentrifugoOrder(userId: string | undefined) {
   const centrifugeRef = useRef<Centrifuge | null>(null)
-  const setStatus = useOrderStore((s) => s.setStatus)
+  const setOrderStatus = useOrderStore((s) => s.setOrderStatus)
 
   useEffect(() => {
     if (!userId) return
@@ -45,7 +45,7 @@ export function useCentrifugoOrder(userId: string | undefined) {
       }
 
       if (data.type === "order:status_changed" && data.orderId && data.status) {
-        setStatus(data.orderId, data.status)
+        setOrderStatus(data.orderId, data.status)
       }
     })
 
@@ -55,7 +55,7 @@ export function useCentrifugoOrder(userId: string | undefined) {
       centrifuge.disconnect()
       centrifugeRef.current = null
     }
-  }, [userId, setStatus])
+  }, [userId, setOrderStatus])
 
   return centrifugeRef
 }
