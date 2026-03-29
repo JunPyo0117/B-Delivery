@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { Centrifuge } from "centrifuge";
 import { Bell, BellOff } from "lucide-react";
 import {
   DeliveryRequestCard,
@@ -15,9 +16,8 @@ interface RiderWaitingClientProps {
 /**
  * 배달 대기 클라이언트 영역
  *
- * - 온라인 상태일 때 배달 요청 대기 UI 표시
- * - 추후 Centrifugo `delivery_requests#<riderId>` 채널 연동
- * - 현재는 플레이스홀더 + 데모 요청 표시
+ * - 온라인 상태일 때 Centrifugo `delivery_requests#<riderId>` 채널 구독
+ * - 배달 요청 수신 시 DeliveryRequestCard 표시
  */
 export function RiderWaitingClient({
   riderId,
@@ -26,10 +26,62 @@ export function RiderWaitingClient({
   const [currentRequest, setCurrentRequest] = useState<DeliveryRequest | null>(
     null
   );
+  const centrifugeRef = useRef<Centrifuge | null>(null);
 
   const handleDismiss = useCallback(() => {
     setCurrentRequest(null);
   }, []);
+
+  // Centrifugo 연결 및 배달 요청 구독
+  useEffect(() => {
+    if (!riderId || !isOnline) return;
+
+    const wsUrl = process.env.NEXT_PUBLIC_CENTRIFUGO_URL;
+    if (!wsUrl) return;
+
+    const centrifuge = new Centrifuge(wsUrl, {
+      getToken: async () => {
+        const res = await fetch("/api/chat/token", { method: "POST" });
+        if (!res.ok) throw new Error("Centrifugo 토큰 발급 실패");
+        const data = await res.json();
+        return data.token as string;
+      },
+    });
+
+    centrifugeRef.current = centrifuge;
+
+    // 서버 사이드 구독 채널(delivery_requests#<riderId>)의 publication 수신
+    centrifuge.on("publication", (ctx: { data: unknown }) => {
+      const data = ctx.data as {
+        orderId?: string;
+        restaurantName?: string;
+        pickupLat?: number;
+        pickupLng?: number;
+        dropoffLat?: number;
+        dropoffLng?: number;
+        riderFee?: number;
+      };
+
+      if (data.orderId && data.restaurantName && typeof data.riderFee === "number") {
+        setCurrentRequest({
+          orderId: data.orderId,
+          restaurantName: data.restaurantName,
+          restaurantAddress: "",
+          deliveryAddress: "",
+          distance: null,
+          estimatedTime: null,
+          riderFee: data.riderFee,
+        });
+      }
+    });
+
+    centrifuge.connect();
+
+    return () => {
+      centrifuge.disconnect();
+      centrifugeRef.current = null;
+    };
+  }, [riderId, isOnline]);
 
   // 오프라인 상태
   if (!isOnline) {

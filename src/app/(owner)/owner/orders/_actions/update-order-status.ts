@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/shared/api/prisma";
-import { publishOrderUpdate } from "@/shared/api/redis";
+import { publishOrderUpdate, publishDeliveryRequest } from "@/shared/api/redis";
 import { OrderStatus } from "@/generated/prisma/client";
 
 /** 허용되는 상태 전이 맵 */
@@ -35,10 +35,14 @@ export async function updateOrderStatus(
     return { success: false, error: "권한이 없습니다." };
   }
 
-  // 주문 조회 + 사장 소유 음식점 검증
+  // 주문 조회 + 음식점 정보 (배달 요청 시 좌표 필요)
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    include: { restaurant: { select: { ownerId: true } } },
+    include: {
+      restaurant: {
+        select: { ownerId: true, name: true, latitude: true, longitude: true },
+      },
+    },
   });
 
   if (!order) {
@@ -73,6 +77,31 @@ export async function updateOrderStatus(
       }),
     },
   });
+
+  // WAITING_RIDER 전이 시: Delivery 생성 + 배달 요청 발행
+  if (newStatus === OrderStatus.WAITING_RIDER) {
+    await prisma.delivery.create({
+      data: {
+        orderId,
+        status: "REQUESTED",
+        pickupLat: order.restaurant.latitude,
+        pickupLng: order.restaurant.longitude,
+        dropoffLat: order.deliveryLat ?? 0,
+        dropoffLng: order.deliveryLng ?? 0,
+        riderFee: order.deliveryFee,
+      },
+    });
+
+    await publishDeliveryRequest(
+      orderId,
+      order.restaurant.latitude,
+      order.restaurant.longitude,
+      order.deliveryLat ?? 0,
+      order.deliveryLng ?? 0,
+      order.restaurant.name,
+      order.deliveryFee
+    );
+  }
 
   // Redis Stream 발행 — 고객에게 실시간 알림
   await publishOrderUpdate(orderId, newStatus, order.userId);
