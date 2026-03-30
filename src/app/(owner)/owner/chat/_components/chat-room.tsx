@@ -140,13 +140,13 @@ export function ChatRoom({
     async function pollMessages() {
       const result = await getChatMessages(chatId);
       if (result.success && result.messages.length > 0) {
+        let hasNew = false;
         setMessages((prev) => {
           // 새 메시지만 추가 (기존 ID와 비교)
           const existingIds = new Set(prev.map((m) => m.id));
           const newMsgs = result.messages.filter((m) => !existingIds.has(m.id));
           if (newMsgs.length > 0) {
-            // 읽음 처리
-            markAsRead(chatId);
+            hasNew = true;
             return [...prev, ...newMsgs];
           }
           // 읽음 상태 업데이트 확인
@@ -162,6 +162,10 @@ export function ChatRoom({
           }
           return prev;
         });
+        // setState 바깥에서 읽음 처리
+        if (hasNew) {
+          markAsRead(chatId);
+        }
       }
     }
 
