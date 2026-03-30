@@ -43,6 +43,16 @@ function DialogTrigger({
   ...props
 }: React.ComponentProps<"button"> & { asChild?: boolean }) {
   const { onOpenChange } = React.useContext(DialogContext)
+
+  if (asChild && React.isValidElement(children)) {
+    return React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
+      onClick: (e: React.MouseEvent) => {
+        onOpenChange(true);
+        (children.props as Record<string, unknown>)?.onClick?.(e);
+      },
+    })
+  }
+
   return (
     <button type="button" onClick={() => onOpenChange(true)} {...props}>
       {children}
