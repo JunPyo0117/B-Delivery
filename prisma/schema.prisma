@@ -164,6 +164,7 @@ model Restaurant {
 
   latitude  Float
   longitude Float
+  location  Unsupported("geometry(Point, 4326)")?
 
   menus     Menu[]
   orders    Order[]

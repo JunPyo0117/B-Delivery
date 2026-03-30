@@ -15,12 +15,21 @@ const VALID_CATEGORIES = [
   "BUNSIK", "JOKBAL", "CAFE", "FASTFOOD", "ETC",
 ] as const;
 
-const HAVERSINE_EXPR = `
-  6371 * acos(LEAST(1.0,
-    cos(radians($1::float)) * cos(radians(r.latitude)) *
-    cos(radians(r.longitude) - radians($2::float)) +
-    sin(radians($1::float)) * sin(radians(r.latitude))
-  ))
+// PostGIS ST_Distance (km 단위)
+const DISTANCE_EXPR = `
+  ST_Distance(
+    r."location"::geography,
+    ST_SetSRID(ST_MakePoint($2::float, $1::float), 4326)::geography
+  ) / 1000.0
+`;
+
+// PostGIS ST_DWithin (GIST 인덱스 활용, 미터 단위)
+const DWITHIN_EXPR = `
+  ST_DWithin(
+    r."location"::geography,
+    ST_SetSRID(ST_MakePoint($2::float, $1::float), 4326)::geography,
+    $3::float * 1000
+  )
 `;
 
 // 정렬 옵션별 ORDER BY 절 매핑
@@ -30,10 +39,6 @@ const ORDER_BY_MAP: Record<SortOption, string> = {
   minOrder: 'r."minOrderAmount" ASC, distance ASC',
 };
 
-/**
- * 캐시 키 생성: 위경도를 소수점 2자리(~100m 격자)로 반올림하여
- * 인접 요청이 동일 캐시를 공유하도록 합니다.
- */
 function buildCacheKey(
   lat: number,
   lng: number,
@@ -78,7 +83,6 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // 정렬 옵션 검증 (유효하지 않으면 기본값 distance)
   const sort: SortOption =
     sortParam && VALID_SORT_OPTIONS.includes(sortParam) ? sortParam : "distance";
 
@@ -94,7 +98,7 @@ export async function GET(request: NextRequest) {
     // Redis 연결 실패 시 무시하고 DB 직접 조회
   }
 
-  // --- DB 조회 ---
+  // --- DB 조회 (PostGIS) ---
   const useCategory = category && category !== "ALL";
   const orderByClause = ORDER_BY_MAP[sort];
 
@@ -107,13 +111,13 @@ export async function GET(request: NextRequest) {
       r."minOrderAmount",
       r."deliveryFee",
       r."deliveryTime",
-      ROUND(CAST(${HAVERSINE_EXPR} AS numeric), 1)::float AS distance,
+      ROUND(CAST(${DISTANCE_EXPR} AS numeric), 1)::float AS distance,
       COALESCE(ROUND(AVG(rev.rating)::numeric, 1), 0)::float AS "avgRating",
       COUNT(rev.id)::int AS "reviewCount"
     FROM "Restaurant" r
     LEFT JOIN "Review" rev ON rev."restaurantId" = r.id
     WHERE r."isOpen" = true
-      AND (${HAVERSINE_EXPR}) <= $3::float
+      AND ${DWITHIN_EXPR}
       ${useCategory ? `AND r."category"::text = $6::text` : ""}
     GROUP BY r.id
     ORDER BY ${orderByClause}
@@ -148,7 +152,7 @@ export async function GET(request: NextRequest) {
   try {
     await redis.set(cacheKey, JSON.stringify(responseBody), "EX", CACHE_TTL_SECONDS);
   } catch {
-    // Redis 저장 실패 시 무시 — 다음 요청에서 재시도
+    // Redis 저장 실패 시 무시
   }
 
   return NextResponse.json(responseBody);

@@ -11,35 +11,14 @@ import type {
 const PAGE_SIZE = 20;
 const CACHE_TTL = 300; // 5분
 
-/**
- * Haversine 공식으로 두 좌표 사이의 거리를 계산합니다 (km).
- * PostGIS 미사용 시 대안으로 Prisma raw query에서 사용합니다.
- */
-function buildHaversineSQL(lat: number, lng: number): string {
-  return `
-    6371 * acos(
-      LEAST(1.0, GREATEST(-1.0,
-        cos(radians(${lat})) * cos(radians("latitude")) *
-        cos(radians("longitude") - radians(${lng})) +
-        sin(radians(${lat})) * sin(radians("latitude"))
-      ))
-    )
-  `;
-}
-
 function buildCacheKey(params: GetRestaurantsParams): string {
   const { lat, lng, category, sortBy, cursor } = params;
-  // 좌표를 소수점 3자리로 반올림 (약 110m 단위)하여 캐시 키 정규화
   const normalizedLat = lat.toFixed(3);
   const normalizedLng = lng.toFixed(3);
   return `restaurants:${normalizedLat}:${normalizedLng}:${category ?? "ALL"}:${sortBy ?? "distance"}:${cursor ?? "0"}`;
 }
 
-function buildOrderByClause(
-  sortBy: string | undefined,
-  lat: number,
-  lng: number
-): string {
+function buildOrderByClause(sortBy: string | undefined): string {
   switch (sortBy) {
     case "rating":
       return `"avg_rating" DESC NULLS LAST, distance ASC`;
@@ -67,9 +46,8 @@ export async function getRestaurants(
     // Redis 에러 시 캐시 무시하고 DB 조회
   }
 
-  // 2. Haversine 거리 계산 포함 raw query
-  const distanceSQL = buildHaversineSQL(lat, lng);
-  const orderByClause = buildOrderByClause(sortBy, lat, lng);
+  // 2. PostGIS ST_DWithin + ST_Distance (GIST 공간 인덱스 활용)
+  const orderByClause = buildOrderByClause(sortBy);
 
   const categoryFilter = category
     ? `AND r."category" = '${category}'`
@@ -78,6 +56,9 @@ export async function getRestaurants(
   const cursorFilter = cursor
     ? `AND r."id" > '${cursor}'`
     : "";
+
+  const userPoint = `ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography`;
+  const radiusMeters = radius * 1000;
 
   const query = `
     SELECT
@@ -88,7 +69,7 @@ export async function getRestaurants(
       r."deliveryTime",
       r."deliveryFee",
       r."minOrderAmount",
-      ${distanceSQL} AS distance,
+      ST_Distance(r."location"::geography, ${userPoint}) / 1000.0 AS distance,
       COALESCE(rev_agg.avg_rating, 0) AS "avg_rating",
       COALESCE(rev_agg.review_count, 0) AS "review_count"
     FROM "Restaurant" r
@@ -101,7 +82,7 @@ export async function getRestaurants(
       GROUP BY "restaurantId"
     ) rev_agg ON rev_agg."restaurantId" = r."id"
     WHERE r."isOpen" = true
-      AND ${distanceSQL} <= ${radius}
+      AND ST_DWithin(r."location"::geography, ${userPoint}, ${radiusMeters})
       ${categoryFilter}
       ${cursorFilter}
     ORDER BY ${orderByClause}

@@ -681,7 +681,7 @@ async function main() {
     }
   }
 
-  console.log(`\n✅ 시드 완료! 총 ${created}개 음식점 + 메뉴 생성`);
+  console.log(`\n✅ 시드 완료! 총 ${created}개 음식점 + 메뉴 생성 (PostGIS location은 트리거로 자동 동기화)`);
 }
 
 main()

@@ -24,7 +24,7 @@ export interface SearchResultItem extends RestaurantCardData {
 
 /**
  * 음식점명 / 메뉴명 / 메뉴 카테고리 통합 검색
- * Prisma 파라미터 바인딩($queryRawUnsafe + 직접 바인딩 대신 $queryRaw 사용)으로 SQL injection 방지
+ * PostGIS ST_DWithin + ST_Distance (GIST 공간 인덱스 활용)
  */
 export async function searchRestaurants(
   params: SearchRestaurantsParams
@@ -35,8 +35,8 @@ export async function searchRestaurants(
   if (!trimmed) return [];
 
   const likePattern = `%${trimmed}%`;
+  const radiusMeters = radius * 1000;
 
-  // Haversine 거리 계산 SQL (파라미터 바인딩)
   const rows = await prisma.$queryRaw<
     Array<{
       id: string;
@@ -59,13 +59,10 @@ export async function searchRestaurants(
       r."deliveryTime",
       r."deliveryFee",
       r."minOrderAmount",
-      6371 * acos(
-        LEAST(1.0, GREATEST(-1.0,
-          cos(radians(${lat})) * cos(radians(r."latitude")) *
-          cos(radians(r."longitude") - radians(${lng})) +
-          sin(radians(${lat})) * sin(radians(r."latitude"))
-        ))
-      ) AS distance,
+      ST_Distance(
+        r."location"::geography,
+        ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography
+      ) / 1000.0 AS distance,
       COALESCE(rev_agg.avg_rating, 0) AS "avg_rating",
       COALESCE(rev_agg.review_count, 0) AS "review_count"
     FROM "Restaurant" r
@@ -84,20 +81,17 @@ export async function searchRestaurants(
         OR m."name" ILIKE ${likePattern}
         OR m."category" ILIKE ${likePattern}
       )
-      AND 6371 * acos(
-        LEAST(1.0, GREATEST(-1.0,
-          cos(radians(${lat})) * cos(radians(r."latitude")) *
-          cos(radians(r."longitude") - radians(${lng})) +
-          sin(radians(${lat})) * sin(radians(r."latitude"))
-        ))
-      ) <= ${radius}
+      AND ST_DWithin(
+        r."location"::geography,
+        ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography,
+        ${radiusMeters}
+      )
     ORDER BY distance ASC
     LIMIT 50
   `;
 
   if (rows.length === 0) return [];
 
-  // 각 음식점에 매칭된 메뉴 정보 조회
   const restaurantIds = rows.map((r) => r.id);
 
   const matchedMenus = await prisma.$queryRaw<
@@ -121,7 +115,6 @@ export async function searchRestaurants(
       AND m."isSoldOut" = false
   `;
 
-  // 음식점별 매칭 메뉴 그룹핑
   const menusByRestaurant = new Map<string, SearchMenuMatch[]>();
   for (const menu of matchedMenus) {
     const existing = menusByRestaurant.get(menu.restaurantId) ?? [];

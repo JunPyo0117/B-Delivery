@@ -154,7 +154,7 @@ export async function updateSettings(
     return { success: false, error: validationError };
   }
 
-  // 5. DB 업데이트
+  // 5. DB 업데이트 (PostGIS location 컬럼은 트리거로 자동 동기화)
   await prisma.restaurant.update({
     where: { id: restaurant.id },
     data: {

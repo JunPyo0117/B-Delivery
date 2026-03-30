@@ -42,13 +42,10 @@ export async function getFavorites(
       r."deliveryTime",
       r."deliveryFee",
       r."minOrderAmount",
-      6371 * acos(
-        LEAST(1.0, GREATEST(-1.0,
-          cos(radians(${lat})) * cos(radians(r."latitude")) *
-          cos(radians(r."longitude") - radians(${lng})) +
-          sin(radians(${lat})) * sin(radians(r."latitude"))
-        ))
-      ) AS distance,
+      ST_Distance(
+        r."location"::geography,
+        ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography
+      ) / 1000.0 AS distance,
       COALESCE(rev_agg.avg_rating, 0) AS "avg_rating",
       COALESCE(rev_agg.review_count, 0) AS "review_count"
     FROM "FavoriteRestaurant" f
