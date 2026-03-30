@@ -257,7 +257,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ result: { data: { success: true } } });
-  } catch {
+  } catch (err) {
+    console.error("[RPC Proxy] error:", err);
     return NextResponse.json({
       error: { code: 500, message: "Internal error" },
     });
