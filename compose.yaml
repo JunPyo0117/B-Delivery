@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:15-alpine
+    image: postgis/postgis:15-3.4-alpine
     ports:
       - "5432:5432"
     environment:
@@ -39,6 +39,7 @@ services:
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_API_CORS_ALLOW_ORIGIN: "*"
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
@@ -65,16 +66,37 @@ services:
       exit 0;
       "
 
-  chat-server:
-    build:
-      context: ./chat-server
-      dockerfile: Dockerfile
+  centrifugo:
+    image: centrifugo/centrifugo:v6
     ports:
-      - "8080:8080"
+      - "8080:8000"
+    volumes:
+      - ./centrifugo/config.json:/centrifugo/config.json
+    command: centrifugo -c config.json
+    environment:
+      CENTRIFUGO_CLIENT_TOKEN_HMAC_SECRET_KEY: ${NEXTAUTH_SECRET:-super-secret-key}
+      CENTRIFUGO_HTTP_API_KEY: ${CENTRIFUGO_API_KEY:-centrifugo-api-key}
+      CENTRIFUGO_ADMIN_PASSWORD: ${CENTRIFUGO_ADMIN_PASSWORD:-admin}
+      CENTRIFUGO_ADMIN_SECRET: ${CENTRIFUGO_ADMIN_SECRET:-admin-secret}
+      CENTRIFUGO_RPC_PROXY_ENDPOINT: http://web-app:3000/api/centrifugo/rpc
+      CENTRIFUGO_RPC_PROXY_TIMEOUT: 3s
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - bdelivery_net
+
+  order-worker:
+    build:
+      context: ./scripts
+      dockerfile: Dockerfile.worker
     environment:
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${NEXTAUTH_SECRET}
+      CENTRIFUGO_API_URL: http://centrifugo:8000/api
+      CENTRIFUGO_API_KEY: ${CENTRIFUGO_API_KEY:-centrifugo-api-key}
     depends_on:
+      centrifugo:
+        condition: service_started
       redis:
         condition: service_healthy
     networks:
@@ -95,12 +117,16 @@ services:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET_NAME: bdelivery
-      CHAT_SERVER_URL: http://chat-server:8080
+      CENTRIFUGO_API_URL: http://centrifugo:8000/api
+      CENTRIFUGO_API_KEY: ${CENTRIFUGO_API_KEY:-centrifugo-api-key}
       NEXTAUTH_URL: http://localhost:3000
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-super-secret-key}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       NEXT_PUBLIC_KAKAO_MAP_KEY: ${NEXT_PUBLIC_KAKAO_MAP_KEY}
+      NEXT_PUBLIC_MINIO_ENDPOINT: "localhost"
+      NEXT_PUBLIC_MINIO_PORT: "9000"
+      NEXT_PUBLIC_CENTRIFUGO_URL: "ws://localhost:8080/connection/websocket"
     depends_on:
       postgres:
         condition: service_healthy
@@ -108,6 +134,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      centrifugo:
+        condition: service_started
     networks:
       - bdelivery_net
 

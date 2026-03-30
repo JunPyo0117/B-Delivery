@@ -1,23 +1,24 @@
 # Claude
 .claude/
+CLAUDE.md
 
 # UI References
 ui/*
 
 # PRD
 prd.md
+prd-v2.md
+/docs
 
 # Dependencies
 node_modules/
 .pnp
-.pnp.js
+.pnp.*
 
 # Environment variables
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 
 # Next.js
 .next/
@@ -31,14 +32,20 @@ dist/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
 # OS
 .DS_Store
 Thumbs.db
+*.swp
+*.swo
+*~
 
 # IDE
 .vscode/
 .idea/
+*.sublime-project
+*.sublime-workspace
 
 # TypeScript
 *.tsbuildinfo
@@ -51,5 +58,32 @@ docker-compose.override.yml
 *.exe
 *.out
 vendor/
+chat-server/tmp/
 
-CLAUDE.md
+# Prisma
+/src/generated/prisma
+
+# Playwright
+e2e/.auth/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# Pencil
+.pencil
+
+# Taskmaster
+.taskmaster/
+
+# Vitest
+coverage/
+
+# MinIO data
+minio-data/
+
+# Misc
+*.log
+*.pid
+*.seed
+.cache/

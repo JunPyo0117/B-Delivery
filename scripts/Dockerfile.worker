@@ -1,0 +1,7 @@
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm init -y && npm install ioredis tsx typescript
+COPY order-worker.ts ./
+EXPOSE 0
+CMD ["npx", "tsx", "order-worker.ts"]

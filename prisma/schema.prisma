@@ -1,0 +1,428 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────
+
+enum Role {
+  USER
+  OWNER // 음식점 사장
+  RIDER // 배달기사
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+  WITHDRAWN
+}
+
+enum OrderStatus {
+  PENDING        // 주문 접수
+  COOKING        // 조리중
+  WAITING_RIDER  // 배달기사 매칭 대기
+  RIDER_ASSIGNED // 기사 배정됨
+  PICKED_UP      // 픽업 완료 (배달 중)
+  DONE           // 배달 완료
+  CANCELLED      // 취소
+}
+
+enum DeliveryStatus {
+  REQUESTED  // 배달 요청됨
+  ACCEPTED   // 기사 수락
+  AT_STORE   // 기사 가게 도착
+  PICKED_UP  // 픽업 완료
+  DELIVERING // 배달 중
+  DONE       // 배달 완료
+  CANCELLED  // 취소
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  REJECTED
+}
+
+enum RestaurantCategory {
+  KOREAN    // 한식
+  CHINESE   // 중식
+  JAPANESE  // 일식
+  CHICKEN   // 치킨
+  PIZZA     // 피자
+  BUNSIK    // 분식
+  JOKBAL    // 족발·보쌈
+  CAFE      // 카페·디저트
+  FASTFOOD  // 패스트푸드
+  JJAMBBONG // 짬·탕
+  RICE_BOWL // 한그릇
+  ETC       // 기타
+}
+
+enum ReportTarget {
+  USER
+  RESTAURANT
+  MENU
+  CHAT
+}
+
+enum TransportType {
+  WALK       // 도보
+  BICYCLE    // 자전거
+  MOTORCYCLE // 오토바이
+  CAR        // 자동차
+}
+
+enum ChatType {
+  CUSTOMER_SUPPORT // 고객 ↔ ADMIN
+  OWNER_SUPPORT    // 사장 ↔ ADMIN
+  RIDER_SUPPORT    // 기사 ↔ ADMIN
+}
+
+enum ChatStatus {
+  WAITING     // 상담 대기
+  IN_PROGRESS // 상담 진행 중
+  CLOSED      // 상담 완료
+}
+
+// ─── User ────────────────────────────────────────────────
+
+model User {
+  id             String     @id @default(uuid())
+  email          String     @unique
+  nickname       String
+  image          String?
+  defaultAddress String?
+  latitude       Float?
+  longitude      Float?
+
+  role     Role       @default(USER)
+  status   UserStatus @default(ACTIVE)
+  bannedAt DateTime?
+
+  orders    Order[]
+  favorites FavoriteRestaurant[]
+  reviews   Review[]
+
+  sentMessages Message[]
+  chats        Chat[]
+
+  sentReports     Report[] @relation("Reporter")
+  receivedReports Report[] @relation("ReportedUser")
+
+  restaurant Restaurant? // OWNER인 경우
+  addresses  UserAddress[]
+
+  // RIDER 관련
+  riderProfile  RiderProfile?
+  deliveries    Delivery[]     @relation("RiderDeliveries")
+  riderLocation RiderLocation?
+
+  createdAt DateTime @default(now())
+}
+
+model UserAddress {
+  id            String  @id @default(uuid())
+  userId        String
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label         String
+  address       String
+  addressDetail String?
+  latitude      Float
+  longitude     Float
+  isDefault     Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ─── Restaurant ──────────────────────────────────────────
+
+model Restaurant {
+  id      String @id @default(uuid())
+  ownerId String @unique
+  owner   User   @relation(fields: [ownerId], references: [id])
+
+  name           String
+  category       RestaurantCategory
+  address        String
+  imageUrl       String?
+  description    String?
+  notice         String? // 사장님 공지 (리뷰 페이지 상단)
+  minOrderAmount Int
+  deliveryFee    Int
+  deliveryTime   Int     @default(30) // 예상 배달 시간 (분)
+  isOpen         Boolean @default(true)
+  openTime       String? // "09:00"
+  closeTime      String? // "22:00"
+
+  latitude  Float
+  longitude Float
+  location  Unsupported("geometry(Point, 4326)")?
+
+  menus     Menu[]
+  orders    Order[]
+  reviews   Review[]
+  favorites FavoriteRestaurant[]
+  reports   Report[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([latitude, longitude])
+}
+
+// ─── Menu & Options ──────────────────────────────────────
+
+model Menu {
+  id           String     @id @default(uuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  name        String
+  price       Int
+  description String?
+  imageUrl    String?
+  category    String // 사장이 자유 입력하는 메뉴 카테고리
+  isSoldOut   Boolean @default(false)
+  isPopular   Boolean @default(false)
+  isNew       Boolean @default(false)
+
+  optionGroups MenuOptionGroup[]
+  orderItems   OrderItem[]
+  reports      Report[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MenuOptionGroup {
+  id         String @id @default(uuid())
+  menuId     String
+  menu       Menu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  name       String // "사이즈 선택", "토핑 추가"
+  isRequired Boolean @default(false)
+  maxSelect  Int     @default(1)
+  sortOrder  Int     @default(0)
+
+  options MenuOption[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MenuOption {
+  id         String          @id @default(uuid())
+  groupId    String
+  group      MenuOptionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  name       String // "레귤러", "라지", "치즈 추가"
+  extraPrice Int    @default(0)
+  sortOrder  Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── Order ───────────────────────────────────────────────
+
+model Order {
+  id           String @id @default(uuid())
+  userId       String
+  restaurantId String
+
+  user       User       @relation(fields: [userId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+
+  status          OrderStatus @default(PENDING)
+  totalPrice      Int
+  deliveryFee     Int         @default(0) // 주문 시점 배달비 스냅샷
+  deliveryAddress String
+  deliveryLat     Float?
+  deliveryLng     Float?
+  deliveryNote    String? // 배달 요청사항
+
+  cancelReason String? // 취소 사유
+  cancelledBy  String? // 취소 주체 (userId)
+
+  items    OrderItem[]
+  review   Review?
+  chats    Chat[]
+  delivery Delivery?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OrderItem {
+  id              String @id @default(uuid())
+  orderId         String
+  menuId          String
+  quantity        Int
+  price           Int    // 주문 시점 메뉴 기본 가격
+  selectedOptions Json?  // 선택한 옵션 스냅샷 [{groupName, optionName, extraPrice}]
+  optionPrice     Int    @default(0) // 옵션 추가 금액 합계
+
+  order Order @relation(fields: [orderId], references: [id])
+  menu  Menu  @relation(fields: [menuId], references: [id])
+}
+
+// ─── Delivery ────────────────────────────────────────────
+
+model Delivery {
+  id      String @id @default(uuid())
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  riderId String?
+  rider   User?   @relation("RiderDeliveries", fields: [riderId], references: [id])
+
+  status DeliveryStatus @default(REQUESTED)
+
+  pickupLat  Float // 가게 위치
+  pickupLng  Float
+  dropoffLat Float // 고객 위치
+  dropoffLng Float
+
+  distance      Float? // 배달 거리 (km)
+  estimatedTime Int?   // 예상 배달 시간 (분)
+  riderFee      Int    // 기사 배달 수수료
+
+  acceptedAt  DateTime?
+  pickedUpAt  DateTime?
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RiderProfile {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  transportType  TransportType
+  activityArea   String?
+  activityLat    Float?
+  activityLng    Float?
+  activityRadius Float   @default(5) // km
+
+  totalDeliveries Int @default(0)
+  totalEarnings   Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RiderLocation {
+  userId String  @id
+  user   User    @relation(fields: [userId], references: [id])
+
+  latitude  Float
+  longitude Float
+  isOnline  Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
+}
+
+// ─── Social ──────────────────────────────────────────────
+
+model FavoriteRestaurant {
+  userId       String
+  restaurantId String
+  user         User       @relation(fields: [userId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  createdAt    DateTime   @default(now())
+
+  @@id([userId, restaurantId])
+}
+
+model Review {
+  id           String @id @default(uuid())
+  userId       String
+  restaurantId String
+  orderId      String @unique
+
+  rating    Int      // 1~5
+  content   String?
+  tags      String[] // 선택한 체크리스트 항목
+  imageUrls String[] // 리뷰 이미지 (최대 3장)
+
+  ownerReply     String?   // 사장 답글
+  ownerRepliedAt DateTime?
+
+  user       User       @relation(fields: [userId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  order      Order      @relation(fields: [orderId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── Chat ────────────────────────────────────────────────
+
+model Chat {
+  id       String     @id @default(uuid())
+  chatType ChatType
+  status   ChatStatus @default(WAITING)
+
+  orderId  String? // 연결된 주문 (선택, 같은 주문에 여러 채팅 가능)
+  userId   String  // 문의한 사용자
+  adminId  String? // 담당 ADMIN 상담원
+  category String? // 문의 카테고리
+
+  order Order? @relation(fields: [orderId], references: [id])
+  user  User   @relation(fields: [userId], references: [id])
+
+  messages Message[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Message {
+  id       String @id @default(uuid())
+  chatId   String
+  senderId String
+
+  type    String  @default("TEXT") // TEXT, IMAGE, SYSTEM
+  content String
+
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  chat   Chat @relation(fields: [chatId], references: [id])
+  sender User @relation(fields: [senderId], references: [id])
+}
+
+// ─── Report ──────────────────────────────────────────────
+
+model Report {
+  id String @id @default(uuid())
+
+  reporterId String
+  reporter   User @relation("Reporter", fields: [reporterId], references: [id])
+
+  targetType ReportTarget
+
+  targetUserId       String?
+  targetUser         User?       @relation("ReportedUser", fields: [targetUserId], references: [id])
+  targetRestaurantId String?
+  targetRestaurant   Restaurant? @relation(fields: [targetRestaurantId], references: [id])
+  targetMenuId       String?
+  targetMenu         Menu?       @relation(fields: [targetMenuId], references: [id])
+
+  reason      String
+  description String?
+
+  status    ReportStatus @default(PENDING)
+  adminMemo String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
