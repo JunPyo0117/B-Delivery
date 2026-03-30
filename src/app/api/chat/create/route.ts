@@ -32,13 +32,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "주문을 찾을 수 없습니다." }, { status: 404 });
   }
 
-  // 이미 채팅방이 있으면 반환
-  if (order.chats.length > 0) {
-    return NextResponse.json({ chatId: order.chats[0].id });
-  }
-
   // ADMIN이 대상 사용자를 지정하여 채팅을 여는 경우
   if (isAdmin && targetUserId) {
+    // 해당 대상과의 기존 채팅이 있으면 반환
+    const existingChat = await prisma.chat.findFirst({
+      where: { orderId, userId: targetUserId },
+      select: { id: true },
+    });
+    if (existingChat) {
+      return NextResponse.json({ chatId: existingChat.id });
+    }
     // 대상 사용자의 역할로 chatType 결정
     const targetUser = await prisma.user.findUnique({
       where: { id: targetUserId },
@@ -72,7 +75,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ chatId: chat.id }, { status: 201 });
   }
 
-  // 일반 사용자(고객/사장/기사)가 채팅을 여는 경우
+  // 일반 사용자: 자기 채팅이 이미 있으면 반환
+  const existingChat = await prisma.chat.findFirst({
+    where: { orderId, userId: session.user.id },
+    select: { id: true },
+  });
+  if (existingChat) {
+    return NextResponse.json({ chatId: existingChat.id });
+  }
+
   const role = session.user.role;
   const chatType = role === "OWNER" ? "OWNER_SUPPORT" : role === "RIDER" ? "RIDER_SUPPORT" : "CUSTOMER_SUPPORT";
 

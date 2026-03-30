@@ -84,6 +84,9 @@ interface ChatListPanelProps {
   onSelectChat: (chatId: string) => void;
   /** 외부에서 목록 갱신을 트리거할 카운터 (값이 바뀌면 목록 재조회) */
   refreshTrigger?: number;
+  /** 외부에서 탭/필터를 강제 전환 (채팅 생성 후 해당 채팅을 보여주기 위함) */
+  forceTab?: ChatStatus | "ALL";
+  forceTypeFilter?: ChatType | "ALL";
 }
 
 // ─── Component ───────────────────────────────────────────
@@ -94,6 +97,8 @@ export function ChatListPanel({
   selectedChatId,
   onSelectChat,
   refreshTrigger = 0,
+  forceTab,
+  forceTypeFilter,
 }: ChatListPanelProps) {
   const [activeTab, setActiveTab] = useState<ChatStatus | "ALL">("WAITING");
   const [typeFilter, setTypeFilter] = useState<ChatType | "ALL">("ALL");
@@ -133,6 +138,20 @@ export function ChatListPanel({
     },
     [activeTab, fetchChats]
   );
+
+  // 외부에서 탭/필터 강제 전환
+  useEffect(() => {
+    if (forceTab !== undefined) {
+      setActiveTab(forceTab);
+    }
+    if (forceTypeFilter !== undefined) {
+      setTypeFilter(forceTypeFilter);
+    }
+    if (forceTab !== undefined || forceTypeFilter !== undefined) {
+      fetchChats(forceTab ?? activeTab, forceTypeFilter ?? typeFilter);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [forceTab, forceTypeFilter]);
 
   // 외부 refreshTrigger 변경 시 목록 재조회
   useEffect(() => {
