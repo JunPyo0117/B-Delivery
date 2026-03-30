@@ -78,7 +78,11 @@ export default async function RiderActivePage() {
         <DeliveryInfo
           restaurantName={activeDelivery.order.restaurant.name}
           restaurantAddress={activeDelivery.order.restaurant.address}
+          restaurantLat={activeDelivery.order.restaurant.latitude}
+          restaurantLng={activeDelivery.order.restaurant.longitude}
           deliveryAddress={activeDelivery.order.deliveryAddress}
+          deliveryLat={activeDelivery.order.deliveryLat ?? null}
+          deliveryLng={activeDelivery.order.deliveryLng ?? null}
           deliveryNote={activeDelivery.order.deliveryNote}
           orderItems={orderItems}
           distance={activeDelivery.distance}

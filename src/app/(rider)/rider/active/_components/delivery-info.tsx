@@ -1,7 +1,9 @@
 "use client";
 
+import { useMemo } from "react";
 import { Store, MapPin, FileText, Package, Wallet, Navigation } from "lucide-react";
 import { formatPrice, formatDistance } from "@/shared/lib";
+import { KakaoMap } from "@/shared/ui/kakao-map";
 
 interface OrderItem {
   menuName: string;
@@ -11,7 +13,11 @@ interface OrderItem {
 interface DeliveryInfoProps {
   restaurantName: string;
   restaurantAddress: string;
+  restaurantLat: number;
+  restaurantLng: number;
   deliveryAddress: string;
+  deliveryLat: number | null;
+  deliveryLng: number | null;
   deliveryNote: string | null;
   orderItems: OrderItem[];
   distance: number | null;
@@ -24,14 +30,58 @@ interface DeliveryInfoProps {
 export function DeliveryInfo({
   restaurantName,
   restaurantAddress,
+  restaurantLat,
+  restaurantLng,
   deliveryAddress,
+  deliveryLat,
+  deliveryLng,
   deliveryNote,
   orderItems,
   distance,
   riderFee,
 }: DeliveryInfoProps) {
+  // 지도 중심 좌표 및 마커 계산
+  const { centerLat, centerLng, mapLevel, markers } = useMemo(() => {
+    const storeMarker = { lat: restaurantLat, lng: restaurantLng, label: restaurantName };
+    const markerList = [storeMarker];
+
+    if (deliveryLat != null && deliveryLng != null) {
+      markerList.push({ lat: deliveryLat, lng: deliveryLng, label: "배달지" });
+
+      // 두 마커의 중간점을 중심으로 설정
+      const cLat = (restaurantLat + deliveryLat) / 2;
+      const cLng = (restaurantLng + deliveryLng) / 2;
+
+      // 두 지점 간 거리에 따라 zoom level 조정
+      const latDiff = Math.abs(restaurantLat - deliveryLat);
+      const lngDiff = Math.abs(restaurantLng - deliveryLng);
+      const maxDiff = Math.max(latDiff, lngDiff);
+
+      let level = 3;
+      if (maxDiff > 0.1) level = 7;
+      else if (maxDiff > 0.05) level = 6;
+      else if (maxDiff > 0.02) level = 5;
+      else if (maxDiff > 0.01) level = 4;
+
+      return { centerLat: cLat, centerLng: cLng, mapLevel: level, markers: markerList };
+    }
+
+    return { centerLat: restaurantLat, centerLng: restaurantLng, mapLevel: 3, markers: markerList };
+  }, [restaurantLat, restaurantLng, restaurantName, deliveryLat, deliveryLng]);
+
   return (
     <div className="flex flex-col gap-4">
+      {/* 지도 */}
+      <div className="rounded-2xl bg-white shadow-sm border border-gray-100 overflow-hidden">
+        <KakaoMap
+          lat={centerLat}
+          lng={centerLng}
+          level={mapLevel}
+          markers={markers}
+          className="h-52 rounded-xl"
+        />
+      </div>
+
       {/* 경로 정보 */}
       <div className="rounded-2xl bg-white shadow-sm border border-gray-100 p-4">
         <h3 className="text-[14px] font-bold text-gray-900 mb-3 flex items-center gap-2">

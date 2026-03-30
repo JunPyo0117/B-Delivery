@@ -78,6 +78,7 @@ export interface AdminChatDetail {
     restaurant: {
       id: string;
       name: string;
+      ownerId: string;
     };
     delivery: {
       id: string;
@@ -215,7 +216,7 @@ export async function getChatDetail(
       order: {
         include: {
           restaurant: {
-            select: { id: true, name: true },
+            select: { id: true, name: true, ownerId: true },
           },
           delivery: {
             include: {

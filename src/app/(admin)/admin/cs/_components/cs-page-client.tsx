@@ -124,7 +124,13 @@ export function CsPageClient({
 
         {/* 우측: 상담 정보 (320px) */}
         <div className="w-[320px] shrink-0 border-l border-gray-200">
-          <InfoPanel chatDetail={chatDetail} />
+          <InfoPanel
+            chatDetail={chatDetail}
+            onChatCreated={(chatId) => {
+              handleNewMessage();
+              handleSelectChat(chatId);
+            }}
+          />
         </div>
       </div>
     </div>

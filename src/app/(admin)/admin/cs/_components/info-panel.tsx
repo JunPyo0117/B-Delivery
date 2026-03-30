@@ -85,11 +85,12 @@ function formatDate(iso: string): string {
 
 interface InfoPanelProps {
   chatDetail: AdminChatDetail | null;
+  onChatCreated?: (chatId: string) => void;
 }
 
 // ─── Component ───────────────────────────────────────────
 
-export function InfoPanel({ chatDetail }: InfoPanelProps) {
+export function InfoPanel({ chatDetail, onChatCreated }: InfoPanelProps) {
   if (!chatDetail) {
     return (
       <div className="flex h-full flex-col items-center justify-center bg-gray-50 text-gray-400">
@@ -261,10 +262,10 @@ export function InfoPanel({ chatDetail }: InfoPanelProps) {
                 const res = await fetch("/api/chat/create", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ orderId: order.id }),
+                  body: JSON.stringify({ orderId: order.id, targetUserId: order.restaurant.ownerId }),
                 });
                 const data = await res.json();
-                if (data.chatId) window.location.reload();
+                if (data.chatId) onChatCreated?.(data.chatId);
               }}
               className="flex items-center justify-center rounded-lg border border-[#2DB400] px-3 py-2 text-[12px] font-medium text-[#2DB400] transition-colors hover:bg-[#2DB400]/5"
             >
@@ -277,10 +278,10 @@ export function InfoPanel({ chatDetail }: InfoPanelProps) {
                 const res = await fetch("/api/chat/create", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ orderId: order.id }),
+                  body: JSON.stringify({ orderId: order.id, targetUserId: order.delivery.rider.id }),
                 });
                 const data = await res.json();
-                if (data.chatId) window.location.reload();
+                if (data.chatId) onChatCreated?.(data.chatId);
               }}
               className="flex items-center justify-center rounded-lg border border-[#2DB400] px-3 py-2 text-[12px] font-medium text-[#2DB400] transition-colors hover:bg-[#2DB400]/5"
             >

@@ -1,6 +1,7 @@
 "use client";
 
 import { KpiCards } from "./kpi-cards";
+import { DailyStatsChart } from "./daily-stats-chart";
 import type { DashboardData } from "../_actions/get-dashboard-data";
 
 interface Props {
@@ -21,11 +22,9 @@ export function DashboardClient({ data }: Props) {
         <KpiCards data={data.kpi} />
       </div>
 
-      {/* 차트 영역 (플레이스홀더) */}
-      <div className="flex min-h-[400px] items-center justify-center rounded-xl bg-card">
-        <p className="text-sm text-muted-foreground">
-          📊 주문/매출 추이 차트 영역
-        </p>
+      {/* 주문/매출 추이 차트 */}
+      <div className="mb-6">
+        <DailyStatsChart data={data.dailyStats} />
       </div>
     </div>
   );

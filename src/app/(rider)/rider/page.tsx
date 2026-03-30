@@ -105,8 +105,11 @@ export default async function RiderPage() {
         </a>
       )}
 
-      {/* 지도 플레이스홀더 */}
-      <DeliveryMap />
+      {/* 현재 위치 지도 */}
+      <DeliveryMap
+        lat={riderLocation?.latitude ?? 0}
+        lng={riderLocation?.longitude ?? 0}
+      />
 
       {/* 실시간 배달 요청 영역 (Client) */}
       <RiderWaitingClient riderId={session.user.id} isOnline={isOnline} />
