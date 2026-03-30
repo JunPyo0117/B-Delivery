@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useTransition, useRef } from "react";
+import { Centrifuge } from "centrifuge";
 import { OrderStatus } from "@/generated/prisma/enums";
 import { getOwnerOrders, type OwnerOrder } from "../_actions/get-orders";
 import { OrderCard } from "./order-card";
@@ -35,16 +36,71 @@ export function OrderList({ initialOrders, restaurantName }: OrderListProps) {
     });
   }, []);
 
-  // 현재 주문 수를 ref로 추적 (interval 재생성 방지)
+  // 현재 주문 수를 ref로 추적
   const ordersRef = useRef(orders);
   ordersRef.current = orders;
+  const centrifugeRef = useRef<Centrifuge | null>(null);
 
-  // 30초마다 자동 새로고침 (폴링 기반 실시간 알림)
+  // Centrifugo WebSocket 연결 — owner_orders# 채널에서 실시간 주문 알림 수신
+  useEffect(() => {
+    const wsUrl = process.env.NEXT_PUBLIC_CENTRIFUGO_URL;
+    if (!wsUrl) return;
+
+    const centrifuge = new Centrifuge(wsUrl, {
+      getToken: async () => {
+        const res = await fetch("/api/chat/token", { method: "POST" });
+        if (!res.ok) throw new Error("Centrifugo 토큰 발급 실패");
+        const data = await res.json();
+        return data.token as string;
+      },
+    });
+
+    centrifugeRef.current = centrifuge;
+
+    // 서버 사이드 구독 채널(owner_orders#<userId>)의 publication 수신
+    centrifuge.on("publication", (ctx: { data: unknown }) => {
+      const data = ctx.data as {
+        orderId?: string;
+        newStatus?: string;
+      };
+
+      if (data.orderId) {
+        // 신규 PENDING 주문 감지 시 알림 표시
+        if (data.newStatus === "PENDING") {
+          setNewOrderAlert(true);
+          if (
+            typeof Notification !== "undefined" &&
+            Notification.permission === "granted"
+          ) {
+            new Notification("B-Delivery", {
+              body: "새로운 주문이 들어왔습니다!",
+            });
+          }
+        }
+
+        // 주문 목록 갱신
+        startTransition(async () => {
+          const result = await getOwnerOrders("ALL");
+          if (!result.error) {
+            setOrders(result.orders);
+          }
+        });
+      }
+    });
+
+    centrifuge.connect();
+
+    return () => {
+      centrifuge.disconnect();
+      centrifugeRef.current = null;
+    };
+  }, []);
+
+  // Fallback: 60초마다 폴링 (WebSocket 연결 실패 대비)
   useEffect(() => {
     const interval = setInterval(async () => {
       const result = await getOwnerOrders("ALL");
       if (!result.error) {
-        // 신규 주문 감지
         const currentPendingCount = ordersRef.current.filter(
           (o) => o.status === "PENDING"
         ).length;
@@ -54,7 +110,6 @@ export function OrderList({ initialOrders, restaurantName }: OrderListProps) {
 
         if (newPendingCount > currentPendingCount) {
           setNewOrderAlert(true);
-          // 브라우저 알림
           if (
             typeof Notification !== "undefined" &&
             Notification.permission === "granted"
@@ -67,7 +122,7 @@ export function OrderList({ initialOrders, restaurantName }: OrderListProps) {
 
         setOrders(result.orders);
       }
-    }, 30000);
+    }, 60000);
 
     return () => clearInterval(interval);
   }, []);

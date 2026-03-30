@@ -97,27 +97,26 @@ export function useCentrifugoChat({
       const data = ctx.data as Record<string, unknown>
       const type = data.type as string | undefined
 
-      if (type === "message:new") {
-        // RPC route가 publish하는 형식: { type: "message:new", id, chatId, senderId, ... }
+      if (type === "typing:update") {
+        onTypingRef.current?.(data as unknown as TypingEvent)
+      } else if (type === "message:read_receipt") {
+        onReadRef.current?.(data as unknown as ReadReceiptEvent)
+      } else if (data.id && data.chatId && data.content !== undefined) {
+        // 메시지 데이터 처리:
+        // - Publish Proxy 응답 (type: TEXT/IMAGE) — chat:<chatId> 채널
+        // - user# 알림 (type: message:new) — 개인 채널
+        const msgType = type === "message:new" ? "TEXT" : (type as string) || "TEXT"
         const msg: ChatMessageResponse = {
           id: data.id as string,
           chatId: data.chatId as string,
           senderId: data.senderId as string,
           nickname: data.nickname as string,
-          type: (data.type as string) || "TEXT",
+          type: msgType as "TEXT" | "IMAGE" | "SYSTEM",
           content: data.content as string,
           isRead: (data.isRead as boolean) ?? false,
           createdAt: data.createdAt as string,
         }
-        // type 필드를 메시지 타입으로 복원 (TEXT/IMAGE)
-        msg.type = ((data as Record<string, unknown>)["type"] as string) === "message:new"
-          ? "TEXT"
-          : (data as Record<string, unknown>)["type"] as string || "TEXT"
         onMessageRef.current?.(msg)
-      } else if (type === "typing:update") {
-        onTypingRef.current?.(data as unknown as TypingEvent)
-      } else if (type === "message:read_receipt") {
-        onReadRef.current?.(data as unknown as ReadReceiptEvent)
       }
     })
 

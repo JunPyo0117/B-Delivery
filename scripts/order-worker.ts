@@ -67,7 +67,7 @@ async function processOrderUpdates() {
   for (const [, messages] of results) {
     for (const [id, fields] of messages) {
       const data = parseStreamFields(fields);
-      const { orderId, newStatus, userId, timestamp } = data;
+      const { orderId, newStatus, userId, timestamp, ownerId } = data;
 
       if (!orderId || !userId) {
         await redis.xack(ORDER_STREAM, CONSUMER_GROUP, id);
@@ -78,6 +78,14 @@ async function processOrderUpdates() {
       await centrifugoPublish(`order#${userId}`, {
         orderId, newStatus, userId, timestamp,
       });
+
+      // 사장에게 주문 상태 변경 발행
+      if (ownerId) {
+        await centrifugoPublish(`owner_orders#${ownerId}`, {
+          orderId, newStatus, userId, timestamp,
+        });
+        console.log(`[ORDER] ${orderId} → ${newStatus} → owner_orders#${ownerId}`);
+      }
 
       await redis.xack(ORDER_STREAM, CONSUMER_GROUP, id);
       console.log(`[ORDER] ${orderId} → ${newStatus} → order#${userId}`);
