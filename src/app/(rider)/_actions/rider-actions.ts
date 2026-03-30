@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/shared/api/prisma";
 import { DeliveryStatus, OrderStatus } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
+import { updateRiderGeo, removeRiderGeo } from "@/shared/api/redis";
 
 // ─── 헬퍼 ──────────────────────────────────────────────
 
@@ -31,10 +32,19 @@ export async function toggleOnlineStatus(): Promise<{
     });
 
     if (existing) {
+      const newIsOnline = !existing.isOnline;
       const updated = await prisma.riderLocation.update({
         where: { userId: user.id },
-        data: { isOnline: !existing.isOnline },
+        data: { isOnline: newIsOnline },
       });
+
+      // Redis GEO 동기화: 온라인 → 위치 등록, 오프라인 → 제거
+      if (newIsOnline) {
+        await updateRiderGeo(user.id, existing.longitude, existing.latitude);
+      } else {
+        await removeRiderGeo(user.id);
+      }
+
       return { success: true, isOnline: updated.isOnline };
     } else {
       // 위치 정보가 없으면 기본 좌표(0,0)으로 생성
@@ -46,6 +56,7 @@ export async function toggleOnlineStatus(): Promise<{
           isOnline: true,
         },
       });
+      // 첫 온라인 전환 — 아직 실제 위치가 없으므로 GEO 등록은 위치 업데이트 시 수행
       return { success: true, isOnline: created.isOnline };
     }
   } catch (err) {
@@ -338,6 +349,9 @@ export async function updateRiderLocation(
         isOnline: true,
       },
     });
+
+    // Redis GEO 동기화: Order Worker GEORADIUS 검색에 반영
+    await updateRiderGeo(user.id, longitude, latitude);
 
     return { success: true };
   } catch (err) {

@@ -40,6 +40,27 @@ export async function publishOrderUpdate(
  * Redis Stream에 배달 요청 이벤트를 발행합니다.
  * Order Worker가 소비하여 근처 기사에게 브로드캐스트합니다.
  */
+const RIDER_GEO_KEY = "rider:locations";
+
+/**
+ * 기사 위치를 Redis GEO에 등록/갱신합니다.
+ * Order Worker의 GEORADIUS 검색에 사용됩니다.
+ */
+export async function updateRiderGeo(
+  userId: string,
+  longitude: number,
+  latitude: number
+) {
+  await redis.geoadd(RIDER_GEO_KEY, longitude, latitude, userId);
+}
+
+/**
+ * 기사를 Redis GEO에서 제거합니다 (오프라인 전환 시).
+ */
+export async function removeRiderGeo(userId: string) {
+  await redis.zrem(RIDER_GEO_KEY, userId);
+}
+
 export async function publishDeliveryRequest(
   orderId: string,
   pickupLat: number,
