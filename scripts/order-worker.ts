@@ -22,16 +22,17 @@ const CONSUMER_NAME = "order-worker-1";
 const redis = new Redis(REDIS_URL);
 
 async function centrifugoPublish(channel: string, data: unknown) {
-  const res = await fetch(CENTRIFUGO_API_URL, {
+  const res = await fetch(`${CENTRIFUGO_API_URL}/publish`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `apikey ${CENTRIFUGO_API_KEY}`,
+      "X-API-Key": CENTRIFUGO_API_KEY,
     },
-    body: JSON.stringify({ method: "publish", params: { channel, data } }),
+    body: JSON.stringify({ channel, data }),
   });
   if (!res.ok) {
-    console.error(`Centrifugo publish failed: ${res.status}`);
+    const body = await res.text();
+    console.error(`Centrifugo publish failed: ${res.status} ${body}`);
   }
 }
 
