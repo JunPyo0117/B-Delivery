@@ -29,6 +29,12 @@ export function CsPageClient({
   const [chatMessages, setChatMessages] = useState<AdminChatMessage[]>([]);
   const [chatDetail, setChatDetail] = useState<AdminChatDetail | null>(null);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [listRefreshTrigger, setListRefreshTrigger] = useState(0);
+
+  // 새 메시지 수신 시 채팅 목록 갱신
+  const handleNewMessage = useCallback(() => {
+    setListRefreshTrigger((prev) => prev + 1);
+  }, []);
 
   // 채팅 선택 시 메시지 + 상세 정보 로드
   const handleSelectChat = useCallback(async (chatId: string) => {
@@ -78,6 +84,7 @@ export function CsPageClient({
             initialWaitingCount={waitingCount}
             selectedChatId={selectedChatId}
             onSelectChat={handleSelectChat}
+            refreshTrigger={listRefreshTrigger}
           />
         </div>
 
@@ -91,6 +98,7 @@ export function CsPageClient({
               chatDetail={chatDetail}
               initialMessages={chatMessages}
               onStatusChange={() => handleSelectChat(selectedChatId)}
+              onNewMessage={handleNewMessage}
             />
           ) : loadingMessages ? (
             <div className="flex h-full items-center justify-center bg-white">

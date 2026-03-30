@@ -10,6 +10,8 @@ import {
 import Image from "next/image";
 import { Send, Loader2, Camera, MessageCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/shared/ui/button";
+import { useCentrifugoChat } from "@/features/chat";
+import type { ChatMessageResponse } from "@/types/chat";
 import {
   getChatMessages,
   sendMessage,
@@ -80,6 +82,7 @@ interface ChatRoomPanelProps {
   chatDetail: AdminChatDetail | null;
   initialMessages: AdminChatMessage[];
   onStatusChange: () => void;
+  onNewMessage?: () => void;
 }
 
 // ─── Component ───────────────────────────────────────────
@@ -90,6 +93,7 @@ export function ChatRoomPanel({
   chatDetail,
   initialMessages,
   onStatusChange,
+  onNewMessage,
 }: ChatRoomPanelProps) {
   const [messages, setMessages] = useState<AdminChatMessage[]>(initialMessages);
   const [inputText, setInputText] = useState("");
@@ -99,7 +103,6 @@ export function ChatRoomPanel({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isAtBottom = useRef(true);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const isClosed = chatDetail?.status === "CLOSED";
   const hasText = inputText.trim().length > 0;
@@ -107,6 +110,40 @@ export function ChatRoomPanel({
   const roleBadge = chatDetail
     ? ROLE_BADGE[chatDetail.user.role] ?? ROLE_BADGE.USER
     : null;
+
+  // Centrifugo 실시간 구독 — 상대방 메시지 수신
+  const { isConnected } = useCentrifugoChat({
+    chatId: isClosed ? undefined : chatId,
+    onMessage: useCallback(
+      (msg: ChatMessageResponse) => {
+        // 자신이 보낸 메시지는 무시 (optimistic UI로 이미 추가됨)
+        if (msg.senderId === adminId) return;
+
+        setMessages((prev) => {
+          // 중복 방지
+          if (prev.some((m) => m.id === msg.id)) return prev;
+          return [
+            ...prev,
+            {
+              id: msg.id,
+              chatId: msg.chatId,
+              senderId: msg.senderId,
+              nickname: msg.nickname,
+              type: msg.type as "TEXT" | "IMAGE" | "SYSTEM",
+              content: msg.content,
+              isRead: msg.isRead,
+              createdAt: msg.createdAt,
+            },
+          ];
+        });
+
+        // 새 메시지 도착 시 읽음 처리 + 목록 갱신 알림
+        markAsRead(chatId);
+        onNewMessage?.();
+      },
+      [adminId, chatId, onNewMessage]
+    ),
+  });
 
   // 하단으로 스크롤
   const scrollToBottom = useCallback(() => {
@@ -139,44 +176,6 @@ export function ChatRoomPanel({
     if (!el) return;
     isAtBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 50;
   }, []);
-
-  // 폴링: 5초마다 새 메시지 확인
-  useEffect(() => {
-    async function pollMessages() {
-      const result = await getChatMessages(chatId);
-      if (result.success && result.messages.length > 0) {
-        let hasNew = false;
-        setMessages((prev) => {
-          const existingIds = new Set(prev.map((m) => m.id));
-          const newMsgs = result.messages.filter((m) => !existingIds.has(m.id));
-          if (newMsgs.length > 0) {
-            hasNew = true;
-            return [...prev, ...newMsgs];
-          }
-          // 읽음 상태 업데이트
-          const hasReadChanges = result.messages.some((newMsg) => {
-            const existing = prev.find((p) => p.id === newMsg.id);
-            return existing && existing.isRead !== newMsg.isRead;
-          });
-          if (hasReadChanges) {
-            return prev.map((msg) => {
-              const updated = result.messages.find((m) => m.id === msg.id);
-              return updated ? { ...msg, isRead: updated.isRead } : msg;
-            });
-          }
-          return prev;
-        });
-        if (hasNew) {
-          markAsRead(chatId);
-        }
-      }
-    }
-
-    pollRef.current = setInterval(pollMessages, 5000);
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, [chatId]);
 
   // 메시지 전송
   const handleSend = useCallback(async () => {

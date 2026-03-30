@@ -82,6 +82,8 @@ interface ChatListPanelProps {
   initialWaitingCount: number;
   selectedChatId: string | null;
   onSelectChat: (chatId: string) => void;
+  /** 외부에서 목록 갱신을 트리거할 카운터 (값이 바뀌면 목록 재조회) */
+  refreshTrigger?: number;
 }
 
 // ─── Component ───────────────────────────────────────────
@@ -91,6 +93,7 @@ export function ChatListPanel({
   initialWaitingCount,
   selectedChatId,
   onSelectChat,
+  refreshTrigger = 0,
 }: ChatListPanelProps) {
   const [activeTab, setActiveTab] = useState<ChatStatus | "ALL">("WAITING");
   const [typeFilter, setTypeFilter] = useState<ChatType | "ALL">("ALL");
@@ -130,6 +133,18 @@ export function ChatListPanel({
     },
     [activeTab, fetchChats]
   );
+
+  // 외부 refreshTrigger 변경 시 목록 재조회
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      fetchChats(activeTab, typeFilter);
+      // 대기 건수도 갱신
+      getChatList({ status: "WAITING" }).then((items) =>
+        setWaitingCount(items.length)
+      ).catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshTrigger]);
 
   // 폴링: 10초마다 목록 갱신
   useEffect(() => {
