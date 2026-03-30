@@ -50,8 +50,13 @@ export function RiderWaitingClient({
 
     centrifugeRef.current = centrifuge;
 
+    centrifuge.on("connected", (ctx: unknown) => {
+      console.log("[Centrifugo] connected", ctx);
+    });
+
     // 서버 사이드 구독 채널(delivery_requests#<riderId>)의 publication 수신
-    centrifuge.on("publication", (ctx: { data: unknown }) => {
+    centrifuge.on("publication", (ctx: { channel?: string; data: unknown }) => {
+      console.log("[Centrifugo] publication received", ctx.channel, ctx.data);
       const data = ctx.data as {
         orderId?: string;
         restaurantName?: string;
