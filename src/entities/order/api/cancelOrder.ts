@@ -26,6 +26,7 @@ export async function cancelOrder(
     select: {
       id: true,
       status: true,
+      restaurant: { select: { ownerId: true } },
     },
   })
 
@@ -51,7 +52,7 @@ export async function cancelOrder(
 
   // Redis Stream에 취소 이벤트 발행
   try {
-    await publishOrderUpdate(orderId, "CANCELLED", userId)
+    await publishOrderUpdate(orderId, "CANCELLED", userId, order.restaurant.ownerId)
   } catch {
     console.error(
       `[cancelOrder] Redis 이벤트 발행 실패: orderId=${orderId}`

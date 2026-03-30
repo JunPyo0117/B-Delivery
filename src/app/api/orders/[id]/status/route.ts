@@ -112,8 +112,8 @@ export async function PATCH(
     },
   });
 
-  // Redis Stream 발행
-  await publishOrderUpdate(orderId, newStatus, order.userId);
+  // Redis Stream 발행 — 고객 + 사장 실시간 알림
+  await publishOrderUpdate(orderId, newStatus, order.userId, order.restaurant.ownerId);
 
   return NextResponse.json(updatedOrder);
 }

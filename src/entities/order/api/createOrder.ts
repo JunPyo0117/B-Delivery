@@ -33,6 +33,7 @@ export async function createOrder(
       isOpen: true,
       minOrderAmount: true,
       deliveryFee: true,
+      ownerId: true,
     },
   })
 
@@ -151,7 +152,7 @@ export async function createOrder(
 
   // 7. Redis Stream에 주문 접수 이벤트 발행
   try {
-    await publishOrderUpdate(order.id, "PENDING", userId)
+    await publishOrderUpdate(order.id, "PENDING", userId, restaurant.ownerId)
   } catch {
     // Redis 발행 실패해도 주문 자체는 성공 처리
     console.error(

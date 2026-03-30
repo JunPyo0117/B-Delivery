@@ -103,8 +103,8 @@ export async function updateOrderStatus(
     );
   }
 
-  // Redis Stream 발행 — 고객에게 실시간 알림
-  await publishOrderUpdate(orderId, newStatus, order.userId);
+  // Redis Stream 발행 — 고객 + 사장 실시간 알림
+  await publishOrderUpdate(orderId, newStatus, order.userId, order.restaurant.ownerId);
 
   return { success: true };
 }

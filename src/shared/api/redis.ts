@@ -24,16 +24,19 @@ if (process.env.NODE_ENV !== "production") {
 export async function publishOrderUpdate(
   orderId: string,
   newStatus: string,
-  userId: string
+  userId: string,
+  ownerId?: string
 ) {
-  await redis.xadd(
-    ORDER_STREAM,
-    "*",
+  const args: string[] = [
     "orderId", orderId,
     "newStatus", newStatus,
     "userId", userId,
-    "timestamp", new Date().toISOString()
-  );
+    "timestamp", new Date().toISOString(),
+  ];
+  if (ownerId) {
+    args.push("ownerId", ownerId);
+  }
+  await redis.xadd(ORDER_STREAM, "*", ...args);
 }
 
 /**
