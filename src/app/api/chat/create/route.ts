@@ -13,15 +13,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "orderId is required" }, { status: 400 });
   }
 
-  // 주문이 현재 사용자의 것이거나 사장의 음식점 주문인지 확인
+  // 주문이 현재 사용자의 것이거나 사장의 음식점 주문인지 확인 (ADMIN은 모든 주문 접근 가능)
+  const isAdmin = session.user.role === "ADMIN";
   const order = await prisma.order.findFirst({
-    where: {
-      id: orderId,
-      OR: [
-        { userId: session.user.id },
-        { restaurant: { ownerId: session.user.id } },
-      ],
-    },
+    where: isAdmin
+      ? { id: orderId }
+      : {
+          id: orderId,
+          OR: [
+            { userId: session.user.id },
+            { restaurant: { ownerId: session.user.id } },
+          ],
+        },
     include: { chats: { select: { id: true }, take: 1 } },
   });
 
