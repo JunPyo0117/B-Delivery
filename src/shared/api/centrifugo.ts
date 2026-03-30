@@ -7,14 +7,14 @@ const CENTRIFUGO_API_URL =
   process.env.CENTRIFUGO_API_URL || "http://localhost:8080/api";
 const CENTRIFUGO_API_KEY = process.env.CENTRIFUGO_API_KEY || "";
 
-async function centrifugoRequest(method: string, params: Record<string, unknown>) {
-  const res = await fetch(CENTRIFUGO_API_URL, {
+async function centrifugoRequest(endpoint: string, body: Record<string, unknown>) {
+  const res = await fetch(`${CENTRIFUGO_API_URL}/${endpoint}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `apikey ${CENTRIFUGO_API_KEY}`,
+      "X-API-Key": CENTRIFUGO_API_KEY,
     },
-    body: JSON.stringify({ method, params }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {
