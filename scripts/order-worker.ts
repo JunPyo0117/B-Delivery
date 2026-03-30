@@ -7,6 +7,7 @@
  * - delivery_requests_stream → GEORADIUS로 근처 기사 검색 → delivery_requests#<riderId> 발행
  */
 
+import "dotenv/config";
 import Redis from "ioredis";
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
