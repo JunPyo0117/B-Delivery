@@ -38,6 +38,8 @@ export async function POST(request: Request) {
     }
     // ADMIN은 user# 채널만 (채팅 알림용)
 
+    console.log("[Connect Proxy]", { userId, role, channels });
+
     return NextResponse.json({
       result: {
         user: userId,
