@@ -35,8 +35,15 @@ export interface RecentReport {
   createdAt: string;
 }
 
+export interface DailyStat {
+  date: string;
+  orderCount: number;
+  revenue: number;
+}
+
 export interface DashboardData {
   kpi: KpiData;
+  dailyStats: DailyStat[];
   regionStats: RegionStat[];
   recentOrders: RecentOrder[];
   recentReports: RecentReport[];
@@ -59,6 +66,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     recentOrdersRaw,
     recentReportsRaw,
     regionStatsRaw,
+    dailyStatsRaw,
   ] = await Promise.all([
     // DAU: 오늘 주문한 고유 사용자 수
     prisma.order
@@ -124,7 +132,42 @@ export async function getDashboardData(): Promise<DashboardData> {
         totalPrice: true,
       },
     }),
+
+    // 일별 주문/매출 통계 (최근 7일)
+    prisma.$queryRaw<{ date: Date; order_count: bigint; revenue: number }[]>`
+      SELECT
+        DATE_TRUNC('day', "createdAt") AS date,
+        COUNT(*)::bigint AS order_count,
+        COALESCE(SUM("totalPrice"), 0)::float AS revenue
+      FROM "Order"
+      WHERE "createdAt" >= ${sevenDaysAgo}
+      GROUP BY DATE_TRUNC('day', "createdAt")
+      ORDER BY date ASC
+    `,
   ]);
+
+  // 일별 통계 가공 (7일 전체 채우기 — 데이터 없는 날도 0으로 표시)
+  const dailyStatsMap = new Map<string, { orderCount: number; revenue: number }>();
+  for (const row of dailyStatsRaw) {
+    const dateStr = new Date(row.date).toISOString().split("T")[0];
+    dailyStatsMap.set(dateStr, {
+      orderCount: Number(row.order_count),
+      revenue: row.revenue,
+    });
+  }
+
+  const dailyStats: DailyStat[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(todayStart);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split("T")[0];
+    const stat = dailyStatsMap.get(dateStr);
+    dailyStats.push({
+      date: dateStr,
+      orderCount: stat?.orderCount ?? 0,
+      revenue: stat?.revenue ?? 0,
+    });
+  }
 
   // 지역별 통계 집계 (deliveryAddress에서 시/구 추출)
   const regionMap = new Map<string, { count: number; revenue: number }>();
@@ -174,6 +217,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       pendingReports,
       activeRiders,
     },
+    dailyStats,
     regionStats,
     recentOrders,
     recentReports,
