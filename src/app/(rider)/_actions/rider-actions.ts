@@ -2,9 +2,12 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/shared/api/prisma";
-import { DeliveryStatus, OrderStatus } from "@/generated/prisma/client";
+import { DeliveryStatus, OrderStatus, Prisma } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
 import { updateRiderGeo, removeRiderGeo } from "@/shared/api/redis";
+import { publish } from "@/shared/api/centrifugo";
+
+type TransactionClient = Prisma.TransactionClient;
 
 // ─── 헬퍼 ──────────────────────────────────────────────
 
@@ -112,6 +115,16 @@ export async function acceptDelivery(
       select: { id: true },
     });
 
+    // 고객/사장 채널에 배달 수락 알림 발행
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { userId: true, restaurant: { select: { ownerId: true } } },
+    });
+    if (order) {
+      await publish(`order#${order.userId}`, { type: "rider_assigned", orderId });
+      await publish(`owner_orders#${order.restaurant.ownerId}`, { type: "rider_assigned", orderId });
+    }
+
     revalidatePath("/rider");
     revalidatePath("/rider/active");
 
@@ -173,37 +186,31 @@ export async function updateDeliveryStatus(
     }
 
     // 트랜잭션: 배달 상태 + 주문 상태 동시 업데이트
-    const operations = [
-      prisma.delivery.update({
+    await prisma.$transaction(async (tx: TransactionClient) => {
+      await tx.delivery.update({
         where: { id: deliveryId },
         data: { status: newStatus, ...extraData },
-      }),
-    ];
+      });
 
-    const orderStatus = DELIVERY_TO_ORDER_STATUS[newStatus];
-    if (orderStatus) {
-      operations.push(
-        prisma.order.update({
+      const orderStatus = DELIVERY_TO_ORDER_STATUS[newStatus];
+      if (orderStatus) {
+        await tx.order.update({
           where: { id: delivery.orderId },
           data: { status: orderStatus },
-        }) as never
-      );
-    }
+        });
+      }
 
-    // 배달 완료 시 기사 프로필 통계 업데이트
-    if (newStatus === DeliveryStatus.DONE) {
-      operations.push(
-        prisma.riderProfile.update({
+      // 배달 완료 시 기사 프로필 통계 업데이트
+      if (newStatus === DeliveryStatus.DONE) {
+        await tx.riderProfile.update({
           where: { userId: user.id },
           data: {
             totalDeliveries: { increment: 1 },
             totalEarnings: { increment: delivery.riderFee },
           },
-        }) as never
-      );
-    }
-
-    await prisma.$transaction(operations);
+        });
+      }
+    });
 
     revalidatePath("/rider");
     revalidatePath("/rider/active");

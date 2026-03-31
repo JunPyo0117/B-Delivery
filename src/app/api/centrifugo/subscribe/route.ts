@@ -3,16 +3,34 @@ import { prisma } from "@/shared/api/prisma";
 
 /**
  * Centrifugo Subscribe Proxy
- * - chat:<chatId> → 채팅 참여자 검증
- * - rider_location:<orderId> → 해당 주문의 고객/사장 검증
+ * 화이트리스트 기반 채널 구독 제어
  */
+
+// 허용 채널 패턴
+const ALLOWED_PATTERNS = [
+  /^chat:.+/,              // 채팅
+  /^rider_location:.+/,    // 기사 위치
+  /^order#.+/,             // 주문 상태 (서버사이드 구독이지만 방어)
+  /^owner_orders#.+/,      // 사장 주문
+  /^delivery_requests#.+/, // 배달 요청
+  /^user#.+/,              // 개인 채널
+];
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const userId = body.user as string;
     const channel = body.channel as string;
 
-    // chat:<chatId> 채널
+    // 화이트리스트 패턴 매칭 검사
+    const isAllowed = ALLOWED_PATTERNS.some((pattern) => pattern.test(channel));
+    if (!isAllowed) {
+      return NextResponse.json({
+        error: { code: 403, message: "Subscribe not allowed" },
+      });
+    }
+
+    // chat:<chatId> 채널 — 참여자 검증
     if (channel.startsWith("chat:")) {
       const chatId = channel.replace("chat:", "");
       const chat = await prisma.chat.findFirst({
@@ -31,7 +49,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ result: {} });
     }
 
-    // rider_location:<orderId> 채널
+    // rider_location:<orderId> 채널 — 주문 관련자 검증
     if (channel.startsWith("rider_location:")) {
       const orderId = channel.replace("rider_location:", "");
       const order = await prisma.order.findFirst({
@@ -53,7 +71,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ result: {} });
     }
 
-    // 기타 채널은 허용
+    // 나머지 화이트리스트 채널은 허용
     return NextResponse.json({ result: {} });
   } catch {
     return NextResponse.json({

@@ -236,18 +236,18 @@ export async function POST(request: Request) {
           });
         }
 
-        const txOps = [
-          prisma.delivery.update({
+        await prisma.$transaction(async (tx) => {
+          await tx.delivery.update({
             where: { id: delivery.id },
             data: { status: newStatus as "AT_STORE" | "PICKED_UP" | "DONE", ...extraData },
-          }),
-        ];
-        if (orderStatus) {
-          txOps.push(
-            prisma.order.update({ where: { id: orderId }, data: { status: orderStatus as "PICKED_UP" | "DONE" } }) as never
-          );
-        }
-        await prisma.$transaction(txOps);
+          });
+          if (orderStatus) {
+            await tx.order.update({
+              where: { id: orderId },
+              data: { status: orderStatus as "PICKED_UP" | "DONE" },
+            });
+          }
+        });
 
         await publish(`order#${delivery.order.userId}`, { type: "status:changed", orderId, newStatus: orderStatus || newStatus });
         await publish(`owner_orders#${delivery.order.restaurant.ownerId}`, { type: "delivery_status", orderId, newStatus });

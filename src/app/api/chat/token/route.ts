@@ -34,7 +34,7 @@ export async function POST() {
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(session.user.id)
     .setIssuedAt()
-    .setExpirationTime("24h")
+    .setExpirationTime("2h")
     .sign(secret);
 
   return NextResponse.json({ token });
