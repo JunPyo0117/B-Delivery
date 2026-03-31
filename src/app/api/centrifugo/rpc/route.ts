@@ -154,24 +154,29 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: { code: 400, message: "이미 진행 중인 배달이 있습니다." } });
         }
 
+        // 원자적 수락: status가 REQUESTED인 경우에만 업데이트 (Race Condition 방지)
+        const result = await prisma.delivery.updateMany({
+          where: { orderId, status: "REQUESTED" },
+          data: { riderId: userId, status: "ACCEPTED", acceptedAt: new Date() },
+        });
+
+        if (result.count === 0) {
+          return NextResponse.json({ error: { code: 400, message: "이미 다른 기사가 수락한 배달입니다." } });
+        }
+
+        // 주문 상태 업데이트
+        await prisma.order.update({
+          where: { id: orderId },
+          data: { status: "RIDER_ASSIGNED" },
+        });
+
         const delivery = await prisma.delivery.findUnique({
           where: { orderId },
           include: { order: { select: { userId: true, restaurantId: true, restaurant: { select: { ownerId: true } } } } },
         });
-        if (!delivery || delivery.status !== "REQUESTED") {
-          return NextResponse.json({ error: { code: 400, message: "수락할 수 없는 배달입니다." } });
+        if (!delivery) {
+          return NextResponse.json({ error: { code: 500, message: "배달 정보 조회 실패" } });
         }
-
-        await prisma.$transaction([
-          prisma.delivery.update({
-            where: { id: delivery.id },
-            data: { riderId: userId, status: "ACCEPTED", acceptedAt: new Date() },
-          }),
-          prisma.order.update({
-            where: { id: orderId },
-            data: { status: "RIDER_ASSIGNED" },
-          }),
-        ]);
 
         const riderProfile = await prisma.user.findUnique({
           where: { id: userId },

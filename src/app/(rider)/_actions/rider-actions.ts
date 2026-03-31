@@ -86,39 +86,36 @@ export async function acceptDelivery(
       return { error: "이미 진행 중인 배달이 있습니다." };
     }
 
-    // 배달 요청 찾기
-    const delivery = await prisma.delivery.findUnique({
-      where: { orderId },
+    // 원자적 수락: status가 REQUESTED인 경우에만 업데이트 (Race Condition 방지)
+    const result = await prisma.delivery.updateMany({
+      where: { orderId, status: DeliveryStatus.REQUESTED },
+      data: {
+        riderId: user.id,
+        status: DeliveryStatus.ACCEPTED,
+        acceptedAt: new Date(),
+      },
     });
 
-    if (!delivery) {
-      return { error: "배달 요청을 찾을 수 없습니다." };
+    if (result.count === 0) {
+      return { error: "이미 다른 기사가 수락했거나 존재하지 않는 배달입니다." };
     }
 
-    if (delivery.status !== DeliveryStatus.REQUESTED) {
-      return { error: "이미 다른 기사가 수락한 배달입니다." };
-    }
+    // 주문 상태도 업데이트
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { status: OrderStatus.RIDER_ASSIGNED },
+    });
 
-    // 트랜잭션: 배달 수락 + 주문 상태 변경
-    const [updatedDelivery] = await prisma.$transaction([
-      prisma.delivery.update({
-        where: { id: delivery.id },
-        data: {
-          riderId: user.id,
-          status: DeliveryStatus.ACCEPTED,
-          acceptedAt: new Date(),
-        },
-      }),
-      prisma.order.update({
-        where: { id: orderId },
-        data: { status: OrderStatus.RIDER_ASSIGNED },
-      }),
-    ]);
+    // 수락된 배달 ID 조회 (응답용)
+    const updatedDelivery = await prisma.delivery.findUnique({
+      where: { orderId },
+      select: { id: true },
+    });
 
     revalidatePath("/rider");
     revalidatePath("/rider/active");
 
-    return { success: true, deliveryId: updatedDelivery.id };
+    return { success: true, deliveryId: updatedDelivery?.id };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "오류가 발생했습니다." };
   }
