@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "worker": "npx tsx scripts/order-worker.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },
@@ -42,12 +45,15 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.1.2",
     "dotenv": "^17.3.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "prisma": "^7.5.0",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.2",
+    "vitest-mock-extended": "^3.1.0"
   }
 }

@@ -67,7 +67,7 @@ export async function updateOrderStatus(
   }
 
   // 트랜잭션으로 원자적 처리 — 낙관적 잠금 + Delivery 생성
-  const txResult = await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx) => {
     const updateResult = await tx.order.updateMany({
       where: { id: orderId, status: order.status },
       data: {

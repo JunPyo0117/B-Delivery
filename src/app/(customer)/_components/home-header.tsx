@@ -1,19 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Bell, ChevronDown, ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/features/cart/model/cartStore";
+
+const subscribe = () => () => {};
 
 interface HomeHeaderProps {
   address: string | null;
 }
 
 export function HomeHeader({ address }: HomeHeaderProps) {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(subscribe, () => true, () => false);
   const totalQuantity = useCartStore((s) => s.getTotalQuantity());
-
-  useEffect(() => setMounted(true), []);
 
   const displayAddress = address
     ? address.length > 15

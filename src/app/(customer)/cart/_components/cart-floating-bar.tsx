@@ -1,21 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/features/cart/model/cartStore";
+
+const subscribe = () => () => {};
 
 /**
  * 장바구니에 아이템이 있을 때 하단에 표시되는 플로팅 바
  * 음식점 상세 페이지 등에서 사용
  */
 export function CartFloatingBar({ hidden = false }: { hidden?: boolean }) {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(subscribe, () => true, () => false);
   const getTotal = useCartStore((s) => s.getTotal);
   const getTotalQuantity = useCartStore((s) => s.getTotalQuantity);
   const restaurantName = useCartStore((s) => s.restaurantName);
-
-  useEffect(() => setMounted(true), []);
 
   const totalQuantity = getTotalQuantity();
   const total = getTotal();

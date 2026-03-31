@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useSyncExternalStore } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Store, ChevronRight, Plus, ShoppingBag } from "lucide-react"
 import { Button } from "@/shared/ui/button"
@@ -36,7 +36,7 @@ export function CartPage() {
     getTotalQuantity,
   } = useCartStore()
 
-  const [mounted, setMounted] = useState(false)
+  const mounted = useSyncExternalStore(() => () => {}, () => true, () => false)
   const [deliveryNote, setDeliveryNote] = useState("")
   const [isOrdering, setIsOrdering] = useState(false)
   const [errorDialog, setErrorDialog] = useState<{
@@ -44,11 +44,6 @@ export function CartPage() {
     title: string
     message: string
   }>({ open: false, title: "", message: "" })
-
-  // Zustand persist hydration 대기
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   const itemTotal = mounted ? getTotal() : 0
   const subtotal = itemTotal

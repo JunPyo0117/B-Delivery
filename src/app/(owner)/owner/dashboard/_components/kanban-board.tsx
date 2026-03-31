@@ -103,7 +103,7 @@ export function KanbanBoard({ initialOrders, restaurantId }: KanbanBoardProps) {
 
   // 30초마다 폴링 갱신
   const ordersRef = useRef(orders);
-  ordersRef.current = orders;
+  useEffect(() => { ordersRef.current = orders; }, [orders]);
 
   const refreshOrders = useCallback(() => {
     startTransition(async () => {

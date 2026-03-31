@@ -278,7 +278,7 @@ export function InfoPanel({ chatDetail, onChatCreated }: InfoPanelProps) {
                 const res = await fetch("/api/chat/create", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ orderId: order.id, targetUserId: order.delivery.rider.id }),
+                  body: JSON.stringify({ orderId: order.id, targetUserId: order.delivery?.rider?.id }),
                 });
                 const data = await res.json();
                 if (data.chatId) onChatCreated?.(data.chatId);

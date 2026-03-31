@@ -89,7 +89,7 @@ export function DeliveryProgress({
   useEffect(() => {
     if (currentStatus === "DONE") return;
 
-    let watchId: number | null = null;
+    const watchId: number | null = null;
     let intervalId: ReturnType<typeof setInterval> | null = null;
 
     if (navigator.geolocation) {
