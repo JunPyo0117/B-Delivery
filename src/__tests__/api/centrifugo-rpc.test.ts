@@ -171,12 +171,6 @@ describe("POST /api/centrifugo/rpc", () => {
     // 진행 중인 배달 없음
     prismaMock.delivery.findFirst.mockResolvedValue(null);
 
-    // 트랜잭션 내부 순서대로 mock
-    const txMock = {
-      order: { findUnique: prismaMock.order.findUnique, update: prismaMock.order.update },
-      delivery: { updateMany: prismaMock.delivery.updateMany },
-    };
-
     prismaMock.order.findUnique.mockResolvedValue({
       id: "order-1",
       status: "WAITING_RIDER",
