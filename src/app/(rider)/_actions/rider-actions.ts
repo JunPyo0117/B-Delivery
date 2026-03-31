@@ -2,9 +2,12 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/shared/api/prisma";
-import { DeliveryStatus, OrderStatus } from "@/generated/prisma/client";
+import { DeliveryStatus, OrderStatus, Prisma } from "@/generated/prisma/client";
 import { revalidatePath } from "next/cache";
 import { updateRiderGeo, removeRiderGeo } from "@/shared/api/redis";
+import { publish } from "@/shared/api/centrifugo";
+
+type TransactionClient = Prisma.TransactionClient;
 
 // ─── 헬퍼 ──────────────────────────────────────────────
 
@@ -86,39 +89,46 @@ export async function acceptDelivery(
       return { error: "이미 진행 중인 배달이 있습니다." };
     }
 
-    // 배달 요청 찾기
-    const delivery = await prisma.delivery.findUnique({
-      where: { orderId },
+    // 원자적 수락: status가 REQUESTED인 경우에만 업데이트 (Race Condition 방지)
+    const result = await prisma.delivery.updateMany({
+      where: { orderId, status: DeliveryStatus.REQUESTED },
+      data: {
+        riderId: user.id,
+        status: DeliveryStatus.ACCEPTED,
+        acceptedAt: new Date(),
+      },
     });
 
-    if (!delivery) {
-      return { error: "배달 요청을 찾을 수 없습니다." };
+    if (result.count === 0) {
+      return { error: "이미 다른 기사가 수락했거나 존재하지 않는 배달입니다." };
     }
 
-    if (delivery.status !== DeliveryStatus.REQUESTED) {
-      return { error: "이미 다른 기사가 수락한 배달입니다." };
-    }
+    // 주문 상태도 업데이트
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { status: OrderStatus.RIDER_ASSIGNED },
+    });
 
-    // 트랜잭션: 배달 수락 + 주문 상태 변경
-    const [updatedDelivery] = await prisma.$transaction([
-      prisma.delivery.update({
-        where: { id: delivery.id },
-        data: {
-          riderId: user.id,
-          status: DeliveryStatus.ACCEPTED,
-          acceptedAt: new Date(),
-        },
-      }),
-      prisma.order.update({
-        where: { id: orderId },
-        data: { status: OrderStatus.RIDER_ASSIGNED },
-      }),
-    ]);
+    // 수락된 배달 ID 조회 (응답용)
+    const updatedDelivery = await prisma.delivery.findUnique({
+      where: { orderId },
+      select: { id: true },
+    });
+
+    // 고객/사장 채널에 배달 수락 알림 발행
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { userId: true, restaurant: { select: { ownerId: true } } },
+    });
+    if (order) {
+      await publish(`order#${order.userId}`, { type: "rider_assigned", orderId });
+      await publish(`owner_orders#${order.restaurant.ownerId}`, { type: "rider_assigned", orderId });
+    }
 
     revalidatePath("/rider");
     revalidatePath("/rider/active");
 
-    return { success: true, deliveryId: updatedDelivery.id };
+    return { success: true, deliveryId: updatedDelivery?.id };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "오류가 발생했습니다." };
   }
@@ -176,37 +186,31 @@ export async function updateDeliveryStatus(
     }
 
     // 트랜잭션: 배달 상태 + 주문 상태 동시 업데이트
-    const operations = [
-      prisma.delivery.update({
+    await prisma.$transaction(async (tx: TransactionClient) => {
+      await tx.delivery.update({
         where: { id: deliveryId },
         data: { status: newStatus, ...extraData },
-      }),
-    ];
+      });
 
-    const orderStatus = DELIVERY_TO_ORDER_STATUS[newStatus];
-    if (orderStatus) {
-      operations.push(
-        prisma.order.update({
+      const orderStatus = DELIVERY_TO_ORDER_STATUS[newStatus];
+      if (orderStatus) {
+        await tx.order.update({
           where: { id: delivery.orderId },
           data: { status: orderStatus },
-        }) as never
-      );
-    }
+        });
+      }
 
-    // 배달 완료 시 기사 프로필 통계 업데이트
-    if (newStatus === DeliveryStatus.DONE) {
-      operations.push(
-        prisma.riderProfile.update({
+      // 배달 완료 시 기사 프로필 통계 업데이트
+      if (newStatus === DeliveryStatus.DONE) {
+        await tx.riderProfile.update({
           where: { userId: user.id },
           data: {
             totalDeliveries: { increment: 1 },
             totalEarnings: { increment: delivery.riderFee },
           },
-        }) as never
-      );
-    }
-
-    await prisma.$transaction(operations);
+        });
+      }
+    });
 
     revalidatePath("/rider");
     revalidatePath("/rider/active");

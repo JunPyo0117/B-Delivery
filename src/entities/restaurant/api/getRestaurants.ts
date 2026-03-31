@@ -1,5 +1,6 @@
 "use server";
 
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/shared/api/prisma";
 import { redis } from "@/shared/api/redis";
 import type {
@@ -18,15 +19,15 @@ function buildCacheKey(params: GetRestaurantsParams): string {
   return `restaurants:${normalizedLat}:${normalizedLng}:${category ?? "ALL"}:${sortBy ?? "distance"}:${cursor ?? "0"}`;
 }
 
-function buildOrderByClause(sortBy: string | undefined): string {
+function buildOrderByClause(sortBy: string | undefined): Prisma.Sql {
   switch (sortBy) {
     case "rating":
-      return `"avg_rating" DESC NULLS LAST, distance ASC`;
+      return Prisma.raw(`"avg_rating" DESC NULLS LAST, distance ASC`);
     case "minOrder":
-      return `r."minOrderAmount" ASC, distance ASC`;
+      return Prisma.raw(`r."minOrderAmount" ASC, distance ASC`);
     case "distance":
     default:
-      return `distance ASC`;
+      return Prisma.raw(`distance ASC`);
   }
 }
 
@@ -48,48 +49,17 @@ export async function getRestaurants(
 
   // 2. PostGIS ST_DWithin + ST_Distance (GIST 공간 인덱스 활용)
   const orderByClause = buildOrderByClause(sortBy);
-
-  const categoryFilter = category
-    ? `AND r."category" = '${category}'`
-    : "";
-
-  const cursorFilter = cursor
-    ? `AND r."id" > '${cursor}'`
-    : "";
-
-  const userPoint = `ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography`;
   const radiusMeters = radius * 1000;
 
-  const query = `
-    SELECT
-      r."id",
-      r."name",
-      r."category",
-      r."imageUrl",
-      r."deliveryTime",
-      r."deliveryFee",
-      r."minOrderAmount",
-      ST_Distance(r."location"::geography, ${userPoint}) / 1000.0 AS distance,
-      COALESCE(rev_agg.avg_rating, 0) AS "avg_rating",
-      COALESCE(rev_agg.review_count, 0) AS "review_count"
-    FROM "Restaurant" r
-    LEFT JOIN (
-      SELECT
-        "restaurantId",
-        AVG("rating")::float AS avg_rating,
-        COUNT(*)::int AS review_count
-      FROM "Review"
-      GROUP BY "restaurantId"
-    ) rev_agg ON rev_agg."restaurantId" = r."id"
-    WHERE r."isOpen" = true
-      AND ST_DWithin(r."location"::geography, ${userPoint}, ${radiusMeters})
-      ${categoryFilter}
-      ${cursorFilter}
-    ORDER BY ${orderByClause}
-    LIMIT ${PAGE_SIZE + 1}
-  `;
+  const categoryFilter = category
+    ? Prisma.sql`AND r."category" = ${category}`
+    : Prisma.empty;
 
-  const rows = await prisma.$queryRawUnsafe<
+  const cursorFilter = cursor
+    ? Prisma.sql`AND r."id" > ${cursor}`
+    : Prisma.empty;
+
+  const rows = await prisma.$queryRaw<
     Array<{
       id: string;
       name: string;
@@ -102,7 +72,41 @@ export async function getRestaurants(
       avg_rating: number;
       review_count: number;
     }>
-  >(query);
+  >`
+    SELECT
+      r."id",
+      r."name",
+      r."category",
+      r."imageUrl",
+      r."deliveryTime",
+      r."deliveryFee",
+      r."minOrderAmount",
+      ST_Distance(
+        r."location"::geography,
+        ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography
+      ) / 1000.0 AS distance,
+      COALESCE(rev_agg.avg_rating, 0) AS "avg_rating",
+      COALESCE(rev_agg.review_count, 0) AS "review_count"
+    FROM "Restaurant" r
+    LEFT JOIN (
+      SELECT
+        "restaurantId",
+        AVG("rating")::float AS avg_rating,
+        COUNT(*)::int AS review_count
+      FROM "Review"
+      GROUP BY "restaurantId"
+    ) rev_agg ON rev_agg."restaurantId" = r."id"
+    WHERE r."isOpen" = true
+      AND ST_DWithin(
+        r."location"::geography,
+        ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography,
+        ${radiusMeters}
+      )
+      ${categoryFilter}
+      ${cursorFilter}
+    ORDER BY ${orderByClause}
+    LIMIT ${PAGE_SIZE + 1}
+  `;
 
   const hasMore = rows.length > PAGE_SIZE;
   const items = hasMore ? rows.slice(0, PAGE_SIZE) : rows;

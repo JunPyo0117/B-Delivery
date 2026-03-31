@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/shared/api/prisma";
+import { auth } from "@/auth";
 import type { SearchResultItem } from "@/types/search";
 
 const MAX_RESULTS = 20;
 
 export async function GET(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const q = request.nextUrl.searchParams.get("q")?.trim();
 
   if (!q || q.length < 1) {

@@ -19,7 +19,9 @@ const DELIVERY_STREAM = "delivery_requests_stream";
 const CONSUMER_GROUP = "order-worker-group";
 const CONSUMER_NAME = "order-worker-1";
 
-const redis = new Redis(REDIS_URL);
+const redisOrder = new Redis(REDIS_URL);
+const redisDelivery = new Redis(REDIS_URL);
+const redis = new Redis(REDIS_URL); // 공용 (GEORADIUS, XACK 등)
 
 async function centrifugoPublish(channel: string, data: unknown) {
   const res = await fetch(`${CENTRIFUGO_API_URL}/publish`, {
@@ -55,7 +57,7 @@ function parseStreamFields(fields: string[]): Record<string, string> {
 }
 
 async function processOrderUpdates() {
-  const results = await redis.xreadgroup(
+  const results = await redisOrder.xreadgroup(
     "GROUP", CONSUMER_GROUP, CONSUMER_NAME,
     "COUNT", "10",
     "BLOCK", "5000",
@@ -94,7 +96,7 @@ async function processOrderUpdates() {
 }
 
 async function processDeliveryRequests() {
-  const results = await redis.xreadgroup(
+  const results = await redisDelivery.xreadgroup(
     "GROUP", CONSUMER_GROUP, CONSUMER_NAME,
     "COUNT", "10",
     "BLOCK", "5000",
@@ -164,6 +166,8 @@ async function main() {
   }
 
   console.log("Order Worker stopped");
+  redisOrder.disconnect();
+  redisDelivery.disconnect();
   redis.disconnect();
 }
 
