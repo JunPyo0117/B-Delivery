@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import { auth } from "@/auth";
 import {
   getMinioClient,
   MINIO_BUCKET,
@@ -28,7 +29,10 @@ const PRESIGNED_URL_EXPIRY = 60 * 5; // 5분
 
 export async function POST(request: NextRequest) {
   try {
-    // TODO: 인증 확인 (NextAuth 세션 검증 - auth 태스크 완료 후 연결)
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const body = await request.json();
     const { category, contentType, fileSize } = body;

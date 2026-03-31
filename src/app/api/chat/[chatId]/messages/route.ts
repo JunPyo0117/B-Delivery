@@ -16,9 +16,12 @@ export async function GET(
   const cursor = searchParams.get("cursor");
   const limit = Math.min(Number(searchParams.get("limit")) || 50, 100);
 
-  // 채팅방 소유자 확인
+  // 채팅방 소유자 확인 (ADMIN은 모든 채팅방 접근 가능)
+  const isAdmin = session.user.role === "ADMIN";
   const chat = await prisma.chat.findFirst({
-    where: { id: chatId, userId: session.user.id },
+    where: isAdmin
+      ? { id: chatId }
+      : { id: chatId, OR: [{ userId: session.user.id }, { adminId: session.user.id }] },
   });
 
   if (!chat) {
