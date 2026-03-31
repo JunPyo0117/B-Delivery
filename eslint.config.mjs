@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Test files — Vitest mock 캐스팅에서 any 사용 불가피
+    "src/__tests__/**",
   ]),
 ]);
 

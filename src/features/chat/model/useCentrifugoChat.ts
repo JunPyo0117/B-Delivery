@@ -31,7 +31,9 @@ export function useCentrifugoChat({
   // 연결 상태
   const [isConnected, setIsConnected] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(
+    !process.env.NEXT_PUBLIC_CENTRIFUGO_URL ? "실시간 서버 URL이 설정되지 않았습니다." : null
+  )
 
   // 콜백 refs (re-render 시 재구독 방지)
   const onMessageRef = useRef(onMessage)
@@ -56,12 +58,8 @@ export function useCentrifugoChat({
     const wsUrl = process.env.NEXT_PUBLIC_CENTRIFUGO_URL
     if (!wsUrl) {
       console.warn("[useCentrifugoChat] NEXT_PUBLIC_CENTRIFUGO_URL이 설정되지 않았습니다.")
-      setError("실시간 서버 URL이 설정되지 않았습니다.")
       return
     }
-
-    setIsConnecting(true)
-    setError(null)
 
     const centrifuge = new Centrifuge(wsUrl, {
       getToken: async () => {
@@ -75,6 +73,11 @@ export function useCentrifugoChat({
     centrifugeRef.current = centrifuge
 
     // 연결 상태 이벤트 핸들링
+    centrifuge.on("connecting", () => {
+      setIsConnecting(true)
+      setError(null)
+    })
+
     centrifuge.on("connected", () => {
       setIsConnected(true)
       setIsConnecting(false)

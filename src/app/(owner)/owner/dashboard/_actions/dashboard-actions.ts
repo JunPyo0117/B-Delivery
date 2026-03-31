@@ -112,13 +112,13 @@ export async function getDashboardOrders(
     orderBy: { createdAt: "asc" },
   });
 
-  return orders.map((order: any) => ({
+  return orders.map((order) => ({
     id: order.id,
     status: order.status,
     totalPrice: order.totalPrice,
     deliveryAddress: order.deliveryAddress,
     customerNickname: order.user.nickname,
-    items: order.items.map((item: any) => ({
+    items: order.items.map((item) => ({
       id: item.id,
       menuName: item.menu.name,
       quantity: item.quantity,
@@ -166,12 +166,12 @@ export async function getDashboardStats(
     }),
   ]);
 
-  const todaySales = todayOrders.reduce((sum: number, o: any) => sum + o.totalPrice, 0);
+  const todaySales = todayOrders.reduce((sum, o) => sum + o.totalPrice, 0);
   const todayCount = todayOrders.length;
   const todayAvg = todayCount > 0 ? Math.round(todaySales / todayCount) : 0;
 
   const yesterdaySales = yesterdayOrders.reduce(
-    (sum: number, o: any) => sum + o.totalPrice,
+    (sum, o) => sum + o.totalPrice,
     0
   );
   const yesterdayCount = yesterdayOrders.length;
@@ -347,13 +347,13 @@ export async function getRecentReviews(
     },
   });
 
-  return reviews.map((r: any) => ({
+  return reviews.map((r) => ({
     id: r.id,
     rating: r.rating,
     content: r.content,
     ownerReply: r.ownerReply,
     createdAt: r.createdAt.toISOString(),
     user: { nickname: r.user.nickname },
-    orderMenuNames: r.order.items.map((item: any) => item.menu.name),
+    orderMenuNames: r.order.items.map((item) => item.menu.name),
   }));
 }

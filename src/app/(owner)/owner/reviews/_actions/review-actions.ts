@@ -71,7 +71,7 @@ export async function getOwnerReviews(
     },
   });
 
-  return reviews.map((r: any) => ({
+  return reviews.map((r) => ({
     id: r.id,
     rating: r.rating,
     content: r.content,
@@ -84,7 +84,7 @@ export async function getOwnerReviews(
       nickname: r.user.nickname,
       image: r.user.image,
     },
-    orderMenuNames: r.order.items.map((item: any) => item.menu.name),
+    orderMenuNames: r.order.items.map((item) => item.menu.name),
   }));
 }
 

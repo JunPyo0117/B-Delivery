@@ -16,18 +16,16 @@ export function RestaurantMap({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const kakaoMapKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
 
   useEffect(() => {
-    const kakaoMapKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
-
-    if (!kakaoMapKey) {
-      setError("카카오 맵 API 키가 설정되지 않았습니다.");
-      return;
-    }
+    if (!kakaoMapKey) return;
 
     // 이미 카카오 SDK가 로드되어 있는 경우
     if (window.kakao?.maps) {
-      setIsLoaded(true);
+      window.kakao.maps.load(() => {
+        setIsLoaded(true);
+      });
       return;
     }
 
@@ -50,7 +48,7 @@ export function RestaurantMap({
     return () => {
       // 스크립트는 제거하지 않음 (다른 컴포넌트에서 재사용)
     };
-  }, []);
+  }, [kakaoMapKey]);
 
   useEffect(() => {
     if (!isLoaded || !mapContainerRef.current) return;
@@ -93,10 +91,12 @@ export function RestaurantMap({
     });
   }, [isLoaded, latitude, longitude, restaurantName]);
 
-  if (error) {
+  if (!kakaoMapKey || error) {
     return (
       <div className="w-full h-48 bg-muted rounded-lg flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">{error}</p>
+        <p className="text-sm text-muted-foreground">
+          {error ?? "카카오 맵 API 키가 설정되지 않았습니다."}
+        </p>
       </div>
     );
   }

@@ -10,13 +10,10 @@ interface Props {
 
 export default async function ReportDetailPage({ params }: Props) {
   const { reportId } = await params;
+  const report = await getReportDetail(reportId).catch(() => null);
+  if (!report) notFound();
 
-  try {
-    const report = await getReportDetail(reportId);
-    return (
-      <ReportDetailClient report={JSON.parse(JSON.stringify(report))} />
-    );
-  } catch {
-    notFound();
-  }
+  return (
+    <ReportDetailClient report={JSON.parse(JSON.stringify(report))} />
+  );
 }
