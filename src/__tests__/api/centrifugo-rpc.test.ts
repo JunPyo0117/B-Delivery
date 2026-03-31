@@ -1,4 +1,10 @@
-import { describe, it, expect, beforeEach } from "vitest";
+/**
+ * PROXY_SECRET은 route.ts 모듈 최상위에서 process.env를 읽어 고정됩니다.
+ * import 전에 env를 설정해야 올바르게 반영됩니다.
+ */
+process.env.CENTRIFUGO_PROXY_SECRET = "test-secret";
+
+import { describe, it, expect } from "vitest";
 import { prismaMock } from "../helpers/prisma-mock";
 import { redisMock } from "../helpers/redis-mock";
 import { POST } from "@/app/api/centrifugo/rpc/route";
@@ -17,9 +23,6 @@ function makeRequest(body: Record<string, unknown>, secret?: string) {
 }
 
 describe("POST /api/centrifugo/rpc", () => {
-  beforeEach(() => {
-    process.env.CENTRIFUGO_PROXY_SECRET = PROXY_SECRET;
-  });
 
   // ────────────────────────────────────────────────────────────
   // 1. 인증
