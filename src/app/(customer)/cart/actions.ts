@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/shared/api/prisma";
+import { publishOrderUpdate } from "@/shared/api/redis";
 
 /** 음식점의 배달비, 최소주문금액 조회 */
 export async function getRestaurantDeliveryInfo(restaurantId: string) {
@@ -61,7 +62,7 @@ export async function createOrder(
   // 음식점 존재 & 영업 중 확인
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId },
-    select: { id: true, isOpen: true, minOrderAmount: true, deliveryFee: true },
+    select: { id: true, isOpen: true, minOrderAmount: true, deliveryFee: true, ownerId: true },
   });
 
   if (!restaurant) {
@@ -150,6 +151,13 @@ export async function createOrder(
     },
     select: { id: true },
   });
+
+  // Redis Stream 발행 — 사장에게 신규 주문 알림
+  try {
+    await publishOrderUpdate(order.id, "PENDING", session.user.id, restaurant.ownerId);
+  } catch {
+    // Redis 발행 실패는 주문 생성을 롤백하지 않음
+  }
 
   return { orderId: order.id };
 }

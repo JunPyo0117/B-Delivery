@@ -12,7 +12,7 @@ const providers: Provider[] = [
 ];
 
 // E2E 테스트 환경에서만 Credentials provider 추가
-if (process.env.E2E_TESTING === "true") {
+if (process.env.E2E_TESTING === "true" && process.env.NODE_ENV !== "production") {
   providers.push(
     Credentials({
       id: "test-credentials",
