@@ -62,13 +62,19 @@ export function KakaoMap({
 
       const content = document.createElement("div")
       content.style.cssText = "display:flex;flex-direction:column;align-items:center;"
-      content.innerHTML = `
-        ${m.label ? `<span style="background:#fff;border:1px solid #ddd;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:600;color:#333;white-space:nowrap;margin-bottom:4px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">${m.label}</span>` : ""}
-        <svg width="28" height="40" viewBox="0 0 28 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+      if (m.label) {
+        const labelEl = document.createElement("span")
+        labelEl.style.cssText = "background:#fff;border:1px solid #ddd;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:600;color:#333;white-space:nowrap;margin-bottom:4px;box-shadow:0 1px 3px rgba(0,0,0,0.1);"
+        labelEl.textContent = m.label
+        content.appendChild(labelEl)
+      }
+
+      const svgHtml = `<svg width="28" height="40" viewBox="0 0 28 40" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M14 0C6.268 0 0 6.268 0 14c0 10.5 14 26 14 26s14-15.5 14-26C28 6.268 21.732 0 14 0z" fill="#FF3B30"/>
           <circle cx="14" cy="14" r="6" fill="#fff"/>
-        </svg>
-      `
+        </svg>`
+      content.insertAdjacentHTML("beforeend", svgHtml)
 
       const overlay = new kakao.maps.CustomOverlay({
         position,

@@ -7,8 +7,17 @@ import { randomUUID } from "crypto";
  * Centrifugo Publish Proxy
  * - chat:<chatId> 채널 → 메시지 저장 + 브로드캐스트
  */
+const PROXY_SECRET = process.env.CENTRIFUGO_PROXY_SECRET;
+
 export async function POST(request: Request) {
   try {
+    if (PROXY_SECRET) {
+      const headerSecret = request.headers.get("X-Centrifugo-Proxy-Secret");
+      if (headerSecret !== PROXY_SECRET) {
+        return NextResponse.json({ error: { code: 403, message: "Forbidden" } });
+      }
+    }
+
     const body = await request.json();
     const userId = body.user as string;
     const channel = body.channel as string;

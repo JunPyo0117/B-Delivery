@@ -78,6 +78,7 @@ services:
       CENTRIFUGO_HTTP_API_KEY: ${CENTRIFUGO_API_KEY:-centrifugo-api-key}
       CENTRIFUGO_ADMIN_PASSWORD: ${CENTRIFUGO_ADMIN_PASSWORD:-admin}
       CENTRIFUGO_ADMIN_SECRET: ${CENTRIFUGO_ADMIN_SECRET:-admin-secret}
+      CENTRIFUGO_PROXY_SECRET: ${CENTRIFUGO_PROXY_SECRET:-centrifugo-proxy-secret}
       CENTRIFUGO_RPC_PROXY_ENDPOINT: http://host.docker.internal:3000/api/centrifugo/rpc
       CENTRIFUGO_RPC_PROXY_TIMEOUT: 3s
     depends_on:
@@ -119,6 +120,7 @@ services:
       MINIO_BUCKET_NAME: bdelivery
       CENTRIFUGO_API_URL: http://centrifugo:8000/api
       CENTRIFUGO_API_KEY: ${CENTRIFUGO_API_KEY:-centrifugo-api-key}
+      CENTRIFUGO_PROXY_SECRET: ${CENTRIFUGO_PROXY_SECRET:-centrifugo-proxy-secret}
       NEXTAUTH_URL: http://localhost:3000
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-super-secret-key}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}

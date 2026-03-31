@@ -8,15 +8,20 @@ import { toggleFavorite } from "../api/toggleFavorite";
 interface FavoriteButtonProps {
   restaurantId: string;
   initialFavorite?: boolean;
+  /** @alias initialFavorite — 기존 코드 호환용 */
+  initialFavorited?: boolean;
+  size?: "sm" | "md";
   className?: string;
 }
 
 export function FavoriteButton({
   restaurantId,
-  initialFavorite = false,
+  initialFavorite,
+  initialFavorited,
+  size = "sm",
   className,
 }: FavoriteButtonProps) {
-  const [isFavorite, setIsFavorite] = useState(initialFavorite);
+  const [isFavorite, setIsFavorite] = useState(initialFavorited ?? initialFavorite ?? false);
   const [isPending, startTransition] = useTransition();
 
   function handleToggle(e: React.MouseEvent) {
@@ -52,7 +57,7 @@ export function FavoriteButton({
       aria-label={isFavorite ? "찜 해제" : "찜하기"}
     >
       <Heart
-        size={22}
+        size={size === "sm" ? 20 : 24}
         className={cn(
           "transition-colors",
           isFavorite

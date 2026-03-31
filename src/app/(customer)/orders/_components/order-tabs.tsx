@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ShoppingCart, Search, Heart, ChevronDown } from "lucide-react";
 import { useCartStore } from "@/features/cart/model/cartStore";
-import { getReorderItems } from "../actions";
+import { getReorderItems } from "@/entities/order/api/getReorderItems";
 
 /** 주문 내역 탭 타입 */
 type TabType = "delivery" | "grocery";
