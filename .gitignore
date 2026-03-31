@@ -87,3 +87,5 @@ minio-data/
 *.pid
 *.seed
 .cache/
+
+.omc
