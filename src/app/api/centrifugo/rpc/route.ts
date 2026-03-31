@@ -11,8 +11,17 @@ import { redis } from "@/shared/api/redis";
  * - delivery:accept / delivery:reject
  * - delivery:status (AT_STORE, PICKED_UP, DONE)
  */
+const PROXY_SECRET = process.env.CENTRIFUGO_PROXY_SECRET;
+
 export async function POST(request: Request) {
   try {
+    if (PROXY_SECRET) {
+      const headerSecret = request.headers.get("X-Centrifugo-Proxy-Secret");
+      if (headerSecret !== PROXY_SECRET) {
+        return NextResponse.json({ error: { code: 403, message: "Forbidden" } });
+      }
+    }
+
     const body = await request.json();
     const userId = body.user as string;
     const method = body.method as string;
@@ -50,12 +59,12 @@ export async function POST(request: Request) {
         };
 
         // 채팅 채널에 브로드캐스트
-        await publish(`chat:${chatId}`, { type: "message:new", ...enriched });
+        await publish(`chat:${chatId}`, { ...enriched, type: "message:new" });
 
         // 수신자 개인 채널에도 알림
         const recipientId = chat.userId === userId ? chat.adminId : chat.userId;
         if (recipientId) {
-          await publish(`user#${recipientId}`, { type: "message:new", ...enriched });
+          await publish(`user#${recipientId}`, { ...enriched, type: "message:new" });
         }
 
         return NextResponse.json({ result: { data: enriched } });
@@ -101,6 +110,11 @@ export async function POST(request: Request) {
       }
 
       case "location:update": {
+        const riderCheck = await prisma.riderProfile.findUnique({ where: { userId } });
+        if (!riderCheck) {
+          return NextResponse.json({ error: { code: 403, message: "RIDER 권한이 필요합니다." } });
+        }
+
         const lat = data.lat as number;
         const lng = data.lng as number;
 
@@ -154,21 +168,35 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: { code: 400, message: "이미 진행 중인 배달이 있습니다." } });
         }
 
-        // 원자적 수락: status가 REQUESTED인 경우에만 업데이트 (Race Condition 방지)
-        const result = await prisma.delivery.updateMany({
-          where: { orderId, status: "REQUESTED" },
-          data: { riderId: userId, status: "ACCEPTED", acceptedAt: new Date() },
+        // 원자적 수락: 트랜잭션으로 Delivery + Order 상태를 함께 업데이트
+        const acceptResult = await prisma.$transaction(async (tx) => {
+          // Order가 WAITING_RIDER 상태인지 검증
+          const order = await tx.order.findUnique({ where: { id: orderId }, select: { status: true } });
+          if (!order || order.status !== "WAITING_RIDER") {
+            throw new Error("주문이 배달 대기 상태가 아닙니다.");
+          }
+
+          const result = await tx.delivery.updateMany({
+            where: { orderId, status: "REQUESTED" },
+            data: { riderId: userId, status: "ACCEPTED", acceptedAt: new Date() },
+          });
+          if (result.count === 0) {
+            throw new Error("이미 다른 기사가 수락한 배달입니다.");
+          }
+
+          await tx.order.update({
+            where: { id: orderId },
+            data: { status: "RIDER_ASSIGNED" },
+          });
+
+          return result;
+        }).catch((err: Error) => {
+          return { error: err.message };
         });
 
-        if (result.count === 0) {
-          return NextResponse.json({ error: { code: 400, message: "이미 다른 기사가 수락한 배달입니다." } });
+        if ("error" in acceptResult) {
+          return NextResponse.json({ error: { code: 400, message: acceptResult.error } });
         }
-
-        // 주문 상태 업데이트
-        await prisma.order.update({
-          where: { id: orderId },
-          data: { status: "RIDER_ASSIGNED" },
-        });
 
         const delivery = await prisma.delivery.findUnique({
           where: { orderId },
@@ -207,12 +235,25 @@ export async function POST(request: Request) {
         const orderId = data.orderId as string;
         const newStatus = data.status as string;
 
+        // 허용 가능한 상태 전이 맵
+        const VALID_DELIVERY_TRANSITIONS: Record<string, string[]> = {
+          ACCEPTED: ["AT_STORE"],
+          AT_STORE: ["PICKED_UP"],
+          PICKED_UP: ["DONE"],
+        };
+
         const delivery = await prisma.delivery.findUnique({
           where: { orderId },
           include: { order: { select: { userId: true, restaurant: { select: { ownerId: true } } } } },
         });
         if (!delivery || delivery.riderId !== userId) {
           return NextResponse.json({ error: { code: 403, message: "권한이 없습니다." } });
+        }
+
+        // 상태 전이 유효성 검증
+        const allowedNext = VALID_DELIVERY_TRANSITIONS[delivery.status];
+        if (!allowedNext?.includes(newStatus)) {
+          return NextResponse.json({ error: { code: 400, message: `${delivery.status}에서 ${newStatus}로 전이할 수 없습니다.` } });
         }
 
         const extraData: Record<string, unknown> = {};
@@ -226,14 +267,6 @@ export async function POST(request: Request) {
         } else if (newStatus === "DONE") {
           extraData.completedAt = new Date();
           orderStatus = "DONE";
-          // 기사 통계 업데이트
-          await prisma.riderProfile.update({
-            where: { userId },
-            data: {
-              totalDeliveries: { increment: 1 },
-              totalEarnings: { increment: delivery.riderFee },
-            },
-          });
         }
 
         await prisma.$transaction(async (tx) => {
@@ -245,6 +278,16 @@ export async function POST(request: Request) {
             await tx.order.update({
               where: { id: orderId },
               data: { status: orderStatus as "PICKED_UP" | "DONE" },
+            });
+          }
+          // 기사 통계 업데이트 (DONE일 때만, 트랜잭션 내)
+          if (newStatus === "DONE") {
+            await tx.riderProfile.update({
+              where: { userId },
+              data: {
+                totalDeliveries: { increment: 1 },
+                totalEarnings: { increment: delivery.riderFee },
+              },
             });
           }
         });

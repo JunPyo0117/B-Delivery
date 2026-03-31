@@ -8,8 +8,17 @@ const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
  * - JWT 검증 → user 정보 반환
  * - 역할별 서버 사이드 채널 구독
  */
+const PROXY_SECRET = process.env.CENTRIFUGO_PROXY_SECRET;
+
 export async function POST(request: Request) {
   try {
+    if (PROXY_SECRET) {
+      const headerSecret = request.headers.get("X-Centrifugo-Proxy-Secret");
+      if (headerSecret !== PROXY_SECRET) {
+        return NextResponse.json({ error: { code: 403, message: "Forbidden" } });
+      }
+    }
+
     const body = await request.json();
     const token = body.token as string;
 

@@ -89,25 +89,39 @@ export async function acceptDelivery(
       return { error: "이미 진행 중인 배달이 있습니다." };
     }
 
-    // 원자적 수락: status가 REQUESTED인 경우에만 업데이트 (Race Condition 방지)
-    const result = await prisma.delivery.updateMany({
-      where: { orderId, status: DeliveryStatus.REQUESTED },
-      data: {
-        riderId: user.id,
-        status: DeliveryStatus.ACCEPTED,
-        acceptedAt: new Date(),
-      },
+    // 트랜잭션으로 Delivery + Order 상태를 함께 원자적 업데이트
+    const txResult = await prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({ where: { id: orderId }, select: { status: true } });
+      if (!order || order.status !== "WAITING_RIDER") {
+        throw new Error("주문이 배달 대기 상태가 아닙니다.");
+      }
+
+      const result = await tx.delivery.updateMany({
+        where: { orderId, status: DeliveryStatus.REQUESTED },
+        data: {
+          riderId: user.id,
+          status: DeliveryStatus.ACCEPTED,
+          acceptedAt: new Date(),
+        },
+      });
+
+      if (result.count === 0) {
+        throw new Error("이미 다른 기사가 수락했거나 존재하지 않는 배달입니다.");
+      }
+
+      await tx.order.update({
+        where: { id: orderId },
+        data: { status: OrderStatus.RIDER_ASSIGNED },
+      });
+
+      return result;
+    }).catch((err: Error) => {
+      return { error: err.message } as const;
     });
 
-    if (result.count === 0) {
-      return { error: "이미 다른 기사가 수락했거나 존재하지 않는 배달입니다." };
+    if ("error" in txResult) {
+      return { error: txResult.error };
     }
-
-    // 주문 상태도 업데이트
-    await prisma.order.update({
-      where: { id: orderId },
-      data: { status: OrderStatus.RIDER_ASSIGNED },
-    });
 
     // 수락된 배달 ID 조회 (응답용)
     const updatedDelivery = await prisma.delivery.findUnique({

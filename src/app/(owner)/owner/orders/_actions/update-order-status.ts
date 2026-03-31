@@ -66,32 +66,41 @@ export async function updateOrderStatus(
     };
   }
 
-  // DB 업데이트
-  await prisma.order.update({
-    where: { id: orderId },
-    data: {
-      status: newStatus,
-      ...(newStatus === OrderStatus.CANCELLED && {
-        cancelReason,
-        cancelledBy: session.user.role,
-      }),
-    },
-  });
-
-  // WAITING_RIDER 전이 시: Delivery 생성 + 배달 요청 발행
-  if (newStatus === OrderStatus.WAITING_RIDER) {
-    await prisma.delivery.create({
+  // 트랜잭션으로 원자적 처리 — 낙관적 잠금 + Delivery 생성
+  const txResult = await prisma.$transaction(async (tx) => {
+    const updateResult = await tx.order.updateMany({
+      where: { id: orderId, status: order.status },
       data: {
-        orderId,
-        status: "REQUESTED",
-        pickupLat: order.restaurant.latitude,
-        pickupLng: order.restaurant.longitude,
-        dropoffLat: order.deliveryLat ?? 0,
-        dropoffLng: order.deliveryLng ?? 0,
-        riderFee: order.deliveryFee,
+        status: newStatus,
+        ...(newStatus === OrderStatus.CANCELLED && {
+          cancelReason,
+          cancelledBy: session.user.role,
+        }),
       },
     });
 
+    if (updateResult.count === 0) {
+      throw new Error("주문 상태가 이미 변경되었습니다.");
+    }
+
+    // WAITING_RIDER 전이 시: Delivery 생성 (같은 트랜잭션)
+    if (newStatus === OrderStatus.WAITING_RIDER) {
+      await tx.delivery.create({
+        data: {
+          orderId,
+          status: "REQUESTED",
+          pickupLat: order.restaurant.latitude,
+          pickupLng: order.restaurant.longitude,
+          dropoffLat: order.deliveryLat ?? 0,
+          dropoffLng: order.deliveryLng ?? 0,
+          riderFee: order.deliveryFee,
+        },
+      });
+    }
+  });
+
+  // Redis 발행은 트랜잭션 밖에서 (DB 성공 후)
+  if (newStatus === OrderStatus.WAITING_RIDER) {
     await publishDeliveryRequest(
       orderId,
       order.restaurant.latitude,
@@ -103,7 +112,6 @@ export async function updateOrderStatus(
     );
   }
 
-  // Redis Stream 발행 — 고객 + 사장 실시간 알림
   await publishOrderUpdate(orderId, newStatus, order.userId, order.restaurant.ownerId);
 
   return { success: true };

@@ -16,8 +16,17 @@ const ALLOWED_PATTERNS = [
   /^user#.+/,              // 개인 채널
 ];
 
+const PROXY_SECRET = process.env.CENTRIFUGO_PROXY_SECRET;
+
 export async function POST(request: Request) {
   try {
+    if (PROXY_SECRET) {
+      const headerSecret = request.headers.get("X-Centrifugo-Proxy-Secret");
+      if (headerSecret !== PROXY_SECRET) {
+        return NextResponse.json({ error: { code: 403, message: "Forbidden" } });
+      }
+    }
+
     const body = await request.json();
     const userId = body.user as string;
     const channel = body.channel as string;
@@ -71,7 +80,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ result: {} });
     }
 
-    // 나머지 화이트리스트 채널은 허용
+    // # 구분자 채널: 소유자 확인 (order#userId, owner_orders#userId 등)
+    if (channel.includes("#")) {
+      const channelOwnerId = channel.split("#")[1];
+      if (channelOwnerId !== userId) {
+        return NextResponse.json({
+          error: { code: 403, message: "Not channel owner" },
+        });
+      }
+    }
+
     return NextResponse.json({ result: {} });
   } catch {
     return NextResponse.json({

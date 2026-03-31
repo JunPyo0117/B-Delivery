@@ -1,4 +1,10 @@
 {
+  "proxy": {
+    "proxy_extra_http_headers": ["X-Centrifugo-Proxy-Secret"],
+    "static_http_headers": {
+      "X-Centrifugo-Proxy-Secret": "${CENTRIFUGO_PROXY_SECRET}"
+    }
+  },
   "client": {
     "token": {
       "hmac_secret_key": "${CENTRIFUGO_CLIENT_TOKEN_HMAC_SECRET_KEY}"

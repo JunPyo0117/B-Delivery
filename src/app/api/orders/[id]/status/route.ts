@@ -102,10 +102,21 @@ export async function PATCH(
     );
   }
 
-  // DB 업데이트
-  const updatedOrder = await prisma.order.update({
-    where: { id: orderId },
+  // DB 업데이트 — 낙관적 잠금 (현재 상태 조건)
+  const updateResult = await prisma.order.updateMany({
+    where: { id: orderId, status: order.status },
     data: { status: newStatus },
+  });
+
+  if (updateResult.count === 0) {
+    return NextResponse.json(
+      { error: "주문 상태가 이미 변경되었습니다. 새로고침 후 다시 시도해주세요." },
+      { status: 409 }
+    );
+  }
+
+  const updatedOrder = await prisma.order.findUnique({
+    where: { id: orderId },
     include: {
       items: { include: { menu: { select: { name: true } } } },
       restaurant: { select: { name: true } },
