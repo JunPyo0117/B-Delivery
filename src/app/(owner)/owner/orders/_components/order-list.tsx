@@ -38,7 +38,7 @@ export function OrderList({ initialOrders, restaurantName }: OrderListProps) {
 
   // 현재 주문 수를 ref로 추적
   const ordersRef = useRef(orders);
-  ordersRef.current = orders;
+  useEffect(() => { ordersRef.current = orders; }, [orders]);
   const centrifugeRef = useRef<Centrifuge | null>(null);
 
   // Centrifugo WebSocket 연결 — owner_orders# 채널에서 실시간 주문 알림 수신

@@ -10,11 +10,8 @@ interface Props {
 
 export default async function UserDetailPage({ params }: Props) {
   const { userId } = await params;
+  const user = await getUserDetail(userId).catch(() => null);
+  if (!user) notFound();
 
-  try {
-    const user = await getUserDetail(userId);
-    return <UserDetailClient user={JSON.parse(JSON.stringify(user))} />;
-  } catch {
-    notFound();
-  }
+  return <UserDetailClient user={JSON.parse(JSON.stringify(user))} />;
 }

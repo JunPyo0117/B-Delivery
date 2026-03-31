@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Search, ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/features/cart/model/cartStore";
+
+const subscribe = () => () => {};
 
 interface RestaurantHeaderProps {
   imageUrl: string | null;
@@ -13,10 +15,8 @@ interface RestaurantHeaderProps {
 
 export function RestaurantHeader({ imageUrl, name }: RestaurantHeaderProps) {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(subscribe, () => true, () => false);
   const totalQuantity = useCartStore((s) => s.getTotalQuantity());
-
-  useEffect(() => setMounted(true), []);
 
   return (
     <div className="relative h-[220px] w-full bg-muted">

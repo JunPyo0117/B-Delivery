@@ -44,16 +44,16 @@ export function useSearch({ lat, lng, radius }: UseSearchParams): UseSearchRetur
     }
 
     const trimmed = query.trim();
-    if (!trimmed) {
-      setResults([]);
-      setIsLoading(false);
-      return;
-    }
 
-    setIsLoading(true);
-
-    // 300ms 디바운스
+    // 모든 setState를 setTimeout 콜백 내부로 이동 (동기 setState 방지)
     timerRef.current = setTimeout(async () => {
+      if (!trimmed) {
+        setResults([]);
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
       const requestId = ++abortRef.current;
 
       try {
@@ -75,7 +75,7 @@ export function useSearch({ lat, lng, radius }: UseSearchParams): UseSearchRetur
           setIsLoading(false);
         }
       }
-    }, 300);
+    }, trimmed ? 300 : 0);
 
     return () => {
       if (timerRef.current) {

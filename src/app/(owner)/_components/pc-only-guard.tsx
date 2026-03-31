@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Monitor } from "lucide-react";
+
+const emptySubscribe = () => () => {};
 
 /**
  * PC 전용 가드 컴포넌트
@@ -10,11 +12,9 @@ import { Monitor } from "lucide-react";
  */
 export function PcOnlyGuard({ children }: { children: React.ReactNode }) {
   const [isMobile, setIsMobile] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
   useEffect(() => {
-    setMounted(true);
-
     const mediaQuery = window.matchMedia("(max-width: 1023px)");
 
     const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
