@@ -83,6 +83,24 @@ export const DELIVERING_STATUSES: OrderStatus[] = [
 /** 완료된 상태 목록 */
 export const COMPLETED_STATUSES: OrderStatus[] = ["DONE", "CANCELLED"]
 
+/**
+ * 새 상태가 현재 상태보다 진행 방향으로 앞에 있는지 판단.
+ * onConnected 재조회 시 stale 데이터로 WebSocket 이벤트를 덮어쓰지 않도록 사용.
+ */
+export function isStatusAhead(
+  newStatus: OrderStatus,
+  currentStatus: OrderStatus
+): boolean {
+  // CANCELLED는 특수 처리: 진입은 허용, 탈출은 불가
+  if (currentStatus === "CANCELLED") return false;
+  if (newStatus === "CANCELLED") return true;
+
+  const newIdx = ORDER_STATUS_STEPS.indexOf(newStatus);
+  const curIdx = ORDER_STATUS_STEPS.indexOf(currentStatus);
+  if (newIdx === -1 || curIdx === -1) return false;
+  return newIdx > curIdx;
+}
+
 /** 주문 생성 입력 데이터 */
 export interface CreateOrderInput {
   restaurantId: string

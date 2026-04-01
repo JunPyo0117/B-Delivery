@@ -5,6 +5,7 @@ import {
   CUSTOMER_CANCELLABLE,
   DELIVERING_STATUSES,
   COMPLETED_STATUSES,
+  isStatusAhead,
 } from "@/entities/order/model/types";
 
 /**
@@ -133,6 +134,40 @@ describe("ORDER_STATUS_STEPS — 정상 흐름 순서", () => {
 
   it("CANCELLED는 정상 흐름에 포함되지 않음", () => {
     expect(ORDER_STATUS_STEPS).not.toContain(OrderStatus.CANCELLED);
+  });
+});
+
+describe("isStatusAhead — 상태 전진 여부 판단 (forward-only 재조회용)", () => {
+  // 이 함수는 onConnected 재조회 시 stale 데이터로 WebSocket 이벤트를 덮어쓰지 않도록
+  // 새 상태가 현재 상태보다 앞에 있는지 판단합니다.
+  it("COOKING은 PENDING보다 앞이다", () => {
+    expect(isStatusAhead("COOKING", "PENDING")).toBe(true);
+  });
+
+  it("WAITING_RIDER는 COOKING보다 앞이다", () => {
+    expect(isStatusAhead("WAITING_RIDER", "COOKING")).toBe(true);
+  });
+
+  it("PENDING은 COOKING보다 앞이 아니다 (뒤로 가기 방지)", () => {
+    expect(isStatusAhead("PENDING", "COOKING")).toBe(false);
+  });
+
+  it("같은 상태는 앞이 아니다", () => {
+    expect(isStatusAhead("COOKING", "COOKING")).toBe(false);
+  });
+
+  it("CANCELLED는 정상 흐름의 어떤 상태보다도 앞으로 취급한다", () => {
+    expect(isStatusAhead("CANCELLED", "PENDING")).toBe(true);
+    expect(isStatusAhead("CANCELLED", "COOKING")).toBe(true);
+  });
+
+  it("현재 CANCELLED면 어떤 상태로도 되돌리지 않는다", () => {
+    expect(isStatusAhead("PENDING", "CANCELLED")).toBe(false);
+    expect(isStatusAhead("COOKING", "CANCELLED")).toBe(false);
+  });
+
+  it("DONE은 PICKED_UP보다 앞이다", () => {
+    expect(isStatusAhead("DONE", "PICKED_UP")).toBe(true);
   });
 });
 

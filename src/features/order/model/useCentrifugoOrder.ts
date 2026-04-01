@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import { Centrifuge } from "centrifuge"
 import type { OrderStatus } from "@/generated/prisma/client"
 import { useOrderStore } from "./orderStore"
@@ -12,10 +12,17 @@ import { useOrderStore } from "./orderStore"
  * - `order#<userId>` 채널은 서버 사이드 구독으로 자동 할당
  * - 수신된 주문 상태 변경 이벤트를 orderStore에 반영
  */
-export function useCentrifugoOrder(userId: string | undefined) {
+export function useCentrifugoOrder(
+  userId: string | undefined,
+  onConnected?: () => void
+) {
   const centrifugeRef = useRef<Centrifuge | null>(null)
-  const setOrderStatus = useOrderStore((s) => s.setOrderStatus)
   const [isConnected, setIsConnected] = useState(false)
+
+  // store 액션은 안정적 참조로 가져와서 useEffect 의존성에서 제외
+  const setOrderStatusRef = useRef(useOrderStore.getState().setOrderStatus)
+  const onConnectedRef = useRef(onConnected)
+  onConnectedRef.current = onConnected
 
   useEffect(() => {
     if (!userId) return
@@ -40,6 +47,8 @@ export function useCentrifugoOrder(userId: string | undefined) {
     // 연결 상태 이벤트 핸들링
     centrifuge.on("connected", () => {
       setIsConnected(true)
+      // 연결 완료 시 콜백 — 연결 전 유실된 이벤트를 보상하기 위해 최신 상태 재조회
+      onConnectedRef.current?.()
     })
 
     centrifuge.on("disconnected", () => {
@@ -55,7 +64,7 @@ export function useCentrifugoOrder(userId: string | undefined) {
       }
 
       if (data.type === "order:status_changed" && data.orderId && data.status) {
-        setOrderStatus(data.orderId, data.status)
+        setOrderStatusRef.current(data.orderId, data.status)
       }
     })
 
@@ -66,7 +75,7 @@ export function useCentrifugoOrder(userId: string | undefined) {
       centrifugeRef.current = null
       setIsConnected(false)
     }
-  }, [userId, setOrderStatus])
+  }, [userId])
 
   return { centrifugeRef, isConnected }
 }

@@ -34,7 +34,7 @@ async function centrifugoPublish(channel: string, data: unknown) {
   });
   if (!res.ok) {
     const body = await res.text();
-    console.error(`Centrifugo publish failed: ${res.status} ${body}`);
+    throw new Error(`Centrifugo publish failed: ${res.status} ${body}`);
   }
 }
 
@@ -57,6 +57,24 @@ function parseStreamFields(fields: string[]): Record<string, string> {
 }
 
 async function processOrderUpdates() {
+  // 1) pending 메시지 재처리 (ACK 안 된 메시지)
+  const pending = await redisOrder.xreadgroup(
+    "GROUP", CONSUMER_GROUP, CONSUMER_NAME,
+    "COUNT", "10",
+    "STREAMS", ORDER_STREAM, "0"
+  ) as [string, [string, string[]][]][] | null;
+
+  if (pending) {
+    for (const [, messages] of pending) {
+      if (messages.length === 0) break; // pending 없음
+      for (const [id, fields] of messages) {
+        if (fields.length === 0) continue; // 이미 처리 완료된 빈 엔트리
+        await processOrderMessage(id, fields);
+      }
+    }
+  }
+
+  // 2) 새 메시지 처리
   const results = await redisOrder.xreadgroup(
     "GROUP", CONSUMER_GROUP, CONSUMER_NAME,
     "COUNT", "10",
@@ -68,30 +86,40 @@ async function processOrderUpdates() {
 
   for (const [, messages] of results) {
     for (const [id, fields] of messages) {
-      const data = parseStreamFields(fields);
-      const { orderId, newStatus, userId, timestamp, ownerId } = data;
-
-      if (!orderId || !userId) {
-        await redis.xack(ORDER_STREAM, CONSUMER_GROUP, id);
-        continue;
-      }
-
-      // 고객에게 주문 상태 변경 발행
-      await centrifugoPublish(`order#${userId}`, {
-        orderId, newStatus, userId, timestamp,
-      });
-
-      // 사장에게 주문 상태 변경 발행
-      if (ownerId) {
-        await centrifugoPublish(`owner_orders#${ownerId}`, {
-          orderId, newStatus, userId, timestamp,
-        });
-        console.log(`[ORDER] ${orderId} → ${newStatus} → owner_orders#${ownerId}`);
-      }
-
-      await redis.xack(ORDER_STREAM, CONSUMER_GROUP, id);
-      console.log(`[ORDER] ${orderId} → ${newStatus} → order#${userId}`);
+      await processOrderMessage(id, fields);
     }
+  }
+}
+
+async function processOrderMessage(id: string, fields: string[]) {
+  const data = parseStreamFields(fields);
+  const { orderId, newStatus, userId, timestamp, ownerId } = data;
+
+  if (!orderId || !userId) {
+    await redis.xack(ORDER_STREAM, CONSUMER_GROUP, id);
+    return;
+  }
+
+  const orderPayload = {
+    type: "order:status_changed" as const,
+    orderId,
+    status: newStatus,
+    timestamp,
+  };
+
+  try {
+    await centrifugoPublish(`order#${userId}`, orderPayload);
+
+    if (ownerId) {
+      await centrifugoPublish(`owner_orders#${ownerId}`, orderPayload);
+      console.log(`[ORDER] ${orderId} → ${newStatus} → owner_orders#${ownerId}`);
+    }
+
+    await redis.xack(ORDER_STREAM, CONSUMER_GROUP, id);
+    console.log(`[ORDER] ${orderId} → ${newStatus} → order#${userId}`);
+  } catch (err) {
+    // publish 실패 시 ACK하지 않음 → 다음 루프에서 재시도
+    console.error(`[ORDER] Centrifugo publish failed, will retry: ${orderId}`, err);
   }
 }
 
@@ -124,6 +152,7 @@ async function processDeliveryRequests() {
 
       for (const riderId of nearbyRiders) {
         await centrifugoPublish(`delivery_requests#${riderId}`, {
+          type: "delivery:new_request" as const,
           orderId,
           restaurantName,
           pickupLat: Number(pickupLat),

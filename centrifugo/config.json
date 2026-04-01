@@ -29,6 +29,11 @@
         "timeout": "5s"
       }
     },
+    "without_namespace": {
+      "history_size": 20,
+      "history_ttl": "120s",
+      "force_recovery": true
+    },
     "namespaces": [
       {
         "name": "chat",
@@ -38,7 +43,10 @@
       },
       {
         "name": "rider_location",
-        "subscribe_proxy_enabled": true
+        "subscribe_proxy_enabled": true,
+        "history_size": 0,
+        "history_ttl": "0s",
+        "force_recovery": false
       }
     ]
   },
