@@ -2,8 +2,9 @@ import { vi } from "vitest";
 import { prismaMock } from "./prisma-mock";
 import { redisMock } from "./redis-mock";
 
-// Centrifugo Proxy Secret 환경변수 (모듈 import 전에 설정)
+// 환경변수 (모듈 import 전에 설정)
 process.env.CENTRIFUGO_PROXY_SECRET = "test-secret";
+process.env.NEXTAUTH_SECRET = "test-nextauth-secret-at-least-32-chars-long";
 
 // Prisma 싱글톤 mock
 vi.mock("@/shared/api/prisma", () => ({

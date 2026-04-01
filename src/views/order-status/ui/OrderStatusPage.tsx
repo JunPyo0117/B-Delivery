@@ -17,6 +17,7 @@ import { getOrderDetail } from "@/entities/order/api/getOrderDetail"
 import {
   ORDER_STATUS_LABELS,
   DELIVERING_STATUSES,
+  isStatusAhead,
   type OrderDetailData,
 } from "@/entities/order"
 import { KakaoMap } from "@/shared/ui/kakao-map"
@@ -47,9 +48,15 @@ export function OrderStatusPage({ orderId }: OrderStatusPageProps) {
         if (!data) {
           setError("주문을 찾을 수 없습니다.")
         } else {
-          setOrder(data)
-          // orderStore 초기 상태 세팅
-          useOrderStore.getState().setOrderStatus(orderId, data.status)
+          // forward-only: WebSocket으로 이미 더 최신 상태를 받았으면 덮어쓰지 않음
+          const current = useOrderStore.getState().orders[orderId]
+          if (!current || isStatusAhead(data.status, current.status)) {
+            setOrder(data)
+            useOrderStore.getState().setOrderStatus(orderId, data.status)
+          } else {
+            // 주문 상세 정보(메뉴, 가격 등)는 갱신하되 상태는 유지
+            setOrder(data)
+          }
         }
       } catch {
         setError("주문 정보를 불러오는 데 실패했습니다.")
@@ -62,7 +69,18 @@ export function OrderStatusPage({ orderId }: OrderStatusPageProps) {
   }, [orderId, userId])
 
   // Centrifugo 실시간 주문 상태 구독
-  const { centrifugeRef } = useCentrifugoOrder(userId)
+  // 연결 완료 시 재조회 — forward-only로 stale 데이터가 WebSocket 이벤트를 덮어쓰지 않음
+  const { centrifugeRef } = useCentrifugoOrder(userId, () => {
+    if (!userId) return
+    getOrderDetail(orderId, userId).then((data) => {
+      if (!data) return
+      const current = useOrderStore.getState().orders[orderId]
+      if (!current || isStatusAhead(data.status, current.status)) {
+        setOrder(data)
+        useOrderStore.getState().setOrderStatus(orderId, data.status)
+      }
+    })
+  })
 
   // orderStore에서 실시간 상태 구독
   const realtimeEntry = useOrderStore((s) => s.orders[orderId])

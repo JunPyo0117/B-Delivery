@@ -35,15 +35,15 @@ export async function POST(request: Request) {
     const role = info?.role || "USER";
     const nickname = info?.nickname || "";
 
-    // 역할별 서버 사이드 채널 구독
-    const channels: string[] = [`user#${userId}`];
+    // 역할별 서버 사이드 채널 구독 (Centrifugo v6: subs 객체)
+    const subs: Record<string, object> = { [`user#${userId}`]: {} };
 
     if (role === "USER") {
-      channels.push(`order#${userId}`);
+      subs[`order#${userId}`] = { recover: true };
     } else if (role === "OWNER") {
-      channels.push(`owner_orders#${userId}`);
+      subs[`owner_orders#${userId}`] = { recover: true };
     } else if (role === "RIDER") {
-      channels.push(`delivery_requests#${userId}`);
+      subs[`delivery_requests#${userId}`] = { recover: true };
     }
     // ADMIN은 user# 채널만 (채팅 알림용)
 
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       result: {
         user: userId,
         data: { role, nickname },
-        channels,
+        subs,
       },
     });
   } catch {

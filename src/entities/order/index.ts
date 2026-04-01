@@ -16,6 +16,7 @@ export {
   CUSTOMER_CANCELLABLE,
   DELIVERING_STATUSES,
   COMPLETED_STATUSES,
+  isStatusAhead,
 } from "./model/types"
 
 // api
