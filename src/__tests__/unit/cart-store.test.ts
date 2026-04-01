@@ -72,6 +72,20 @@ describe("addItem", () => {
     expect(items[0].quantity).toBe(3);
   });
 
+  it("여러 아이템 중 일치하는 것만 수량이 증가하고 나머지는 그대로 유지된다", () => {
+    const { addItem } = useCartStore.getState();
+    addItem(makeItem({ menuId: "menu-1", options: [OPTION_A] }), 1);
+    addItem(makeItem({ menuId: "menu-2", name: "양념치킨", options: [OPTION_B] }), 2);
+
+    // menu-1만 추가 → menu-1 수량 증가, menu-2는 그대로
+    addItem(makeItem({ menuId: "menu-1", options: [OPTION_A] }), 3);
+
+    const { items } = useCartStore.getState();
+    expect(items).toHaveLength(2);
+    expect(items.find((i) => i.menuId === "menu-1")!.quantity).toBe(4);
+    expect(items.find((i) => i.menuId === "menu-2")!.quantity).toBe(2);
+  });
+
   it("같은 메뉴라도 옵션이 다르면 별도 항목으로 추가된다", () => {
     const { addItem } = useCartStore.getState();
     addItem(makeItem({ options: [OPTION_A] }), 1);
