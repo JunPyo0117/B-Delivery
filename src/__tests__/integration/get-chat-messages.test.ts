@@ -1,11 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "../helpers/prisma-mock";
-import { createMockSession, mockAuth } from "../helpers/auth-mock";
+import { createMockSession, mockAuth, mockedAuth } from "../helpers/auth-mock";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-import { auth } from "@/auth";
 import { getChatMessages } from "@/features/chat/api/getChatMessages";
 
 beforeEach(() => {
@@ -26,7 +25,7 @@ function makeMessage(id: string, createdAt: Date) {
 
 describe("getChatMessages", () => {
   it("비인증 사용자: 빈 결과를 반환한다", async () => {
-    vi.mocked(auth).mockImplementation(mockAuth(null));
+    mockedAuth.mockImplementation(mockAuth(null));
 
     const result = await getChatMessages("chat-1");
 
@@ -34,7 +33,7 @@ describe("getChatMessages", () => {
   });
 
   it("채팅방 소유자가 아니면 빈 결과를 반환한다", async () => {
-    vi.mocked(auth).mockImplementation(
+    mockedAuth.mockImplementation(
       mockAuth(createMockSession({ id: "user-1" }))
     );
     prismaMock.chat.findFirst.mockResolvedValue(null);
@@ -49,7 +48,7 @@ describe("getChatMessages", () => {
   });
 
   it("메시지를 오래된 순으로 정렬하여 반환한다", async () => {
-    vi.mocked(auth).mockImplementation(
+    mockedAuth.mockImplementation(
       mockAuth(createMockSession({ id: "user-1" }))
     );
     prismaMock.chat.findFirst.mockResolvedValue({ id: "chat-1" } as any);
@@ -76,7 +75,7 @@ describe("getChatMessages", () => {
   });
 
   it("PAGE_SIZE(50)보다 많으면 hasMore = true, nextCursor를 반환한다", async () => {
-    vi.mocked(auth).mockImplementation(
+    mockedAuth.mockImplementation(
       mockAuth(createMockSession({ id: "user-1" }))
     );
     prismaMock.chat.findFirst.mockResolvedValue({ id: "chat-1" } as any);
@@ -96,7 +95,7 @@ describe("getChatMessages", () => {
   });
 
   it("cursor가 있으면 해당 시점 이전 메시지를 조회한다", async () => {
-    vi.mocked(auth).mockImplementation(
+    mockedAuth.mockImplementation(
       mockAuth(createMockSession({ id: "user-1" }))
     );
     prismaMock.chat.findFirst.mockResolvedValue({ id: "chat-1" } as any);
@@ -116,7 +115,7 @@ describe("getChatMessages", () => {
   });
 
   it("cursor가 없으면 createdAt 조건 없이 조회한다", async () => {
-    vi.mocked(auth).mockImplementation(
+    mockedAuth.mockImplementation(
       mockAuth(createMockSession({ id: "user-1" }))
     );
     prismaMock.chat.findFirst.mockResolvedValue({ id: "chat-1" } as any);
@@ -132,7 +131,7 @@ describe("getChatMessages", () => {
   });
 
   it("메시지 응답 포맷이 올바르다", async () => {
-    vi.mocked(auth).mockImplementation(
+    mockedAuth.mockImplementation(
       mockAuth(createMockSession({ id: "user-1" }))
     );
     prismaMock.chat.findFirst.mockResolvedValue({ id: "chat-1" } as any);

@@ -5,20 +5,19 @@ import { describe, it, expect, vi } from "vitest";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 
-import { auth } from "@/auth";
-import { createMockSession } from "../helpers/auth-mock";
+import { createMockSession, mockedAuth } from "../helpers/auth-mock";
 import { prismaMock } from "../helpers/prisma-mock";
 import { GET } from "@/app/api/chat/orders/route";
 
 describe("GET /api/chat/orders", () => {
   it("미인증 시 401 반환", async () => {
-    vi.mocked(auth).mockResolvedValue(null);
+    mockedAuth.mockResolvedValue(null);
     const res = await GET();
     expect(res.status).toBe(401);
   });
 
   it("주문 목록이 없으면 빈 배열 반환", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession({ id: "user-1" }));
+    mockedAuth.mockResolvedValue(createMockSession({ id: "user-1" }));
     prismaMock.order.findMany.mockResolvedValue([]);
 
     const res = await GET();
@@ -29,7 +28,7 @@ describe("GET /api/chat/orders", () => {
   });
 
   it("주문 목록을 ChatOrderItem 형태로 변환하여 반환", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession({ id: "user-1" }));
+    mockedAuth.mockResolvedValue(createMockSession({ id: "user-1" }));
 
     prismaMock.order.findMany.mockResolvedValue([
       {
@@ -57,7 +56,7 @@ describe("GET /api/chat/orders", () => {
   });
 
   it("아이템이 1개면 '외 N개' 없이 메뉴명만 표시", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession({ id: "user-1" }));
+    mockedAuth.mockResolvedValue(createMockSession({ id: "user-1" }));
 
     prismaMock.order.findMany.mockResolvedValue([
       {
@@ -78,7 +77,7 @@ describe("GET /api/chat/orders", () => {
   });
 
   it("아이템이 없으면 '알 수 없는 메뉴' 표시", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession({ id: "user-1" }));
+    mockedAuth.mockResolvedValue(createMockSession({ id: "user-1" }));
 
     prismaMock.order.findMany.mockResolvedValue([
       {

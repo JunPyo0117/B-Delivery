@@ -1,11 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "../helpers/prisma-mock";
-import { createMockSession, mockAuth } from "../helpers/auth-mock";
+import { createMockSession, mockAuth, mockedAuth } from "../helpers/auth-mock";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-import { auth } from "@/auth";
 import { getChatList } from "@/features/chat/api/getChatList";
 
 beforeEach(() => {
@@ -14,7 +13,7 @@ beforeEach(() => {
 
 describe("getChatList", () => {
   it("비인증 사용자: 빈 배열을 반환한다", async () => {
-    vi.mocked(auth).mockImplementation(mockAuth(null));
+    mockedAuth.mockImplementation(mockAuth(null));
 
     const result = await getChatList();
 
@@ -23,7 +22,7 @@ describe("getChatList", () => {
   });
 
   it("채팅 목록을 올바르게 매핑한다 (텍스트 메시지)", async () => {
-    vi.mocked(auth).mockImplementation(
+    mockedAuth.mockImplementation(
       mockAuth(createMockSession({ id: "user-1" }))
     );
 
@@ -63,7 +62,7 @@ describe("getChatList", () => {
   });
 
   it("이미지 메시지인 경우 '사진을 보냈습니다'로 표시한다", async () => {
-    vi.mocked(auth).mockImplementation(
+    mockedAuth.mockImplementation(
       mockAuth(createMockSession({ id: "user-1" }))
     );
 
@@ -93,7 +92,7 @@ describe("getChatList", () => {
   });
 
   it("메시지가 없는 채팅은 lastMessage가 null이다", async () => {
-    vi.mocked(auth).mockImplementation(
+    mockedAuth.mockImplementation(
       mockAuth(createMockSession({ id: "user-1" }))
     );
 
@@ -119,7 +118,7 @@ describe("getChatList", () => {
   });
 
   it("여러 채팅을 올바르게 반환한다", async () => {
-    vi.mocked(auth).mockImplementation(
+    mockedAuth.mockImplementation(
       mockAuth(createMockSession({ id: "user-1" }))
     );
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { prismaMock } from "../helpers/prisma-mock";
-import { createMockSession, mockAuth } from "../helpers/auth-mock";
+import { createMockSession, mockAuth, mockedAuth } from "../helpers/auth-mock";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 
@@ -33,8 +33,7 @@ describe("createAddress", () => {
 
   it("주소 추가 성공: 기본 주소가 아닌 경우", async () => {
     const createAddress = await importCreateAddress();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     prismaMock.$transaction.mockImplementation(
       async (fn: (tx: typeof prismaMock) => Promise<unknown>) =>
@@ -60,8 +59,7 @@ describe("createAddress", () => {
 
   it("기본 주소 설정: isDefault true일 때 기존 기본 주소를 해제하고 User도 업데이트한다", async () => {
     const createAddress = await importCreateAddress();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     prismaMock.$transaction.mockImplementation(
       async (fn: (tx: typeof prismaMock) => Promise<unknown>) =>
@@ -93,8 +91,7 @@ describe("createAddress", () => {
 
   it("비인증 사용자: 로그인 없이 호출하면 실패한다", async () => {
     const createAddress = await importCreateAddress();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(null));
+    mockedAuth.mockImplementation(mockAuth(null));
 
     const result = await createAddress(validInput);
 
@@ -103,8 +100,7 @@ describe("createAddress", () => {
 
   it("트랜잭션 실패: DB 에러 시 실패 메시지를 반환한다", async () => {
     const createAddress = await importCreateAddress();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     prismaMock.$transaction.mockRejectedValue(new Error("DB error"));
 
@@ -118,8 +114,7 @@ describe("createAddress", () => {
 
   it("detail 미제공: detail이 없으면 addressDetail이 null로 저장된다", async () => {
     const createAddress = await importCreateAddress();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     prismaMock.$transaction.mockImplementation(
       async (fn: (tx: typeof prismaMock) => Promise<unknown>) =>

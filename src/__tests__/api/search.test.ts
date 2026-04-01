@@ -5,8 +5,7 @@ import { describe, it, expect, vi } from "vitest";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 
-import { auth } from "@/auth";
-import { createMockSession } from "../helpers/auth-mock";
+import { createMockSession, mockedAuth } from "../helpers/auth-mock";
 import { prismaMock } from "../helpers/prisma-mock";
 import { GET } from "@/app/api/search/route";
 import { NextRequest } from "next/server";
@@ -20,21 +19,21 @@ function makeRequest(q?: string) {
 describe("GET /api/search", () => {
   // ── 인증 ──
   it("미인증 시 401 반환", async () => {
-    vi.mocked(auth).mockResolvedValue(null);
+    mockedAuth.mockResolvedValue(null);
     const res = await GET(makeRequest("치킨"));
     expect(res.status).toBe(401);
   });
 
   // ── 빈 검색어 ──
   it("검색어 미제공 시 빈 결과 반환", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession());
+    mockedAuth.mockResolvedValue(createMockSession());
     const res = await GET(makeRequest());
     const json = await res.json();
     expect(json.results).toEqual([]);
   });
 
   it("공백 검색어 시 빈 결과 반환", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession());
+    mockedAuth.mockResolvedValue(createMockSession());
     const res = await GET(makeRequest("   "));
     const json = await res.json();
     expect(json.results).toEqual([]);
@@ -42,7 +41,7 @@ describe("GET /api/search", () => {
 
   // ── 음식점 이름 매칭 ──
   it("음식점 이름 매칭 결과 반환", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession());
+    mockedAuth.mockResolvedValue(createMockSession());
     prismaMock.menu.findMany.mockResolvedValue([]);
     prismaMock.restaurant.findMany.mockResolvedValue([
       {
@@ -65,7 +64,7 @@ describe("GET /api/search", () => {
 
   // ── 메뉴 이름 매칭 ──
   it("메뉴 이름 매칭 결과 반환", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession());
+    mockedAuth.mockResolvedValue(createMockSession());
     prismaMock.restaurant.findMany.mockResolvedValue([]);
     prismaMock.menu.findMany.mockResolvedValue([
       {
@@ -91,7 +90,7 @@ describe("GET /api/search", () => {
 
   // ── 중복 제거 ──
   it("동일 음식점이 중복되지 않음", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession());
+    mockedAuth.mockResolvedValue(createMockSession());
     prismaMock.restaurant.findMany.mockResolvedValue([
       {
         id: "r-1",
@@ -117,7 +116,7 @@ describe("GET /api/search", () => {
 
   // ── 리뷰 없는 음식점 ──
   it("리뷰 없으면 avgRating=0, reviewCount=0", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession());
+    mockedAuth.mockResolvedValue(createMockSession());
     prismaMock.menu.findMany.mockResolvedValue([]);
     prismaMock.restaurant.findMany.mockResolvedValue([
       { id: "r-3", name: "새식당", imageUrl: null, reviews: [] },

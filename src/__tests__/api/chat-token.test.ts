@@ -8,21 +8,20 @@ import { jwtVerify } from "jose";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 
-import { auth } from "@/auth";
-import { createMockSession } from "../helpers/auth-mock";
+import { createMockSession, mockedAuth } from "../helpers/auth-mock";
 import { POST } from "@/app/api/chat/token/route";
 
 const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
 
 describe("POST /api/chat/token", () => {
   it("미인증 시 401 반환", async () => {
-    vi.mocked(auth).mockResolvedValue(null);
+    mockedAuth.mockResolvedValue(null);
     const res = await POST();
     expect(res.status).toBe(401);
   });
 
   it("USER 역할 → JWT에 order# 채널 포함", async () => {
-    vi.mocked(auth).mockResolvedValue(
+    mockedAuth.mockResolvedValue(
       createMockSession({ id: "user-1", role: "USER", nickname: "고객" })
     );
 
@@ -40,7 +39,7 @@ describe("POST /api/chat/token", () => {
   });
 
   it("OWNER 역할 → JWT에 owner_orders# 채널 포함", async () => {
-    vi.mocked(auth).mockResolvedValue(
+    mockedAuth.mockResolvedValue(
       createMockSession({ id: "owner-1", role: "OWNER", nickname: "사장" })
     );
 
@@ -53,7 +52,7 @@ describe("POST /api/chat/token", () => {
   });
 
   it("RIDER 역할 → JWT에 delivery_requests# 채널 포함", async () => {
-    vi.mocked(auth).mockResolvedValue(
+    mockedAuth.mockResolvedValue(
       createMockSession({ id: "rider-1", role: "RIDER", nickname: "기사" })
     );
 
@@ -65,7 +64,7 @@ describe("POST /api/chat/token", () => {
   });
 
   it("ADMIN 역할 → user# 채널만 포함", async () => {
-    vi.mocked(auth).mockResolvedValue(
+    mockedAuth.mockResolvedValue(
       createMockSession({ id: "admin-1", role: "ADMIN", nickname: "관리자" })
     );
 

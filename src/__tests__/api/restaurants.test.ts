@@ -5,8 +5,7 @@ import { describe, it, expect, vi } from "vitest";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 
-import { auth } from "@/auth";
-import { createMockSession } from "../helpers/auth-mock";
+import { createMockSession, mockedAuth } from "../helpers/auth-mock";
 import { prismaMock } from "../helpers/prisma-mock";
 import { redisMock } from "../helpers/redis-mock";
 import { GET } from "@/app/api/restaurants/route";
@@ -38,14 +37,14 @@ function makeSessionWithLocation(lat: number | null = 37.5665, lng: number | nul
 describe("GET /api/restaurants", () => {
   // ── 인증 ──
   it("미인증 시 401 반환", async () => {
-    vi.mocked(auth).mockResolvedValue(null);
+    mockedAuth.mockResolvedValue(null);
     const res = await GET(makeRequest());
     expect(res.status).toBe(401);
   });
 
   // ── 위치 미설정 ──
   it("위치 미설정 시 400 반환", async () => {
-    vi.mocked(auth).mockResolvedValue(makeSessionWithLocation(null, null) as never);
+    mockedAuth.mockResolvedValue(makeSessionWithLocation(null, null) as never);
     const res = await GET(makeRequest());
     expect(res.status).toBe(400);
     const json = await res.json();
@@ -54,14 +53,14 @@ describe("GET /api/restaurants", () => {
 
   // ── 유효하지 않은 카테고리 ──
   it("유효하지 않은 카테고리 → 400", async () => {
-    vi.mocked(auth).mockResolvedValue(makeSessionWithLocation() as never);
+    mockedAuth.mockResolvedValue(makeSessionWithLocation() as never);
     const res = await GET(makeRequest({ category: "INVALID_CAT" }));
     expect(res.status).toBe(400);
   });
 
   // ── Redis 캐시 히트 ──
   it("Redis 캐시가 있으면 캐시된 데이터 반환", async () => {
-    vi.mocked(auth).mockResolvedValue(makeSessionWithLocation() as never);
+    mockedAuth.mockResolvedValue(makeSessionWithLocation() as never);
     const cachedData = JSON.stringify({
       restaurants: [{ id: "r-1", name: "캐시식당" }],
       nextCursor: null,
@@ -77,7 +76,7 @@ describe("GET /api/restaurants", () => {
 
   // ── DB 조회 ──
   it("캐시 미스 시 DB에서 조회 후 캐시 저장", async () => {
-    vi.mocked(auth).mockResolvedValue(makeSessionWithLocation() as never);
+    mockedAuth.mockResolvedValue(makeSessionWithLocation() as never);
     redisMock.get.mockResolvedValue(null);
 
     const dbResult = [
@@ -96,7 +95,7 @@ describe("GET /api/restaurants", () => {
 
   // ── 페이지네이션 ──
   it("결과가 limit+1개이면 hasMore → nextCursor 반환", async () => {
-    vi.mocked(auth).mockResolvedValue(makeSessionWithLocation() as never);
+    mockedAuth.mockResolvedValue(makeSessionWithLocation() as never);
     redisMock.get.mockResolvedValue(null);
 
     // limit 기본값 20 → 21개 반환
@@ -115,7 +114,7 @@ describe("GET /api/restaurants", () => {
 
   // ── 카테고리 필터 ──
   it("ALL 카테고리는 필터 미적용", async () => {
-    vi.mocked(auth).mockResolvedValue(makeSessionWithLocation() as never);
+    mockedAuth.mockResolvedValue(makeSessionWithLocation() as never);
     redisMock.get.mockResolvedValue(null);
     prismaMock.$queryRawUnsafe.mockResolvedValue([] as never);
 
@@ -127,7 +126,7 @@ describe("GET /api/restaurants", () => {
   });
 
   it("특정 카테고리 필터 적용 시 파라미터 추가", async () => {
-    vi.mocked(auth).mockResolvedValue(makeSessionWithLocation() as never);
+    mockedAuth.mockResolvedValue(makeSessionWithLocation() as never);
     redisMock.get.mockResolvedValue(null);
     prismaMock.$queryRawUnsafe.mockResolvedValue([] as never);
 
@@ -140,7 +139,7 @@ describe("GET /api/restaurants", () => {
 
   // ── Redis 실패 시 폴백 ──
   it("Redis get 실패 시 DB로 폴백", async () => {
-    vi.mocked(auth).mockResolvedValue(makeSessionWithLocation() as never);
+    mockedAuth.mockResolvedValue(makeSessionWithLocation() as never);
     redisMock.get.mockRejectedValue(new Error("Redis down"));
     prismaMock.$queryRawUnsafe.mockResolvedValue([] as never);
     redisMock.set.mockRejectedValue(new Error("Redis down"));

@@ -1,11 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "../helpers/prisma-mock";
-import { createMockSession, mockAuth } from "../helpers/auth-mock";
+import { createMockSession, mockAuth, mockedAuth } from "../helpers/auth-mock";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-import { auth } from "@/auth";
 import { getFavorites } from "@/features/favorite/api/getFavorites";
 
 beforeEach(() => {
@@ -14,7 +13,7 @@ beforeEach(() => {
 
 describe("getFavorites", () => {
   it("비인증 사용자: 에러를 던진다", async () => {
-    vi.mocked(auth).mockImplementation(mockAuth(null));
+    mockedAuth.mockImplementation(mockAuth(null));
 
     await expect(
       getFavorites({ lat: 37.5665, lng: 126.978 })
@@ -22,7 +21,7 @@ describe("getFavorites", () => {
   });
 
   it("찜 목록을 올바르게 매핑하여 반환한다", async () => {
-    vi.mocked(auth).mockImplementation(
+    mockedAuth.mockImplementation(
       mockAuth(createMockSession({ id: "user-1" }))
     );
 
@@ -59,7 +58,7 @@ describe("getFavorites", () => {
   });
 
   it("빈 찜 목록이면 빈 배열을 반환한다", async () => {
-    vi.mocked(auth).mockImplementation(
+    mockedAuth.mockImplementation(
       mockAuth(createMockSession({ id: "user-1" }))
     );
 
@@ -71,7 +70,7 @@ describe("getFavorites", () => {
   });
 
   it("리뷰가 없는 음식점은 rating 0, reviewCount 0으로 반환한다", async () => {
-    vi.mocked(auth).mockImplementation(
+    mockedAuth.mockImplementation(
       mockAuth(createMockSession({ id: "user-1" }))
     );
 
@@ -97,7 +96,7 @@ describe("getFavorites", () => {
   });
 
   it("여러 음식점을 반환한다", async () => {
-    vi.mocked(auth).mockImplementation(
+    mockedAuth.mockImplementation(
       mockAuth(createMockSession({ id: "user-1" }))
     );
 

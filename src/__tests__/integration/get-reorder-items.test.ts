@@ -1,10 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { prismaMock } from "../helpers/prisma-mock"
-import { createMockSession, mockAuth } from "../helpers/auth-mock"
+import { createMockSession, mockAuth, mockedAuth } from "../helpers/auth-mock"
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }))
 
-import { auth } from "@/auth"
 import { getReorderItems } from "@/entities/order/api/getReorderItems"
 
 const MOCK_ORDER = {
@@ -42,7 +41,7 @@ const MOCK_ORDER = {
 
 describe("getReorderItems", () => {
   beforeEach(() => {
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()))
+    mockedAuth.mockImplementation(mockAuth(createMockSession()))
   })
 
   it("재주문 아이템 조회 성공", async () => {
@@ -98,7 +97,7 @@ describe("getReorderItems", () => {
   })
 
   it("미로그인 — 에러", async () => {
-    vi.mocked(auth).mockImplementation(mockAuth(null))
+    mockedAuth.mockImplementation(mockAuth(null))
 
     await expect(getReorderItems("order-1")).rejects.toThrow("로그인이 필요합니다")
   })

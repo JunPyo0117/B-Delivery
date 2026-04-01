@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { prismaMock } from "../helpers/prisma-mock";
-import { createMockSession, mockAuth } from "../helpers/auth-mock";
+import { createMockSession, mockAuth, mockedAuth } from "../helpers/auth-mock";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 
@@ -25,8 +25,7 @@ describe("updateProfile", () => {
 
   it("닉네임 수정 성공: 닉네임을 변경하고 프로필을 반환한다", async () => {
     const updateProfile = await importUpdateProfile();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     prismaMock.user.update.mockResolvedValue(mockUser as any);
 
@@ -52,8 +51,7 @@ describe("updateProfile", () => {
 
   it("이미지 수정 성공: 프로필 이미지를 변경한다", async () => {
     const updateProfile = await importUpdateProfile();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     prismaMock.user.update.mockResolvedValue({
       ...mockUser,
@@ -68,8 +66,7 @@ describe("updateProfile", () => {
 
   it("이미지 삭제: image를 null로 설정할 수 있다", async () => {
     const updateProfile = await importUpdateProfile();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     prismaMock.user.update.mockResolvedValue(mockUser as any);
 
@@ -84,8 +81,7 @@ describe("updateProfile", () => {
 
   it("비인증 사용자: 로그인 없이 호출하면 실패한다", async () => {
     const updateProfile = await importUpdateProfile();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(null));
+    mockedAuth.mockImplementation(mockAuth(null));
 
     const result = await updateProfile({ nickname: "테스트" });
 
@@ -95,8 +91,7 @@ describe("updateProfile", () => {
 
   it("DB 에러: 업데이트 실패 시 에러 메시지를 반환한다", async () => {
     const updateProfile = await importUpdateProfile();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     prismaMock.user.update.mockRejectedValue(new Error("DB error"));
 
@@ -110,8 +105,7 @@ describe("updateProfile", () => {
 
   it("부분 업데이트: nickname만 전달하면 image는 포함하지 않는다", async () => {
     const updateProfile = await importUpdateProfile();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     prismaMock.user.update.mockResolvedValue(mockUser as any);
 

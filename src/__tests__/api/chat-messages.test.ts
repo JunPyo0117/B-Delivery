@@ -5,8 +5,7 @@ import { describe, it, expect, vi } from "vitest";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 
-import { auth } from "@/auth";
-import { createMockSession } from "../helpers/auth-mock";
+import { createMockSession, mockedAuth } from "../helpers/auth-mock";
 import { prismaMock } from "../helpers/prisma-mock";
 import { GET } from "@/app/api/chat/[chatId]/messages/route";
 import { NextRequest } from "next/server";
@@ -26,14 +25,14 @@ function makeParams(chatId: string) {
 describe("GET /api/chat/[chatId]/messages", () => {
   // ── 인증 ──
   it("미인증 시 401 반환", async () => {
-    vi.mocked(auth).mockResolvedValue(null);
+    mockedAuth.mockResolvedValue(null);
     const res = await GET(makeRequest("chat-1"), makeParams("chat-1"));
     expect(res.status).toBe(401);
   });
 
   // ── 채팅방 접근 ──
   it("채팅방을 찾을 수 없으면 404 반환", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession());
+    mockedAuth.mockResolvedValue(createMockSession());
     prismaMock.chat.findFirst.mockResolvedValue(null);
 
     const res = await GET(makeRequest("chat-999"), makeParams("chat-999"));
@@ -42,7 +41,7 @@ describe("GET /api/chat/[chatId]/messages", () => {
 
   // ── ADMIN 접근 ──
   it("ADMIN은 모든 채팅방에 접근 가능", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession({ role: "ADMIN", id: "admin-1" }));
+    mockedAuth.mockResolvedValue(createMockSession({ role: "ADMIN", id: "admin-1" }));
     prismaMock.chat.findFirst.mockResolvedValue({ id: "chat-1" } as never);
     prismaMock.message.findMany.mockResolvedValue([]);
 
@@ -59,7 +58,7 @@ describe("GET /api/chat/[chatId]/messages", () => {
 
   // ── 일반 유저 접근 ──
   it("일반 유저는 참여한 채팅방만 접근 가능", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession({ id: "user-1" }));
+    mockedAuth.mockResolvedValue(createMockSession({ id: "user-1" }));
     prismaMock.chat.findFirst.mockResolvedValue({ id: "chat-1" } as never);
     prismaMock.message.findMany.mockResolvedValue([]);
 
@@ -80,7 +79,7 @@ describe("GET /api/chat/[chatId]/messages", () => {
 
   // ── 메시지 페이지네이션 ──
   it("메시지 목록을 반환하고 커서 기반 페이지네이션 지원", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession());
+    mockedAuth.mockResolvedValue(createMockSession());
     prismaMock.chat.findFirst.mockResolvedValue({ id: "chat-1" } as never);
 
     const now = new Date("2026-03-31T10:00:00Z");
@@ -107,7 +106,7 @@ describe("GET /api/chat/[chatId]/messages", () => {
   });
 
   it("hasMore가 true이면 nextCursor 반환", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession());
+    mockedAuth.mockResolvedValue(createMockSession());
     prismaMock.chat.findFirst.mockResolvedValue({ id: "chat-1" } as never);
 
     // limit 기본값 50 → 51개 반환하면 hasMore=true
@@ -131,7 +130,7 @@ describe("GET /api/chat/[chatId]/messages", () => {
   });
 
   it("limit 파라미터를 100까지 제한", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession());
+    mockedAuth.mockResolvedValue(createMockSession());
     prismaMock.chat.findFirst.mockResolvedValue({ id: "chat-1" } as never);
     prismaMock.message.findMany.mockResolvedValue([]);
 
@@ -144,7 +143,7 @@ describe("GET /api/chat/[chatId]/messages", () => {
   });
 
   it("cursor 파라미터로 이전 메시지 조회", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession());
+    mockedAuth.mockResolvedValue(createMockSession());
     prismaMock.chat.findFirst.mockResolvedValue({ id: "chat-1" } as never);
     prismaMock.message.findMany.mockResolvedValue([]);
 

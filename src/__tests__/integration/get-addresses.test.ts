@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { prismaMock } from "../helpers/prisma-mock";
-import { createMockSession, mockAuth } from "../helpers/auth-mock";
+import { createMockSession, mockAuth, mockedAuth } from "../helpers/auth-mock";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 
@@ -14,8 +14,7 @@ describe("getAddresses", () => {
 
   it("주소 목록 조회 성공: 주소를 매핑하여 반환한다", async () => {
     const getAddresses = await importGetAddresses();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     const dbAddresses = [
       {
@@ -57,8 +56,7 @@ describe("getAddresses", () => {
 
   it("정렬 확인: isDefault desc, createdAt desc 순서로 조회한다", async () => {
     const getAddresses = await importGetAddresses();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     prismaMock.userAddress.findMany.mockResolvedValue([]);
 
@@ -73,8 +71,7 @@ describe("getAddresses", () => {
 
   it("비인증 사용자: 로그인 없이 호출하면 빈 배열을 반환한다", async () => {
     const getAddresses = await importGetAddresses();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(null));
+    mockedAuth.mockImplementation(mockAuth(null));
 
     const result = await getAddresses();
 
@@ -84,8 +81,7 @@ describe("getAddresses", () => {
 
   it("주소 없음: 주소가 없으면 빈 배열을 반환한다", async () => {
     const getAddresses = await importGetAddresses();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     prismaMock.userAddress.findMany.mockResolvedValue([]);
 

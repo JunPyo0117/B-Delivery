@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { prismaMock } from "../helpers/prisma-mock";
-import { createMockSession, mockAuth } from "../helpers/auth-mock";
+import { createMockSession, mockAuth, mockedAuth } from "../helpers/auth-mock";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 
@@ -27,8 +27,7 @@ describe("deleteAddress", () => {
 
   it("삭제 성공: 기본 주소가 아닌 주소를 삭제한다", async () => {
     const deleteAddress = await importDeleteAddress();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     prismaMock.userAddress.findFirst.mockResolvedValue(existingAddress as any);
     prismaMock.$transaction.mockImplementation(
@@ -49,8 +48,7 @@ describe("deleteAddress", () => {
 
   it("기본 주소 삭제: 다음 주소를 기본 주소로 승격한다", async () => {
     const deleteAddress = await importDeleteAddress();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     const defaultAddress = { ...existingAddress, isDefault: true };
     const nextAddress = {
@@ -91,8 +89,7 @@ describe("deleteAddress", () => {
 
   it("기본 주소 삭제 (남은 주소 없음): User의 기본 주소를 null로 초기화한다", async () => {
     const deleteAddress = await importDeleteAddress();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     const defaultAddress = { ...existingAddress, isDefault: true };
 
@@ -122,8 +119,7 @@ describe("deleteAddress", () => {
 
   it("주소 없음: 존재하지 않는 주소는 실패한다", async () => {
     const deleteAddress = await importDeleteAddress();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     prismaMock.userAddress.findFirst.mockResolvedValue(null);
 
@@ -137,8 +133,7 @@ describe("deleteAddress", () => {
 
   it("비인증 사용자: 로그인 없이 호출하면 실패한다", async () => {
     const deleteAddress = await importDeleteAddress();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(null));
+    mockedAuth.mockImplementation(mockAuth(null));
 
     const result = await deleteAddress("addr-1");
 
@@ -147,8 +142,7 @@ describe("deleteAddress", () => {
 
   it("트랜잭션 실패: DB 에러 시 실패 메시지를 반환한다", async () => {
     const deleteAddress = await importDeleteAddress();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     prismaMock.userAddress.findFirst.mockResolvedValue(existingAddress as any);
     prismaMock.$transaction.mockRejectedValue(new Error("DB error"));

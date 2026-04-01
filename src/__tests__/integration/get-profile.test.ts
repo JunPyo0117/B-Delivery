@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { prismaMock } from "../helpers/prisma-mock";
-import { createMockSession, mockAuth } from "../helpers/auth-mock";
+import { createMockSession, mockAuth, mockedAuth } from "../helpers/auth-mock";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 
@@ -12,8 +12,7 @@ describe("getProfile", () => {
 
   it("프로필 조회 성공: 사용자 프로필을 반환한다", async () => {
     const getProfile = await importGetProfile();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     const mockUser = {
       id: "user-1",
@@ -48,8 +47,7 @@ describe("getProfile", () => {
 
   it("비인증 사용자: 로그인 없이 호출하면 null을 반환한다", async () => {
     const getProfile = await importGetProfile();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(null));
+    mockedAuth.mockImplementation(mockAuth(null));
 
     const result = await getProfile();
 
@@ -59,8 +57,7 @@ describe("getProfile", () => {
 
   it("사용자 없음: DB에 사용자가 없으면 null을 반환한다", async () => {
     const getProfile = await importGetProfile();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     prismaMock.user.findUnique.mockResolvedValue(null);
 

@@ -27,10 +27,10 @@ describe("getReviews", () => {
     const getReviews = await importGetReviews();
 
     prismaMock.review.findMany.mockResolvedValue([mockReview] as any);
-    prismaMock.review.groupBy.mockResolvedValue([
+    (prismaMock.review.groupBy as any).mockResolvedValue([
       { rating: 5, _count: { id: 3 } },
       { rating: 4, _count: { id: 2 } },
-    ] as any);
+    ]);
 
     const result = await getReviews({ restaurantId: RESTAURANT.id });
 
@@ -58,7 +58,7 @@ describe("getReviews", () => {
     const getReviews = await importGetReviews();
 
     prismaMock.review.findMany.mockResolvedValue([]);
-    prismaMock.review.groupBy.mockResolvedValue([] as any);
+    (prismaMock.review.groupBy as any).mockResolvedValue([]);
 
     const result = await getReviews({ restaurantId: RESTAURANT.id });
 
@@ -79,7 +79,7 @@ describe("getReviews", () => {
     }));
 
     prismaMock.review.findMany.mockResolvedValue(reviews as any);
-    prismaMock.review.groupBy.mockResolvedValue([] as any);
+    (prismaMock.review.groupBy as any).mockResolvedValue([]);
 
     const result = await getReviews({ restaurantId: RESTAURANT.id });
 
@@ -91,7 +91,7 @@ describe("getReviews", () => {
     const getReviews = await importGetReviews();
 
     prismaMock.review.findMany.mockResolvedValue([]);
-    prismaMock.review.groupBy.mockResolvedValue([] as any);
+    (prismaMock.review.groupBy as any).mockResolvedValue([]);
 
     await getReviews({ restaurantId: RESTAURANT.id, photoOnly: true });
 
@@ -109,7 +109,7 @@ describe("getReviews", () => {
     const getReviews = await importGetReviews();
 
     prismaMock.review.findMany.mockResolvedValue([]);
-    prismaMock.review.groupBy.mockResolvedValue([] as any);
+    (prismaMock.review.groupBy as any).mockResolvedValue([]);
 
     const cursorDate = "2026-03-25T00:00:00.000Z";
     await getReviews({ restaurantId: RESTAURANT.id, cursor: cursorDate });

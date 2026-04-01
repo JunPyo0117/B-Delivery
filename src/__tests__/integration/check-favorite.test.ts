@@ -1,11 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "../helpers/prisma-mock";
-import { createMockSession, mockAuth } from "../helpers/auth-mock";
+import { createMockSession, mockAuth, mockedAuth } from "../helpers/auth-mock";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-import { auth } from "@/auth";
 import { checkFavorite } from "@/features/favorite/api/checkFavorite";
 
 beforeEach(() => {
@@ -14,7 +13,7 @@ beforeEach(() => {
 
 describe("checkFavorite", () => {
   it("비인증 사용자: false를 반환한다", async () => {
-    vi.mocked(auth).mockImplementation(mockAuth(null));
+    mockedAuth.mockImplementation(mockAuth(null));
 
     const result = await checkFavorite({ restaurantId: "rest-1" });
 
@@ -23,7 +22,7 @@ describe("checkFavorite", () => {
   });
 
   it("찜 레코드가 존재하면 true를 반환한다", async () => {
-    vi.mocked(auth).mockImplementation(
+    mockedAuth.mockImplementation(
       mockAuth(createMockSession({ id: "user-1" }))
     );
     prismaMock.favoriteRestaurant.findUnique.mockResolvedValue({
@@ -46,7 +45,7 @@ describe("checkFavorite", () => {
   });
 
   it("찜 레코드가 없으면 false를 반환한다", async () => {
-    vi.mocked(auth).mockImplementation(
+    mockedAuth.mockImplementation(
       mockAuth(createMockSession({ id: "user-1" }))
     );
     prismaMock.favoriteRestaurant.findUnique.mockResolvedValue(null);
@@ -57,7 +56,7 @@ describe("checkFavorite", () => {
   });
 
   it("session.user.id가 없으면 false를 반환한다", async () => {
-    vi.mocked(auth).mockResolvedValue({
+    mockedAuth.mockResolvedValue({
       user: {},
       expires: new Date().toISOString(),
     } as any);

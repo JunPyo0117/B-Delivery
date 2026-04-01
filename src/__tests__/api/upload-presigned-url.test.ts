@@ -13,8 +13,7 @@ vi.mock("@/shared/api/minio", () => ({
   toPublicPresignedUrl: vi.fn((url: string) => url.replace("minio:9000", "localhost:9000")),
 }));
 
-import { auth } from "@/auth";
-import { createMockSession } from "../helpers/auth-mock";
+import { createMockSession, mockedAuth } from "../helpers/auth-mock";
 import { POST } from "@/app/api/upload/presigned-url/route";
 import { NextRequest } from "next/server";
 
@@ -29,14 +28,14 @@ function makeRequest(body: Record<string, unknown>) {
 describe("POST /api/upload/presigned-url", () => {
   // ── 인증 ──
   it("미인증 시 401 반환", async () => {
-    vi.mocked(auth).mockResolvedValue(null);
+    mockedAuth.mockResolvedValue(null);
     const res = await POST(makeRequest({ category: "profile", contentType: "image/webp", fileSize: 1000 }));
     expect(res.status).toBe(401);
   });
 
   // ── 카테고리 검증 ──
   it("허용되지 않는 카테고리 → 400", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession());
+    mockedAuth.mockResolvedValue(createMockSession());
     const res = await POST(makeRequest({ category: "invalid", contentType: "image/webp", fileSize: 1000 }));
     expect(res.status).toBe(400);
     const json = await res.json();
@@ -45,7 +44,7 @@ describe("POST /api/upload/presigned-url", () => {
 
   // ── Content-Type 검증 ──
   it("허용되지 않는 contentType → 400", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession());
+    mockedAuth.mockResolvedValue(createMockSession());
     const res = await POST(makeRequest({ category: "profile", contentType: "application/pdf", fileSize: 1000 }));
     expect(res.status).toBe(400);
     const json = await res.json();
@@ -54,7 +53,7 @@ describe("POST /api/upload/presigned-url", () => {
 
   // ── 파일 크기 검증 ──
   it("5MB 초과 → 400", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession());
+    mockedAuth.mockResolvedValue(createMockSession());
     const res = await POST(
       makeRequest({ category: "profile", contentType: "image/webp", fileSize: 6 * 1024 * 1024 })
     );
@@ -64,7 +63,7 @@ describe("POST /api/upload/presigned-url", () => {
   });
 
   it("fileSize가 숫자가 아니면 400", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession());
+    mockedAuth.mockResolvedValue(createMockSession());
     const res = await POST(
       makeRequest({ category: "profile", contentType: "image/webp", fileSize: "big" })
     );
@@ -73,7 +72,7 @@ describe("POST /api/upload/presigned-url", () => {
 
   // ── 성공 ──
   it("유효한 요청 시 presigned URL 반환", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession());
+    mockedAuth.mockResolvedValue(createMockSession());
 
     const res = await POST(
       makeRequest({ category: "review", contentType: "image/jpeg", fileSize: 2000 })
@@ -87,7 +86,7 @@ describe("POST /api/upload/presigned-url", () => {
   });
 
   it("webp 확장자 올바르게 처리", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession());
+    mockedAuth.mockResolvedValue(createMockSession());
 
     const res = await POST(
       makeRequest({ category: "menu", contentType: "image/webp", fileSize: 1000 })
@@ -98,7 +97,7 @@ describe("POST /api/upload/presigned-url", () => {
   });
 
   it("jpeg 확장자 올바르게 처리", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession());
+    mockedAuth.mockResolvedValue(createMockSession());
 
     const res = await POST(
       makeRequest({ category: "menu", contentType: "image/jpeg", fileSize: 1000 })
@@ -111,7 +110,7 @@ describe("POST /api/upload/presigned-url", () => {
   // ── 허용된 카테고리들 ──
   for (const category of ["profile", "restaurant", "menu", "review", "chat"]) {
     it(`카테고리 '${category}' 허용`, async () => {
-      vi.mocked(auth).mockResolvedValue(createMockSession());
+      mockedAuth.mockResolvedValue(createMockSession());
       const res = await POST(
         makeRequest({ category, contentType: "image/png", fileSize: 1000 })
       );

@@ -5,21 +5,20 @@ import { describe, it, expect, vi } from "vitest";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 
-import { auth } from "@/auth";
-import { createMockSession } from "../helpers/auth-mock";
+import { createMockSession, mockedAuth } from "../helpers/auth-mock";
 import { GET } from "@/app/api/user/address/route";
 
 describe("GET /api/user/address", () => {
   it("미인증 시 401 반환", async () => {
-    vi.mocked(auth).mockResolvedValue(null);
+    mockedAuth.mockResolvedValue(null);
     const res = await GET();
     expect(res.status).toBe(401);
   });
 
   it("주소가 설정되어 있으면 주소 반환", async () => {
     const session = createMockSession();
-    (session.user as Record<string, unknown>).defaultAddress = "서울시 강남구 역삼동";
-    vi.mocked(auth).mockResolvedValue(session as never);
+    (session.user as unknown as Record<string, unknown>).defaultAddress = "서울시 강남구 역삼동";
+    mockedAuth.mockResolvedValue(session as never);
 
     const res = await GET();
     const json = await res.json();
@@ -30,8 +29,8 @@ describe("GET /api/user/address", () => {
 
   it("주소가 미설정이면 null 반환", async () => {
     const session = createMockSession();
-    (session.user as Record<string, unknown>).defaultAddress = null;
-    vi.mocked(auth).mockResolvedValue(session as never);
+    (session.user as unknown as Record<string, unknown>).defaultAddress = null;
+    mockedAuth.mockResolvedValue(session as never);
 
     const res = await GET();
     const json = await res.json();
@@ -41,7 +40,7 @@ describe("GET /api/user/address", () => {
   });
 
   it("defaultAddress가 undefined이면 null 반환", async () => {
-    vi.mocked(auth).mockResolvedValue(createMockSession());
+    mockedAuth.mockResolvedValue(createMockSession());
 
     const res = await GET();
     const json = await res.json();

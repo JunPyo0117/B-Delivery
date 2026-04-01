@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { prismaMock } from "../helpers/prisma-mock";
-import { createMockSession, mockAuth } from "../helpers/auth-mock";
+import { createMockSession, mockAuth, mockedAuth } from "../helpers/auth-mock";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 
@@ -25,8 +25,7 @@ describe("updateAddress", () => {
 
   it("수정 성공: 주소 라벨을 수정한다", async () => {
     const updateAddress = await importUpdateAddress();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     prismaMock.userAddress.findFirst.mockResolvedValue(existingAddress as any);
     prismaMock.$transaction.mockImplementation(
@@ -46,8 +45,7 @@ describe("updateAddress", () => {
 
   it("기본 주소로 변경: isDefault true 시 기존 기본 주소 해제 및 User 업데이트", async () => {
     const updateAddress = await importUpdateAddress();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     prismaMock.userAddress.findFirst.mockResolvedValue(existingAddress as any);
     prismaMock.$transaction.mockImplementation(
@@ -73,8 +71,7 @@ describe("updateAddress", () => {
 
   it("기본 주소 아닌 수정: isDefault 미제공 시 User 업데이트 없음", async () => {
     const updateAddress = await importUpdateAddress();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     prismaMock.userAddress.findFirst.mockResolvedValue(existingAddress as any);
     prismaMock.$transaction.mockImplementation(
@@ -91,8 +88,7 @@ describe("updateAddress", () => {
 
   it("주소 없음: 존재하지 않는 주소는 실패한다", async () => {
     const updateAddress = await importUpdateAddress();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     prismaMock.userAddress.findFirst.mockResolvedValue(null);
 
@@ -106,8 +102,7 @@ describe("updateAddress", () => {
 
   it("비인증 사용자: 로그인 없이 호출하면 실패한다", async () => {
     const updateAddress = await importUpdateAddress();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(null));
+    mockedAuth.mockImplementation(mockAuth(null));
 
     const result = await updateAddress({ id: "addr-1", label: "집" });
 
@@ -116,8 +111,7 @@ describe("updateAddress", () => {
 
   it("트랜잭션 실패: DB 에러 시 실패 메시지를 반환한다", async () => {
     const updateAddress = await importUpdateAddress();
-    const { auth } = await import("@/auth");
-    vi.mocked(auth).mockImplementation(mockAuth(createMockSession()));
+    mockedAuth.mockImplementation(mockAuth(createMockSession()));
 
     prismaMock.userAddress.findFirst.mockResolvedValue(existingAddress as any);
     prismaMock.$transaction.mockRejectedValue(new Error("DB error"));
