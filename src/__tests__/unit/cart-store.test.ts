@@ -240,3 +240,141 @@ describe("setDeliveryInfo + clearCart", () => {
     expect(after.minOrderAmount).toBe(0);
   });
 });
+
+describe("generateCartItemKey — 옵션 정렬", () => {
+  it("옵션 순서가 달라도 같은 조합이면 같은 키로 병합된다", () => {
+    const { addItem } = useCartStore.getState();
+    addItem(makeItem({ options: [OPTION_A, OPTION_B] }), 1);
+    addItem(makeItem({ options: [OPTION_B, OPTION_A] }), 2);
+
+    const { items } = useCartStore.getState();
+    expect(items).toHaveLength(1);
+    expect(items[0].quantity).toBe(3);
+  });
+
+  it("options가 undefined이면 빈 배열로 처리된다", () => {
+    const { addItem } = useCartStore.getState();
+    addItem(makeItem({ options: undefined as unknown as CartItemOption[] }), 1);
+
+    const { items } = useCartStore.getState();
+    expect(items).toHaveLength(1);
+    expect(items[0].options).toEqual([]);
+  });
+});
+
+describe("addItem — 엣지 케이스", () => {
+  it("기존 아이템 수량 증가 시 restaurantId/restaurantName은 변경되지 않는다", () => {
+    const { addItem } = useCartStore.getState();
+    addItem(makeItem({ restaurantId: "rest-1", restaurantName: "치킨집A" }), 1);
+
+    // 같은 메뉴를 다시 추가 (restaurantName이 달라도 기존 값 유지)
+    addItem(makeItem({ restaurantId: "rest-1", restaurantName: "치킨집B" }), 1);
+
+    const { restaurantName, items } = useCartStore.getState();
+    expect(items).toHaveLength(1);
+    expect(items[0].quantity).toBe(2);
+    // 기존 아이템 병합 시 set에 restaurantName이 포함되지 않으므로 원래 값 유지
+    expect(restaurantName).toBe("치킨집A");
+  });
+
+  it("imageUrl이 있는 아이템을 추가한다", () => {
+    const { addItem } = useCartStore.getState();
+    addItem(makeItem({ imageUrl: "https://img.example.com/chicken.jpg" }), 1);
+
+    const { items } = useCartStore.getState();
+    expect(items[0].imageUrl).toBe("https://img.example.com/chicken.jpg");
+  });
+});
+
+describe("removeItem — 엣지 케이스", () => {
+  it("존재하지 않는 키로 호출해도 에러 없이 기존 상태를 유지한다", () => {
+    const { addItem } = useCartStore.getState();
+    addItem(makeItem(), 1);
+
+    const { removeItem } = useCartStore.getState();
+    removeItem("non-existent-key");
+
+    const { items } = useCartStore.getState();
+    expect(items).toHaveLength(1);
+  });
+});
+
+describe("updateQuantity — 엣지 케이스", () => {
+  it("음수 수량 입력 시 아이템을 제거한다", () => {
+    const { addItem } = useCartStore.getState();
+    addItem(makeItem(), 3);
+
+    const { items, updateQuantity } = useCartStore.getState();
+    updateQuantity(items[0].cartItemKey, -1);
+
+    expect(useCartStore.getState().items).toHaveLength(0);
+  });
+
+  it("존재하지 않는 키로 호출해도 에러 없이 기존 상태를 유지한다", () => {
+    const { addItem } = useCartStore.getState();
+    addItem(makeItem(), 1);
+
+    const { updateQuantity } = useCartStore.getState();
+    updateQuantity("non-existent-key", 5);
+
+    const { items } = useCartStore.getState();
+    expect(items).toHaveLength(1);
+    expect(items[0].quantity).toBe(1);
+  });
+});
+
+describe("replaceWithItem — 엣지 케이스", () => {
+  it("옵션 포함 아이템으로 교체한다", () => {
+    const { addItem } = useCartStore.getState();
+    addItem(makeItem({ restaurantId: "rest-1" }), 1);
+
+    useCartStore.getState().replaceWithItem(
+      makeItem({
+        menuId: "menu-new",
+        name: "양념치킨",
+        restaurantId: "rest-2",
+        restaurantName: "새 가게",
+        options: [OPTION_A, OPTION_B],
+      }),
+      2
+    );
+
+    const state = useCartStore.getState();
+    expect(state.items).toHaveLength(1);
+    expect(state.items[0].options).toEqual([OPTION_A, OPTION_B]);
+    expect(state.items[0].quantity).toBe(2);
+    expect(state.restaurantId).toBe("rest-2");
+  });
+
+  it("options가 undefined이면 빈 배열로 교체된다", () => {
+    const { addItem } = useCartStore.getState();
+    addItem(makeItem({ options: [OPTION_A] }), 1);
+
+    useCartStore.getState().replaceWithItem(
+      makeItem({
+        menuId: "menu-new",
+        restaurantId: "rest-2",
+        restaurantName: "새 가게",
+        options: undefined as unknown as CartItemOption[],
+      }),
+      1
+    );
+
+    const state = useCartStore.getState();
+    expect(state.items[0].options).toEqual([]);
+  });
+
+  it("빈 장바구니에서도 교체가 동작한다", () => {
+    useCartStore.getState().replaceWithItem(
+      makeItem({ restaurantId: "rest-1", restaurantName: "가게A" }),
+      3
+    );
+
+    const state = useCartStore.getState();
+    expect(state.items).toHaveLength(1);
+    expect(state.items[0].quantity).toBe(3);
+    expect(state.restaurantId).toBe("rest-1");
+    expect(state.deliveryFee).toBe(0);
+    expect(state.minOrderAmount).toBe(0);
+  });
+});
